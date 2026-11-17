@@ -1,8 +1,9 @@
 # Spec — Registrasi Penjual & Toko goCatering
 
 Tanggal: 2026-11-17 · Status: rancangan disetujui lewat dialog; menunggu review berkas ini
-Berkas yang diubah: `gocatering-prototype-v4.html` (satu-satunya berkas aplikasi),
-`README.md`, `tools/boottest.js`
+Berkas yang diubah: **`gocatering-prototype-v5.html`** (salinan v4, jadi satu-satunya
+berkas aplikasi yang disunting mulai versi ini), `index.html` (arah pengalih),
+`README.md`, `tools/boottest.js`. `gocatering-prototype-v4.html` tidak disentuh.
 
 ## 1. Masalah dan tujuan
 
@@ -181,9 +182,17 @@ hanya ditambah cek "email sudah dipakai sebagai penjual".
 | Pembacaan toko pindah ke `state` bisa merusak alur lama | 4 toko bawaan dimigrasi dengan **ID dan paket yang sama**, plus daftar regresi §10 |
 | Owner kedua mengintip order owner pertama | filter `myShopIds()` di semua jalur baca/tulis + uji silang di §10 |
 
-## 9. Migrasi
+## 9. Berkas v5, storage key, dan migrasi
 
-`state.schema` dinaikkan ke `2`. Saat `load()` dan `schema !== 2`:
+Fitur ini dibuat di **`gocatering-prototype-v5.html`** — salinan persis v4 yang kemudian
+disunting. v4 dibiarkan utuh supaya演进 versi tetap bisa dibandingkan, sesuai pola v1→v4.
+
+* `KEY` naik menjadi `'gocatering_v5'` (mengikuti pola `gocatering_v4`), `state.schema = 2`.
+* Saat `load()` dan `gocatering_v5` belum ada tapi `gocatering_v4` masih tersimpan:
+  data lama dipakai sebagai basis (`users`, `orders`, `queue`, `menuOff`, `antrean`, `user`)
+  supaya pesanan yang sudah dibuat selama demo tidak hilang, lalu dilanjutkan ke
+  pelengkapan di bawah. Kalau keduanya kosong: seed baru.
+* Pelengkapan skema 2 (dari hasil impor maupun seed):
 
 1. `state.shops = SHOPS` (deep copy) lalu dilengkapi `ownerKey`, `code`, `id`, `addr`
    (diambil dari `SHOP_ADDR` lama), `mapUrl`, `csWa`, `photo`, `builtin:true`.
@@ -214,6 +223,9 @@ Otomatis (Node, tanpa browser) — `tools/boottest.js` diperluas:
 
 * boot dengan `localStorage` kosong → tidak boleh melempar error, `state.shops.length === 4`,
   tiap toko punya `code` dan `id` 6 angka unik, tiap `ownerKey` ada di `state.owners`.
+* impor dari v4: sandbox diisi hanya `gocatering_v4` (9 order contoh) → v5 boot tanpa
+  error, jumlah order tetap 9, `gocatering_v5` terbentuk dengan 4 toko + 2 pemilik, dan
+  `gocatering_v4` lama tidak dihapus.
 * regresi nomor: `kode` mengikuti `H4567001`/`H4567002`, tidak bentrok untuk dua pemilik
   dengan inisial dan NIK akhir sama (yang menentukan adalah NIK 16 digit penuh).
 * `enc()/dec()` untuk teks unicode (`é`, `—`, emoji) dan nilai kosong.
