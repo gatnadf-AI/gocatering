@@ -54,7 +54,7 @@ state.owners = {                       // kunci = ownerKey
     nik:'e1:…',                        // tersandi, 16 digit
     email:'e1:…',                      // tersandi, lowercase (registrasi baru: @gmail.com)
     phone:'e1:…',                      // tersandi — WA pemilik
-    photo:'data:image/jpeg;base64,…',  // polos (lihat risiko §8)
+    photo:'data:image/jpeg;base64,…',  // polos; '' berarti tampil avatar inisial (§4)
     password:'e1:…',                   // tersandi
     mustReset:false,
     createdAt:'2026-11-17T16:00:00.000Z',
@@ -71,7 +71,7 @@ state.shops = [                        // sumber tunggal, termasuk 4 toko bawaan
     addr:'Jl. Tunjungan No. 45, Surabaya',
     mapUrl:'https://maps.app.goo.gl/…',
     csWa:'e1:…',                        // WA customer service, tersandi
-    photo:'data:image/jpeg;base64,…',
+    photo:'data:image/jpeg;base64,…',   // '' = kartu toko tetap memakai tile `logo`
     builtin:true }                      // true untuk 4 toko migrasi
 ]
 ```
@@ -98,7 +98,7 @@ Semua error tampil sebagai teks kecil di bawah field dan satu toast ringkas.
 | Email | registrasi penjual wajib `@gmail.com`; belum ada di `state.users` maupun `state.owners` | "Email harus @gmail.com" / "Email sudah dipakai akun pembeli, pakai email lain" |
 | NIK | 16 digit angka, bukan email, belum terdaftar | "NIK harus 16 digit" / "NIK sudah terdaftar sebagai pemilik X. Login dulu, lalu Tambah Toko" |
 | WA pemilik | `^0\d{8,13}$` atau `+62…` | "Nomor WA tidak valid — contoh 081234567890" |
-| Foto | **wajib**, `image/*`, sebelum decode ≤ 8 MB; foto penjual dan foto restoran sama-sama wajib, foto toko kedua pun wajib | "Foto belum diunggah" / "File bukan gambar" / "Foto terlalu besar" |
+| Foto | **opsional** (penjual maupun restoran), `image/*`, sebelum decode ≤ 8 MB. Tidak diisi = sah; tampilan jatuh ke tile inisial (`logo` toko / avatar pemilik) yang sudah dipakai prototype | "File bukan gambar" / "Foto terlalu besar" |
 | Nama restoran | ≥ 3 karakter, belum dipakai nama toko lain | "Nama restoran minimal 3 huruf" / "Nama restoran sudah dipakai" |
 | Alamat fisik | ≥ 10 karakter | "Alamat fisik belum lengkap" |
 | Link peta | diawali `https://`(maps.google.com \|goo.gl/…maps\|maps.app.goo.gl) | "Tempel link Google Maps" |
@@ -121,11 +121,13 @@ hanya form toko yang muncul, NIK pemilik dipakai lagi (butir 3).
 
 1. **`v-reg-seller-1` — Data Diri Penjual.** Titik masuk: saat role di `v-register` dipilih
    Penjual, tombol SIMPAN berubah menjadi `DAFTARKAN TOKO` yang membawa ke layar ini;
-   layar login juga mendapat satu tombol "Daftar sebagai penjual". Enam field di §4 +
-   pratinjau foto. Tombol `Sesudah →` memanggil validasi, belum menyimpan apa pun.
-2. **`v-reg-seller-2` — Data Toko.** Nama restoran, alamat fisik, link peta, WA CS, foto
-   restoran. Tombol `← Sebelum` kembali tanpa menghapus isian (nilai hidup di field yang
-   sama seperti wizard checkout). `Sesudah · DAFTARKAN` memanggil `createSellerAccount()`.
+   layar login juga mendapat satu tombol "Daftar sebagai penjual". Enam field di §4 —
+   foto opsional, kalau dipilih tampil pratinjau kecil. Tombol `Sesudah →` memanggil
+   validasi, belum menyimpan apa pun.
+2. **`v-reg-seller-2` — Data Toko.** Nama restoran, alamat fisik, link peta, WA CS, dan
+   foto restoran (opsional). Tombol `← Sebelum` kembali tanpa menghapus isian (nilai
+   hidup di field yang sama seperti wizard checkout). `Sesudah · DAFTARKAN` memanggil
+   `createSellerAccount()`.
 3. **`v-reg-done` — Akun terbit.** Menampilkan email, kode restoran, ID restoran
    (hanya di sini dan di dasbor penjual), dan **password sementara satu kali tampilan**.
    Akun sudah tersimpan saat layar ini dibuka, dan sesi di-logout supaya penjual benar-benar
@@ -173,7 +175,7 @@ hanya ditambah cek "email sudah dipakai sebagai penjual".
 
 | Risiko | Mitigasi |
 | --- | --- |
-| Kuota `localStorage` ±5 MB; 1 toko ≈ 2 foto × 100 KB | kompresi 640 px; tangkap `QuotaExceededError` → batal simpan foto saja, catatan tetap jadi, toast "Penyimpanan penuh — foto tidak tersimpan" |
+| Kuota `localStorage` ±5 MB; kalau diisi, 1 toko ≈ 2 foto × 100 KB | foto opsional sehingga registrasi tanpa gambar tidak memakan kuota sama sekali; kompresi 640 px; tangkap `QuotaExceededError` → simpan catatan tanpa foto (jatuh ke tile inisial) + toast "Penyimpanan penuh — foto tidak tersimpan" |
 | Obfuscation disalahartikan sebagai enkripsi | README + header spec menulis eksplisit "bukan enkripsi kepatuhan"; tidak ada klaim UU PDP untuk sisi penjual |
 | `crypto.subtle` tidak tersedia di `file://` | tidak dipakai — XOR murni sinkron |
 | Pembacaan toko pindah ke `state` bisa merusak alur lama | 4 toko bawaan dimigrasi dengan **ID dan paket yang sama**, plus daftar regresi §10 |
@@ -220,7 +222,9 @@ Manual (browser, klik DOM nyata — bukan panggil fungsi):
 
 1. Registrasi penjual baru "Huang", email `huang.test@gmail.com`, NIK
    `3578090807064567` (empat digit akhirnya sama dengan Andi, tapi 16 digitnya berbeda)
-   → layar akun menampilkan kode `H4567001` dan ID 6 angka.
+   → layar akun menampilkan kode `H4567001` dan ID 6 angka. Satu registrasi lagi dijalankan
+   **tanpa foto sama sekali**: akun tetap terbentuk, kartu tokonya memakai tile inisial,
+   dan popup menampilkan avatar inisial pemilik (bukti foto memang opsional).
 2. Login role Penjual dengan password sementara → terdampar di `v-s-reset`; password
    ditolak kalau = sementara; setelah ganti, masuk dasbor dan hanya tokonya yang muncul.
 3. Tambah Toko kedua → `H4567002`; pemilih toko menampilkan dua toko dan pesanan tab
