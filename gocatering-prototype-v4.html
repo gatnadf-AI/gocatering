@@ -700,6 +700,11 @@ const FLOW_LBL = {new:'Baru',confirmed:'Dikonfirmasi',processing:'Diproses',ship
 const W = CATERING_WA = '6281234567890';
 
 const KEY='gocatering_v4';
+/* simHour & CUTOFF dipakai seed() lewat todayISO(), jadi binding-nya wajib
+   ada sebelum load() dijalankan. Kalau tidak, database pertama yang kosong
+   membuat skrip mati di tengah: "Cannot access 'simHour' before initialization". */
+let simHour=null;                      // null = jam asli HP
+const CUTOFF=16;                       // lewat jam 16.00 WIB -> order hari ini dimasak besok
 let state = load();
 let history = [];
 let currentShop=null, cart=[], payMethod='qris', pendingOrder=null, offline=false, payingExisting=false;
@@ -1063,8 +1068,7 @@ function updateCartBar(){
 /* ================= PEMBELI: CHECKOUT ================= */
 /* ================= CHECKOUT 4 LANGKAH + JAM WIB ================= */
 function isoOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-let simHour=null;                      // null = jam asli HP
-const CUTOFF=16;                       // lewat jam 16.00 WIB -> order hari ini dimasak besok
+/* simHour & CUTOFF sudah dideklarasikan di bagian DATA (sebelum load()) — jangan deklarasikan ulang. */
 function wibNow(){
   const d=new Date(), w=new Date(d.getTime()+(7*60+d.getTimezoneOffset())*60000);
   if(simHour!=null) w.setHours(simHour,simHour>CUTOFF?5:0,0,0);
