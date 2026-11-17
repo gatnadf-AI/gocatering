@@ -21,7 +21,7 @@ lalu buka `https://gatnadf-AI.github.io/gocatering/gocatering-prototype-v4.html`
 
 | Berkas | Isi |
 | --- | --- |
-| `gocatering-prototype-v4.html` | **Versi utama** — checkout 4 halaman, pembayaran, login Google, profil + UU PDP |
+| `gocatering-prototype-v4.html` | **Versi utama** — checkout 4 halaman, pembayaran, login Google, profil + UU PDP, dashboard pesanan per toko |
 | `gocatering-prototype-v3.html` | Bottom sheet "+ Tambah Pesanan" dengan carousel paket |
 | `gocatering-prototype-v2.html` | Dummy data, foto makanan, pembayaran digital |
 | `gocatering-prototype.html` | Versi dasar (v1) |
@@ -48,6 +48,22 @@ Aturan bisnis yang diterapkan:
   (bisa ditunda, lalu dibayar ulang dari tab Pesanan).
 - **Jadwal Saya** — pesanan dikelompokkan per tanggal pengambilan/pengantaran.
 - **Share via WhatsApp** memakai `wa.me` dengan ringkasan pesanan.
+
+**Dashboard pesanan penjual** (satu akun = banyak toko, semua hitungan mengikuti toko yang dipilih):
+
+- Pemilih toko muncul hanya bila akun punya lebih dari satu toko.
+- 4 widget: **Antrean Pesanan**, **Batal · Kedaluarsa**, **Batal · Tidak Diambil**,
+  **Pesanan Selesai** — lengkap dengan nilai rupiahnya.
+- Setiap widget membuka daftar detail; satu baris memuat id restoran, id pesanan, rincian
+  paket, nama & no. WA pemesan, alamat, metode ambil, nomor antre, dan total pembayaran.
+  Bisa dicari berdasarkan id pesanan, nomor antre, nama, atau nomor pemesan.
+- **Kedaluarsa dihitung otomatis**: order yang belum lunas lewat 2 jam dibatalkan sistem saat
+  dasbor dibuka, sehingga terpisah dari pesanan yang **dibatalkan CS** karena tidak diambil.
+- CS menandai **Sudah Diambil** beserta **nama pengambil dan foto buktinya** (dikompres ke
+  480 px; kalau kuota penyimpanan penuh, status tetap tersimpan dan foto dilepas).
+- Status **Selesai** langsung terlihat di sisi pembeli: badge "Diambil oleh …", foto bukti,
+  dan riwayat di halaman Profil.
+- Penjual hanya melihat tokonya sendiri — permintaan akses ke toko lain diabaikan.
 
 Akun dan data pembeli:
 
