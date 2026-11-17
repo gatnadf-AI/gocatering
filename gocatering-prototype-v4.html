@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>goCatering v4 — Prototype Interaktif (Pickup + Antrean / Delivery + Ongkir)</title>
+<style>
+:root{
+  --biru:#2196F3; --biru-t:#1565C0; --tosca:#00897B; --tosca-t:#00695C;
+  --merah:#E91E63; --kuning:#FFC107; --abu:#6b7280; --garis:#e5e7eb;
+  --bg:#f4f6f8; --putih:#fff; --hitam:#111827;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#1f2937,#374151);min-height:100vh;display:flex;padding:18px;gap:18px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.stage{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.panel{width:300px;background:#111827;color:#d1d5db;border-radius:16px;padding:18px;font-size:13px;line-height:1.55;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.panel h1{font-size:17px;color:#fff;margin-bottom:4px}
+.panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin:16px 0 6px}
+.panel code{background:#1f2937;padding:1px 5px;border-radius:4px;color:#6ee7b7;font-size:11.5px}
+.panel .row{display:flex;gap:6px;margin:6px 0}
+.panel .row button{flex:1;background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:8px;padding:7px;font-size:12px;cursor:pointer}
+.panel .row button:hover{background:#374151}
+.panel .row button.on{background:var(--tosca);border-color:var(--tosca);color:#fff}
+.panel ul{margin-left:16px}
+.panel a{color:#93c5fd}
+.phone{width:380px;height:800px;background:#000;border-radius:44px;padding:10px;box-shadow:0 24px 70px rgba(0,0,0,.55);flex:0 0 auto}
+.screenwrap{width:100%;height:100%;background:var(--bg);border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.statusbar{height:26px;background:var(--tosca-t);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;flex:0 0 auto}
+.appbar{background:var(--biru);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600;flex:0 0 auto;box-shadow:0 2px 6px rgba(0,0,0,.18);position:relative;z-index:5}
+.appbar .act{margin-left:auto;cursor:pointer;font-size:18px;opacity:.95;background:none;border:none;color:#fff}
+.appbar.tosca{background:var(--tosca)}
+.appbar .sub{font-size:11px;font-weight:400;opacity:.9;display:block}
+.body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.view{display:none;min-height:100%;flex-direction:column}
+.view.on{display:flex}
+.card{background:#fff;border-radius:12px;padding:14px;margin:0 12px 12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.btn{border:none;border-radius:10px;padding:13px 16px;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:.15s}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--biru);color:#fff}
+.btn-tosca{background:var(--tosca);color:#fff}
+.btn-grey{background:#eceff1;color:#37474f}
+.btn-wa{background:#25D366;color:#fff}
+.btn-danger{background:#fff;color:#e53935;border:1px solid #ffcdd2}
+.btn-sm{padding:8px 12px;font-size:12.5px;border-radius:8px;width:auto}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.field{margin:12px 0}
+.field label{display:block;font-size:12px;font-weight:600;color:#455a64;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--garis);border-radius:9px;font-size:15px;background:#fff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--biru);box-shadow:0 0 0 3px rgba(33,150,243,.12)}
+.hint{font-size:11px;color:var(--abu)}
+.center{text-align:center}
+.pad{padding:16px}
+.logo{font-size:52px;font-weight:900;color:#FF6B35;letter-spacing:-2px}
+.logo-s{font-size:22px;font-weight:800;color:#4CAF50;letter-spacing:4px}
+.roles{display:flex;gap:10px;margin:18px 0}
+.role{flex:1;border:2px solid var(--garis);border-radius:12px;padding:14px 8px;text-align:center;cursor:pointer;background:#fff;transition:.15s}
+.role.on{border-color:var(--biru);background:#e3f2fd}
+.role .ic{font-size:26px}
+.role .nm{font-size:13px;font-weight:700;margin-top:4px}
+.chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.c-new{background:#FFF3E0;color:#E65100}
+.c-confirmed{background:#E3F2FD;color:#1565C0}
+.c-processing{background:#F3E5F5;color:#6A1B9A}
+.c-shipped{background:#E8F5E9;color:#2E7D32}
+.c-completed{background:#E0F2F1;color:#00695C}
+.c-cancelled{background:#FFEBEE;color:#C62828}
+.c-paid{background:#E8F5E9;color:#2E7D32}
+.c-unpaid{background:#FAFAFA;color:#9E9E9E;border:1px solid #e0e0e0}
+.shopcard{display:flex;gap:12px;align-items:center;cursor:pointer}
+.shoplogo{width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,#FF6B35,#F7931E);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex:0 0 auto}
+.shopname{font-weight:800;font-size:15px}
+.shopmeta{font-size:11.5px;color:var(--abu);margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+.pkg{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);cursor:pointer;border:2px solid transparent;transition:.15s}
+.pkg.on{border-color:var(--biru)}
+.pkg img{width:100%;height:104px;object-fit:cover;display:block;background:#cfd8dc}
+.pkg .pi{padding:8px 9px}
+.pkg .pn{font-size:12.5px;font-weight:700;color:var(--merah);line-height:1.3}
+.pkg .pp{font-size:12px;color:#455a64;margin-top:3px;font-weight:600}
+.pkg .pd{font-size:10.5px;color:#90a4ae;margin-top:3px;line-height:1.35}
+.totalbar{background:#fff;border-bottom:1px solid var(--garis);padding:9px 12px;font-size:13.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:3}
+.totalbar span{color:var(--merah)}
+.selrow{display:flex;gap:10px;align-items:center}
+.selrow img{width:64px;height:56px;object-fit:cover;border-radius:9px}
+.qty{display:flex;align-items:center;gap:10px;margin-top:8px}
+.qty button{width:34px;height:34px;border:1px solid var(--garis);background:#fff;border-radius:9px;font-size:18px;cursor:pointer}
+.qty b{min-width:26px;text-align:center;font-size:16px}
+.oline{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:#37474f}
+.oline.tot{border-top:1px dashed var(--garis);margin-top:6px;padding-top:9px;font-weight:800;font-size:15px}
+.bottombar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--garis);padding:10px 12px;display:flex;gap:8px;z-index:6}
+.bnav{display:flex;background:#fff;border-top:1px solid var(--garis);flex:0 0 auto}
+.bnav button{flex:1;background:none;border:none;padding:9px 4px 10px;font-size:10.5px;color:#90a4ae;cursor:pointer;font-weight:700}
+.bnav button .ic{display:block;font-size:19px;margin-bottom:2px}
+.bnav button.on{color:var(--biru)}
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--garis);flex:0 0 auto;overflow-x:auto}
+.tabs button{flex:1;min-width:70px;background:none;border:none;padding:11px 6px;font-size:12px;font-weight:700;color:#90a4ae;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.tabs button.on{color:var(--biru);border-bottom-color:var(--biru)}
+.ord{background:#fff;border-radius:12px;margin:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.ord .oh{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#fafafa;border-bottom:1px solid #f0f0f0;gap:8px}
+.oid{font-size:11.5px;font-weight:800;color:var(--biru-t)}
+.ob{padding:11px 12px;font-size:12.5px;color:#455a64;line-height:1.65}
+.ob b{color:#263238}
+.oa{padding:0 12px 12px;display:flex;gap:8px;flex-wrap:wrap}
+.oa .btn-sm{flex:1;min-width:90px}
+.flow{display:flex;align-items:flex-start;gap:6px;padding:10px 12px;background:#fafafa;border-top:1px solid #f0f0f0;overflow-x:auto}
+.step{flex:1;text-align:center;font-size:9px;color:#b0bec5;font-weight:700;position:relative}
+.step .dot{width:16px;height:16px;border-radius:50%;background:#cfd8dc;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff}
+.step.done .dot{background:var(--tosca)}
+.step.done{color:var(--tosca)}
+.step.cur .dot{background:var(--biru);box-shadow:0 0 0 3px rgba(33,150,243,.2)}
+.step.cur{color:var(--biru)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+.stat{background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.stat .n{font-size:22px;font-weight:900;color:var(--biru)}
+.stat .l{font-size:10.5px;color:var(--abu);margin-top:2px;font-weight:600}
+.empty{text-align:center;padding:50px 20px;color:#b0bec5}
+.empty .ic{font-size:50px;margin-bottom:10px}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:40}
+.overlay.on{display:flex}
+.sheet{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:16px;max-height:86%;overflow-y:auto;animation:up .22s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+.sheet h3{font-size:16px;margin-bottom:4px}
+.paylist{margin-top:6px}
+.pay{display:flex;gap:11px;align-items:center;padding:12px;border:2px solid var(--garis);border-radius:11px;margin-bottom:9px;cursor:pointer;background:#fff}
+.pay.on{border-color:var(--biru);background:#e3f2fd}
+.pay .ic{font-size:22px;width:34px;text-align:center}
+.pay .nm{font-size:13.5px;font-weight:700}
+.pay .ds{font-size:11px;color:var(--abu);margin-top:1px}
+.pay .fee{margin-left:auto;font-size:11px;font-weight:700;color:#455a64}
+.qrbox{width:180px;height:180px;margin:12px auto;background:#fff;border:1px solid var(--garis);border-radius:12px;padding:8px;display:grid;grid-template-columns:repeat(21,1fr);grid-auto-rows:1fr;gap:1px}
+.qrbox i{background:#fff;display:block}
+.qrbox i.b{background:#111}
+.count{font-size:12px;color:var(--abu);text-align:center;margin-bottom:8px}
+.count b{color:#e53935;font-size:15px}
+.va{background:#f5f7f9;border:1px dashed #cfd8dc;border-radius:11px;padding:12px;text-align:center;margin:10px 0}
+.va .no{font-size:19px;font-weight:900;letter-spacing:1px;color:var(--biru-t)}
+.va .lbl{font-size:11px;color:var(--abu)}
+.spinner{width:34px;height:34px;border:3px solid #e0e0e0;border-top-color:var(--biru);border-radius:50%;margin:0 auto 12px;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:absolute;left:16px;right:16px;bottom:78px;background:#323232;color:#fff;padding:12px 14px;border-radius:10px;font-size:13px;z-index:60;opacity:0;transform:translateY(14px);transition:.25s;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.toast.on{opacity:1;transform:none}
+.toast.err{background:#c62828}
+.toast.ok{background:var(--tosca)}
+.sync{background:#fff8e1;border-bottom:1px solid #ffe082;padding:7px 12px;font-size:11.5px;color:#8d6e63;display:flex;align-items:center;gap:8px;font-weight:600}
+.sync .btn-sm{margin-left:auto;background:#8d6e63;color:#fff}
+.mrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f0}
+.mrow:last-child{border:none}
+.mrow img{width:52px;height:44px;object-fit:cover;border-radius:8px}
+.mrow .mi{flex:1;min-width:0}
+.mrow .mn{font-size:13px;font-weight:700}
+.mrow .mp{font-size:11.5px;color:var(--abu)}
+.mrow .sw{width:42px;height:24px;border-radius:999px;background:#cfd8dc;position:relative;cursor:pointer;flex:0 0 auto;transition:.2s}
+.mrow .sw.on{background:var(--tosca)}
+.mrow .sw::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.mrow .sw.on::after{left:21px}
+.tag{font-size:10px;background:#eceff1;color:#546e7a;padding:2px 7px;border-radius:5px;font-weight:700}
+.demo{background:#e8f5e9;border:1px solid #c8e6c9;border-radius:10px;padding:10px;margin:12px 0;font-size:11.5px;color:#2e7d32}
+.demo b{display:block;margin-bottom:4px}
+.demo .row{display:flex;gap:6px;margin-top:7px}
+.demo .row button{flex:1;border:1px solid #a5d6a7;background:#fff;color:#2e7d32;border-radius:7px;padding:6px;font-size:11px;cursor:pointer;font-weight:700}
+.imgfail{width:100%;height:104px;background:linear-gradient(135deg,#FF6B35,#F7931E);display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px}
+/* ===== v3: CART MULTI-ITEM ===== */
+.citem{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.citem:last-child{border-bottom:none}
+.citem img{width:56px;height:50px;object-fit:cover;border-radius:9px;flex:0 0 auto;background:#cfd8dc}
+.citem .ci{flex:1;min-width:0}
+.citem .cn{font-size:12.5px;font-weight:700;color:var(--merah);line-height:1.3}
+.citem .cm{font-size:11px;color:var(--abu);margin-top:2px}
+.citem .ct{font-size:12.5px;font-weight:800;color:#263238;margin-top:3px}
+.citem .cq{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.citem .cq button{width:30px;height:30px;border:1px solid var(--garis);background:#fff;border-radius:8px;font-size:16px;cursor:pointer;line-height:1}
+.citem .cq button:active{background:#eceff1}
+.citem .cq b{min-width:22px;text-align:center;font-size:14px}
+.citem .cx{width:26px;height:26px;border:none;background:#ffebee;color:#c62828;border-radius:7px;cursor:pointer;font-size:13px;flex:0 0 auto;align-self:flex-start}
+.addbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:2px dashed var(--biru);background:#f3f9ff;color:var(--biru-t);border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;margin-top:4px;transition:.15s}
+.addbtn:active{background:#e3f2fd;transform:scale(.99)}
+.pgbadge{position:absolute;top:6px;right:6px;background:var(--biru);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:3px 8px;box-shadow:0 2px 6px rgba(0,0,0,.28)}
+.pkg{position:relative}
+.pkg .addmini{position:absolute;bottom:8px;right:8px;width:30px;height:30px;border-radius:50%;background:var(--tosca);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1}
+/* ===== v3: BOTTOM SHEET + CAROUSEL ===== */
+.overlay.sheet-bottom{align-items:flex-end}
+.sheet.draggable{padding-top:8px}
+.grabber{width:44px;height:5px;border-radius:999px;background:#d0d7dd;margin:2px auto 12px;cursor:grab;touch-action:none}
+.grabber:active{cursor:grabbing}
+.sheet.closing{animation:down .2s ease forwards}
+@keyframes down{to{transform:translateY(100%);opacity:.4}}
+.carwrap{position:relative;margin:0 -4px}
+.carousel{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 12px;scrollbar-width:none;-ms-overflow-style:none;cursor:grab;overscroll-behavior-x:contain}
+.carousel::-webkit-scrollbar{display:none}
+.carousel.dragging{cursor:grabbing;scroll-snap-type:none;scroll-behavior:auto}
+.cslide{flex:0 0 158px;scroll-snap-align:center;background:#fff;border:1px solid var(--garis);border-radius:13px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.09);display:flex;flex-direction:column;transition:.15s}
+.cslide.incart{border-color:var(--tosca);box-shadow:0 0 0 2px rgba(0,137,123,.22)}
+.cslide img{width:100%;height:104px;object-fit:cover;display:block;background:#cfd8dc}
+.cslide .csb{padding:8px 9px 9px;display:flex;flex-direction:column;flex:1}
+.cslide .csn{font-size:12px;font-weight:700;color:var(--merah);line-height:1.3;min-height:31px}
+.cslide .csp{font-size:12px;font-weight:700;color:#455a64;margin-top:3px}
+.cslide .csd{font-size:10px;color:#90a4ae;margin-top:3px;line-height:1.3;flex:1}
+.cslide .csa{display:flex;align-items:center;gap:7px;margin-top:8px}
+.cslide .csa button{width:28px;height:28px;border-radius:8px;border:1px solid var(--garis);background:#fff;font-size:16px;cursor:pointer;line-height:1}
+.cslide .csa .plus{background:var(--tosca);color:#fff;border-color:var(--tosca);width:auto;padding:0 12px;border-radius:9px;font-size:11.5px;font-weight:800;height:30px}
+.cslide .csa b{min-width:18px;text-align:center;font-size:13px}
+.carnav{position:absolute;top:52px;width:100%;display:flex;justify-content:space-between;pointer-events:none;padding:0 2px}
+.carnav button{pointer-events:auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--garis);background:rgba(255,255,255,.94);font-size:15px;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.16);line-height:1}
+.carnav button:disabled{opacity:.3;cursor:default}
+.dots{display:flex;gap:5px;justify-content:center;margin:2px 0 12px}
+.dots i{width:6px;height:6px;border-radius:50%;background:#cfd8dc;transition:.2s}
+.dots i.on{background:var(--biru);width:18px;border-radius:999px}
+.sheetfoot{position:sticky;bottom:-16px;margin:0 -16px -16px;padding:11px 16px;background:#fff;border-top:1px solid var(--garis);display:flex;gap:8px;align-items:center;z-index:2}
+.sheetfoot .sf{flex:1;min-width:0}
+.sheetfoot .sft{font-size:10.5px;color:var(--abu);font-weight:600}
+.sheetfoot .sfv{font-size:16px;font-weight:900;color:var(--merah)}
+.sheetfoot .btn{width:auto;flex:0 0 auto;padding:12px 22px}
+/* ===== v4: PICKUP / DELIVERY ===== */
+.ffgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+button.ff,button.svc{font:inherit;color:inherit;width:100%;appearance:none;-webkit-appearance:none;display:block;text-align:center;cursor:pointer}
+button.ff:focus-visible,button.svc:focus-visible{outline:2px solid var(--biru);outline-offset:2px}
+.shopcard:focus-visible,.pkg:focus-visible{outline:2px solid var(--biru);outline-offset:2px}
+.ff{border:2px solid var(--garis);border-radius:12px;padding:11px 9px;text-align:center;cursor:pointer;background:#fff;transition:.15s}
+.ff.on{border-color:var(--biru);background:#e3f2fd;box-shadow:0 0 0 3px rgba(33,150,243,.12)}
+.ff .ffi{font-size:24px;line-height:1.1}
+.ff .ffn{font-size:13px;font-weight:800;margin-top:5px;color:#263238}
+.ff .ffd{font-size:10.5px;color:var(--abu);margin-top:2px;line-height:1.3}
+.qbox{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#00897B,#00695C);color:#fff;border-radius:12px;padding:12px 14px;margin:10px 0 4px}
+.qbox .ql{font-size:10.5px;opacity:.85;letter-spacing:.04em;text-transform:uppercase}
+.qbox .qn{font-size:26px;font-weight:900;letter-spacing:1px;line-height:1.1}
+.qbox .qh{margin-left:auto;font-size:10.5px;text-align:right;opacity:.9;line-height:1.45}
+.svcgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.svc{border:2px solid var(--garis);border-radius:11px;padding:10px;cursor:pointer;background:#fff;transition:.15s}
+.svc.on{border-color:var(--tosca);background:#e6f4f1}
+.svc .svi{font-size:20px}
+.svc .svn{font-size:12.5px;font-weight:800;margin-top:3px}
+.svc .svp{font-size:11px;color:var(--tosca-t);font-weight:700;margin-top:2px}
+.svc .svd{font-size:10px;color:var(--abu);margin-top:2px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--biru) var(--pct,20%),#dbe0e5 var(--pct,20%));padding:0;border:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--biru);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:grab}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--biru);cursor:grab}
+#km-lbl b{color:var(--biru-t)}
+/* ===== v4: ANIMASI MASUK PESANAN ===== */
+.fly{position:fixed;z-index:90;width:62px;height:62px;border-radius:12px;background-size:cover;background-position:center;
+  box-shadow:0 8px 22px rgba(0,0,0,.32);pointer-events:none;transition:transform .62s cubic-bezier(.34,.05,.3,1),opacity .62s ease}
+.pulse{animation:pl .5s ease}
+@keyframes pl{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
+.citem.enter{animation:cin .5s ease both}
+@keyframes cin{from{opacity:0;transform:translateX(-22px);background:#dff5ef}60%{background:#dff5ef}to{opacity:1;transform:none;background:transparent}}
+.badge-pop{display:inline-block;animation:bp .45s ease}
+@keyframes bp{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
+/* v4: ringkasan fulfillment */
+.ffline{font-size:11.5px;color:#37474f;background:#f1f6f9;border-left:3px solid var(--tosca);border-radius:0 7px 7px 0;padding:6px 9px;margin:6px 0}
+.pax{display:flex;align-items:baseline;gap:9px;background:#f1f6f9;border:1.5px solid #cfe0ea;border-radius:10px;padding:9px 12px}
+.pax b{font-size:19px;color:var(--biru-t);line-height:1.1}
+.pax .paxq{font-size:11px;color:var(--abu);font-weight:700}
+#co-pax-sub{margin-top:5px;line-height:1.45}
+.qno{display:inline-block;background:var(--tosca-t);color:#fff;border-radius:5px;padding:1px 7px;font-weight:800;font-size:11.5px}
+.locknote{font-size:11px;color:#c62828;background:#fdecea;border-left:3px solid #c62828;border-radius:0 7px 7px 0;padding:6px 9px;margin-top:6px}
+.gratis{color:#2e7d32;font-weight:700}
+/* ===== v4: batas jam 16.00 + Jadwal Saya ===== */
+.mini{font-size:11px;color:#94a3b8;margin-top:4px;line-height:1.4}
+.warn16{display:flex;align-items:center;gap:10px;background:#fff8e1;border:1.5px solid #ffd54f;border-radius:10px;padding:9px 11px;margin:8px 0 2px;font-size:11.5px;line-height:1.45;color:#7a5b00}
+.warn16 b{color:#b7791f}
+.warn16 .btn-sm{margin-left:auto;flex:0 0 auto}
+.stepper{display:flex;gap:5px;padding:10px 12px 0}
+.stp{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:800;color:#90a4ae;background:#f4f6f8;border-radius:18px;padding:4px 5px;white-space:nowrap;overflow:hidden;transition:background .2s}
+.stp b{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#cfd8dc;color:#fff;font-size:9px;flex:0 0 auto}
+.stp.on{background:var(--tosca);color:#0f5f57}
+.stp.on b{background:#fff;color:var(--tosca-t)}
+.stp.done{background:#e8f5e9;color:#2e7d32}
+.stp.done b{background:#2e7d32;color:#fff}
+.sched{display:flex;gap:9px;overflow-x:auto;padding:8px 12px 6px;scroll-snap-type:x proximity}
+.sday{flex:0 0 auto;min-width:138px;background:#fff;border:1.5px solid var(--garis);border-radius:12px;padding:9px 10px;scroll-snap-align:start;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.sday.today{border-color:var(--tosca);background:#eef8f6}
+.sday.late{border-color:#ffd54f;background:#fffdf2}
+.sday .sd{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--abu)}
+.sday .sn{font-size:13.5px;font-weight:800;color:#263238;margin-top:1px}
+.sday .sm{font-size:11px;color:var(--tosca-t);font-weight:700;margin-top:3px}
+.sday .sos{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.schip{font-size:10.5px;background:#eceff1;border:0;border-radius:6px;padding:2px 7px;cursor:pointer;color:#37474f;font-family:inherit;text-align:left}
+.schip:hover{background:#d7e2e9}
+.latechip{font-size:10.5px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:1px 6px;white-space:nowrap}
+/* login Google + profil (UU PDP) */
+.divider{display:flex;align-items:center;gap:10px;margin:12px 0 10px;font-size:11px;color:#90a4ae;font-weight:700}
+.divider::before,.divider::after{content:"";height:1px;background:var(--garis);flex:1}
+.btn-google{background:#fff;color:#3c4043;border:1px solid #dadce0;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-google:hover{background:#f8f9fa}
+.glogo{font-weight:900;font-size:14px;letter-spacing:-.6px;line-height:1}
+.gacc{display:flex;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--garis);border-radius:12px;margin-bottom:8px;cursor:pointer;background:#fff;text-align:left;width:100%}
+.gacc:hover,.gacc:focus-visible{border-color:#1a73e8;outline:none;background:#f8fbff}
+.gav{width:38px;height:38px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:0 0 auto}
+.gn{font-size:13.5px;font-weight:800;color:#263238}
+.gm{font-size:11.5px;color:#5f6368;word-break:break-all}
+.avatar{width:54px;height:54px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex:0 0 auto}
+.pdnote{font-size:11px;color:#5f6368;background:#f1f3f4;border-left:3px solid #1a73e8;border-radius:0 7px 7px 0;padding:7px 9px;margin-top:10px;line-height:1.45}
+.hrow{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--garis)}
+.hrow:last-child{border-bottom:none;padding-bottom:0}
+.hrow .hl{font-size:12.5px;font-weight:700;color:#263238}
+.hrow .hs{font-size:11px;color:var(--abu);margin-top:2px}
+@media (prefers-reduced-motion: reduce){
+  .fly{display:none}
+  .citem.enter,.pulse,.badge-pop{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>goCatering v4</h1>
+  <div>Prototype interaktif — alur pembeli &amp; penjual, pembayaran digital, WhatsApp, dan simulasi offline-first.</div>
+  <h2>Baru di v4</h2>
+  <ul>
+    <li><b>Ambil di toko / Diantar.</b> Pilih di checkout: pickup tanpa ongkir, atau delivery GoSend / GrabExpress.</li>
+    <li><b>Nomor antre otomatis.</b> Pickup memilih tanggal + slot, sistem menerbitkan nomor antre per toko per hari (A-007, B-006, …).</li>
+    <li><b>Ongkir dihitung sebelum bayar.</b> Geser jarak km — tarif per km dengan batas minimal langsung muncul di rincian total.</li>
+    <li><b>Bayar dulu, baru dimasak.</b> COD hanya untuk pickup; status "Diproses" penjual terkunci selama pesanan belum lunas.</li>
+    <li><b>Animasi masuk pesanan.</b> Foto paket terbang ke total, angka menghitung naik, dan baris checkout baru menyala sesaat.</li>
+    <li><b>Checkout 4 halaman.</b> Detail paket &rarr; Metode pengambilan &rarr; Profil pemesan &rarr; Pembayaran. Tiap halaman hanya punya tombol <b>Sebelum / Sesudah</b>; isian tetap tersimpan saat kembali.</li>
+    <li><b>Slot ambil 11.00 &ndash; 18.00 WIB</b> dan <b>jumlah orang otomatis</b> = total paket semua jenis paket (read-only, ikut saat qty diubah).</li>
+    <li><b>Batas jam 16.00 WIB.</b> Order bertanggal hari ini yang dibuat lewat jam 16.00 diberi banner &mdash; dapur mulai memasak besok, dan nomor antre terbit untuk tanggal proses. Tombol <b>Geser ke besok</b> menghapus warning.</li>
+    <li><b>Jadwal Saya.</b> Satu akun pembeli bisa punya beberapa order pada tanggal berbeda; tab Pesanan menampilkan kartu per tanggal (jumlah orang, total, status belum lunas).</li>
+    <li><b>Bayar sekarang</b> pada order yang tertahan (dipilih &quot;kirim order, bayar nanti&quot;) &mdash; setelah lunas, tombol &rarr; Diproses penjual terbuka.</li>
+  </ul>
+  <h2>Baru di v3</h2>
+  <ul>
+    <li><b>Cart multi-item.</b> Satu pesanan bisa berisi beberapa paket sekaligus (melampaui aturan manual lama "satu paket per order").</li>
+    <li><b>Tombol + Tambah Pesanan</b> di checkout membuka <b>bottom sheet</b> yang bisa di-swipe turun.</li>
+    <li>Di dalam sheet ada <b>carousel horizontal</b> — geser kartu makanan kiri/kanan, pakai tombol ‹ ›, atau keyboard.</li>
+    <li>Item baru langsung <b>terjumlah</b> ke pesanan yang sudah ada; qty &amp; hapus bisa diatur per baris.</li>
+  </ul>
+  <h2>Isi cepat</h2>
+  <div class="row"><button onclick="fillDemo('buyer')">Login Pembeli</button><button onclick="fillDemo('seller1')">Login Penjual 1</button></div>
+  <div class="row"><button onclick="fillDemo('seller2')">Login Penjual 2</button><button onclick="resetData()">Reset Data</button></div>
+  <h2>Mode</h2>
+  <div class="row"><button id="mb-online" class="on" onclick="setOffline(false)">Online</button><button id="mb-offline" onclick="setOffline(true)">Offline (DB lokal)</button></div>
+  <h2>Jam simulasi — batas 16.00 WIB</h2>
+  <div class="row" id="sim-hours">
+    <button data-h="10" onclick="setSimHour(10)">10.00</button>
+    <button data-h="15" onclick="setSimHour(15)">15.00</button>
+    <button data-h="17" onclick="setSimHour(17)">17.00</button>
+    <button data-h="null" class="on" onclick="setSimHour(null)">Jam asli HP</button></div>
+  <div class="mini">Lewat jam 16.00, pesanan bertanggal hari ini baru dimasak besok — banner muncul di checkout.</div>
+  <h2>Akun demo</h2>
+  <div>🛒 Pembeli: bebas (auto-registrasi)</div>
+  <div>👨‍🍳 <code>rm.sederhana@gocatering.id</code> / <code>seller123</code></div>
+  <div>👨‍🍳 <code>dapur.nusantara@gocatering.id</code> / <code>seller123</code></div>
+  <h2>Catatan</h2>
+  <ul>
+    <li>21 paket makanan, 4 toko, 5 status pesanan.</li>
+    <li>Cart berlaku <b>per toko</b> — ganti toko mengosongkan cart agar satu pesanan tetap satu penjual.</li>
+    <li>QRIS / VA bank / e-wallet disimulasikan (Midtrans-style).</li>
+    <li>Ongkir: GoSend Rp 8.000/km (min. Rp 12.000), GrabExpress Rp 9.000/km (min. Rp 14.000) — ubah slider jarak untuk melihat total ikut berubah.</li>
+    <li>Nomor antre <b>per toko per hari</b>; ganti tanggal / toko dan nomor berikutnya ikut berubah. Nomor baru terpakai setelah order sukses.</li>
+    <li>Gerbang bayar-dulu: pesanan delivery <b>wajib lunas</b> (COD disembunyikan), pickup boleh COD. Tombol → Diproses penjual terkunci bila belum lunas.</li>
+    <li>Offline: order masuk antrean Room, sync saat online.</li>
+    <li>Foto: Unsplash + Wikimedia Commons (CC), lihat <a href="assets/food/attribusi.json" target="_blank">attribusi</a>.</li>
+  </ul>
+</div>
+
+<div class="stage">
+<div class="phone"><div class="screenwrap">
+  <div class="statusbar"><span>goCatering</span><span id="clock">23:24</span></div>
+  <div class="appbar" id="appbar">
+    <button class="act" id="ab-back" style="display:none" onclick="goBack()">←</button>
+    <div><span id="ab-title">Newgocatering</span><span class="sub" id="ab-sub"></span></div>
+    <button class="act" id="ab-menu" style="display:none" onclick="openSheet('sheet-menu')">⋮</button>
+  </div>
+  <div class="sync" id="syncbar" style="display:none">
+    <span id="sync-text"></span><button class="btn-sm btn-tosca" id="sync-btn" onclick="flushQueue()">Sync sekarang</button>
+  </div>
+  <div class="body" id="body">
+
+    <!-- LOGIN -->
+    <div class="view on" id="v-login">
+      <div class="pad">
+        <div class="center" style="padding:22px 0 10px">
+          <div class="logo">GO</div><div class="logo-s">CATERING</div>
+          <div class="hint" style="margin-top:6px">Pesan catering besok, satu paket pilihan, jumlah bebas</div>
+        </div>
+        <div class="roles">
+          <div class="role on" id="role-buyer" onclick="pickRole('buyer')"><div class="ic">🛒</div><div class="nm">Pembeli</div></div>
+          <div class="role" id="role-seller" onclick="pickRole('seller')"><div class="ic">👨‍🍳</div><div class="nm">Penjual</div></div>
+        </div>
+        <div class="field"><label>Email</label><input id="li-email" type="email" placeholder="email@example.com"></div>
+        <div class="field"><label>Password</label><input id="li-pass" type="password" placeholder="••••••••"></div>
+        <button class="btn btn-tosca" onclick="doLogin()">LOGIN</button>
+        <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-register')">Daftar</button>
+        <div class="divider">atau</div>
+        <button class="btn btn-google" onclick="openGoogleSheet()"><span class="glogo"><span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span></span> Masuk dengan Google</button>
+        <div class="hint center" style="margin-top:8px">Khusus akun pembeli. Google hanya membagikan nama, email, dan foto — no. WA diminta sekali.</div>
+        <div class="demo"><b>Akun demo</b>
+          Pembeli bebas (mis. <code>budi@mail.com</code> / <code>1234</code>).
+          Penjual pakai email di panel kiri.
+          <div class="row"><button onclick="fillDemo('buyer')">Isi pembeli</button><button onclick="fillDemo('seller1')">Isi penjual</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="view" id="v-register">
+      <div class="pad">
+        <div class="field"><label>Nama</label><input id="rg-name" placeholder="Nama lengkap"></div>
+        <div class="field"><label>No. Handphone</label><input id="rg-phone" placeholder="0812xxxxxxxx"></div>
+        <div class="field"><label>Email</label><input id="rg-email" type="email" placeholder="email@example.com"></div>
+        <div class="field"><label>Password</label><input id="rg-pass" type="password" placeholder="min. 6 karakter"></div>
+        <div class="field"><label>Role</label><select id="rg-role"><option value="buyer">Pembeli</option><option value="seller">Penjual (buka toko)</option></select></div>
+        <div class="field" id="rg-shopfield" style="display:none"><label>Nama toko</label><input id="rg-shop" placeholder="cth: Warung Sehat"></div>
+        <button class="btn btn-tosca" onclick="doRegister()">SIMPAN</button>
+        <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-login')">Kembali ke Login</button>
+      </div>
+    </div>
+
+    <!-- BUYER: SHOPS -->
+    <div class="view" id="v-shops"><div class="pad" style="padding-bottom:4px"><div class="hint">Pilih toko catering. Setiap toko punya paket &amp; penjual sendiri.</div></div><div id="shop-list" style="padding-bottom:14px"></div></div>
+
+    <!-- BUYER: CATALOG -->
+    <div class="view" id="v-catalog">
+      <div class="totalbar"><div>TotalHarga: <span id="cart-total">Rp 0</span></div><div class="hint" id="cart-count">0 paket dipilih</div></div>
+      <div class="grid" id="pkg-grid"></div>
+      <div style="padding:0 12px 14px"><button class="btn btn-primary" onclick="openCheckout()">CHECKOUT</button></div>
+    </div>
+
+    <!-- BUYER: CHECKOUT 1/4 — ISI DETAIL PAKET -->
+    <div class="view" id="v-checkout">
+      <div class="stepper"></div>
+      <div class="pad" style="padding-bottom:0;display:flex;align-items:center;gap:8px"><b style="font-size:14px;flex:1">Isi Detail Paket</b><span class="hint" id="co-count">0 item</span></div>
+      <div class="card" id="co-detail"></div>
+      <div style="margin:0 12px 12px"><button class="addbtn" onclick="openAddSheet()">＋ Tambah Pesanan Makanan Baru</button></div>
+      <div style="height:14px"></div>
+      <div class="bottombar">
+        <button class="btn btn-grey" style="flex:1" onclick="go('v-catalog')">MENU</button>
+        <button class="btn btn-primary" style="flex:2" onclick="coNext()">Sesudah →</button>
+      </div>
+    </div>
+
+    <!-- BUYER: CHECKOUT 2/4 — METODE PENGAMBILAN -->
+    <div class="view" id="v-co-ff">
+      <div class="stepper"></div>
+      <div class="pad" style="padding-bottom:0"><b style="font-size:14px">Metode Pengambilan</b></div>
+      <div class="card">
+        <div class="ffgrid">
+          <button type="button" class="ff" id="ff-pickup" onclick="setFulfillment('pickup')" aria-pressed="false"><div class="ffi">🏪</div><div class="ffn">Ambil di toko</div><div class="ffd">Pickup · tanpa ongkir</div></button>
+          <button type="button" class="ff on" id="ff-delivery" onclick="setFulfillment('delivery')" aria-pressed="true"><div class="ffi">🛵</div><div class="ffn">Diantar</div><div class="ffd">GoSend / GrabExpress</div></button>
+        </div>
+        <div class="field"><label id="date-lbl">Tanggal kirim</label><input id="co-date" type="date"></div>
+        <div class="warn16" id="warn-16" style="display:none">
+          <div>⚠️ <b>Lewat jam 16.00 WIB.</b> Order <b>hari ini</b> mulai dimasak <span id="w16-next">besok</span>.</div>
+          <button type="button" class="btn-sm btn-tosca" onclick="shiftTomorrow()">Geser ke besok</button></div>
+        <div id="ff-pickup-box" style="display:none">
+          <div class="field"><label>Slot waktu ambil <span class="hint">· layanan 11.00 – 18.00 WIB</span></label><select id="co-slot"></select></div>
+          <div class="qbox"><div><div class="ql">Nomor antre Anda</div><div class="qn" id="q-preview">A-001</div>
+            <div class="ql" id="q-shop" style="opacity:.8;text-transform:none;letter-spacing:0">RM Sederhana</div></div>
+            <div class="qh">Terbit otomatis<br>saat order berhasil</div></div>
+        </div>
+        <div id="ff-delivery-box">
+          <div class="field"><label>Layanan kurir</label><div class="svcgrid" id="svc-grid"></div></div>
+          <div class="field"><label id="km-lbl">Jarak dari toko — <b>5 km</b></label><input id="co-km" type="range" min="1" max="25" value="5"></div>
+          <div class="oline"><span id="ov-lbl">Ongkos kirim GoSend (5 km)</span><b id="ov-val">Rp 40.000</b></div>
+          <div class="hint" id="ov-note">Tarif minimal Rp 12.000 · estimasi 30–60 menit</div>
+        </div>
+        <div class="hint" style="margin-top:10px" id="ff-note"></div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="bottombar">
+        <button class="btn btn-grey" style="flex:1" onclick="coPrev()">← Sebelum</button>
+        <button class="btn btn-primary" style="flex:2" onclick="coNext()">Sesudah →</button>
+      </div>
+    </div>
+
+    <!-- BUYER: CHECKOUT 3/4 — ISI PROFIL PEMESAN -->
+    <div class="view" id="v-co-profil">
+      <div class="stepper"></div>
+      <div class="pad" style="padding-bottom:0"><b style="font-size:14px">Isi Profil Pemesan</b></div>
+      <div class="card">
+        <div class="field"><label>Nama Pemesan</label><input id="co-name"></div>
+        <div class="field"><label>No. WA / HP</label><input id="co-phone"></div>
+        <div class="field" id="co-addr-box"><label id="addr-lbl">Alamat pengantaran</label><textarea id="co-addr" rows="2" placeholder="Alamat lengkap penerima"></textarea>
+          <div class="hint" id="addr-hint">* Isi alamat pemesan atau share ke no. WA kami</div></div>
+        <div class="field"><label>Jumlah orang / catatan</label>
+          <div class="pax" id="co-pax">0 orang</div>
+          <div class="hint" id="co-pax-sub">= 0 paket — otomatis mengikuti isi pesanan</div></div>
+        <div class="field"><label>Catatan permintaan (opsional)</label><input id="co-note" placeholder="cth: tanpa sambal, bumbu dipisah"></div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="bottombar">
+        <button class="btn btn-grey" style="flex:1" onclick="coPrev()">← Sebelum</button>
+        <button class="btn btn-primary" style="flex:2" onclick="coNext()">Sesudah →</button>
+      </div>
+    </div>
+
+    <!-- BUYER: CHECKOUT 4/4 — METODE PEMBAYARAN -->
+    <div class="view" id="v-co-pay">
+      <div class="stepper"></div>
+      <div class="pad" style="padding-bottom:0"><b style="font-size:14px">Metode Pembayaran</b><span class="hint" style="float:right" id="pay-note"></span></div>
+      <div class="card"><div class="paylist" id="pay-list"></div><div class="hint" id="cod-note" style="display:none">🔒 Delivery wajib bayar di muka — makanan dibuat setelah lunas.</div></div>
+      <div class="card" id="pay-summary"></div>
+      <div style="height:14px"></div>
+      <div class="bottombar">
+        <button class="btn btn-grey" style="flex:1" onclick="coPrev()">← Sebelum</button>
+        <button class="btn btn-primary" style="flex:2" onclick="coNext()">Sesudah · ORDER</button>
+      </div>
+    </div>
+
+    <!-- BUYER: PAYMENT -->
+    <div class="view" id="v-payment"><div id="pay-body"></div></div>
+
+    <!-- BUYER: ORDERS -->
+    <div class="view" id="v-orders">
+      <div id="sched-box"></div>
+      <div id="order-list" style="padding:12px 0 16px"></div></div>
+
+    <!-- BUYER: PROFILE -->
+    <div class="view" id="v-profile">
+      <div class="card" style="margin-top:12px"><div class="selrow">
+        <div class="avatar" id="pf-ava">?</div>
+        <div style="flex:1;min-width:0">
+          <div class="shopname" id="pf-name">-</div>
+          <div class="shopmeta" id="pf-mail">-</div>
+          <div class="shopmeta" id="pf-phone">-</div>
+        </div>
+        <button type="button" class="btn-sm btn-grey" id="pf-reveal" onclick="toggleProfileData()">👁 Lihat</button>
+      </div>
+      <div class="hint" id="pf-src" style="margin-top:8px"></div>
+      <div class="pdnote">🔒 Sesuai <b>UU PDP No. 27/2022</b>, nomor WA &amp; email disamarkan di layar ini (4 digit akhir WA dan nama email ditutupi). Nilai asli tersimpan di database pembeli dan tetap dipakai untuk order, kurir, serta chat WA.</div></div>
+      <div class="card">
+        <div class="oline"><span>Total pesanan</span><b id="pf-orders">0</b></div>
+        <div class="oline"><span>Total dibayar digital</span><b id="pf-paid">Rp 0</b></div>
+        <div class="oline"><span>Pesanan selesai</span><b id="pf-done">0</b></div>
+      </div>
+      <div class="pad" style="padding-bottom:0;display:flex;align-items:center;gap:8px">
+        <b style="font-size:14px;flex:1">Riwayat pesanan selesai</b><span class="hint" id="pf-hist-count"></span></div>
+      <div class="card" id="pf-history"></div>
+      <div class="card">
+        <div class="mrow"><div class="mi"><div class="mn">Mode offline (Room DB)</div><div class="mp">Order tetap tersimpan saat tidak ada internet</div></div><div class="sw" id="sw-offline" onclick="setOffline(!state.offline)"></div></div>
+        <div class="mrow"><div class="mi"><div class="mn">Notifikasi pesanan</div><div class="mp">Simulasi FCM ke penjual</div></div><div class="sw on" onclick="toast('Notifikasi aktif','ok')"></div></div>
+      </div>
+      <div style="padding:0 12px"><button class="btn btn-danger" onclick="logout()">KELUAR</button></div>
+      <div style="height:14px"></div>
+    </div>
+
+    <!-- BUYER: LENGKAPI KONTAK SESUDAH GOOGLE LOGIN -->
+    <div class="view" id="v-gcontact">
+      <div class="pad">
+        <div class="center" style="padding:8px 0 14px">
+          <div class="avatar" id="gc-ava" style="margin:0 auto 10px">?</div>
+          <div class="shopname" id="gc-name">-</div>
+          <div class="hint" id="gc-mail">-</div>
+        </div>
+        <div class="card" style="box-shadow:none;background:#f1f3f4;font-size:12px;line-height:1.5">
+          Google membagikan <b>nama, email, dan foto</b> saja. goCatering butuh nomor WA untuk konfirmasi order &amp; chat kurir — isi sekali, tersimpan di database pembeli.
+        </div>
+        <div class="field" style="margin-top:12px"><label>No. WA / HP <span class="hint">* wajib</span></label>
+          <input id="gc-phone" placeholder="0812xxxxxxxx" inputmode="numeric"></div>
+        <div class="field"><label>Alamat rumah <span class="hint">opsional, dipakai di checkout</span></label>
+          <textarea id="gc-addr" rows="2" placeholder="cth: Jl. Melati No. 12, Surabaya"></textarea></div>
+        <button class="btn btn-tosca" onclick="saveGoogleContact()">Simpan &amp; Lanjut</button>
+        <button class="btn btn-grey" style="margin-top:8px" onclick="logout()">Batal, keluar dulu</button>
+        <div class="hint center" style="margin-top:10px">Nomor ini akan tampil tersamar (08123456****) di halaman Profil.</div>
+      </div>
+    </div>
+
+    <!-- SELLER: DASHBOARD -->
+    <div class="view" id="v-seller">
+      <div class="stats">
+        <div class="stat"><div class="n" id="st-new">0</div><div class="l">Pesanan baru</div></div>
+        <div class="stat"><div class="n" id="st-proc">0</div><div class="l">Diproses</div></div>
+        <div class="stat"><div class="n" id="st-done">0</div><div class="l">Selesai</div></div>
+        <div class="stat"><div class="n" id="st-rev">0</div><div class="l">Omzet (Rp rb)</div></div>
+      </div>
+      <div class="tabs" id="seller-tabs">
+        <button class="on" data-tab="all" onclick="setTab('all')">Semua</button>
+        <button data-tab="new" onclick="setTab('new')">Baru</button>        <button data-tab="confirmed" onclick="setTab('confirmed')">Dikonfirmasi</button>
+        <button data-tab="processing" onclick="setTab('processing')">Diproses</button>
+        <button data-tab="shipped" onclick="setTab('shipped')">Dikirim</button>
+        <button data-tab="completed" onclick="setTab('completed')">Selesai</button>
+        <button data-tab="menu" onclick="setTab('menu')">Menu</button>
+      </div>
+      <div id="seller-list" style="padding:12px 0 16px"></div>
+    </div>
+
+  </div>
+
+  <div class="bnav" id="bnav" style="display:none">
+    <button data-nav="v-shops" onclick="navTo('v-shops')"><span class="ic">🏪</span>Toko</button>
+    <button data-nav="v-catalog" class="on" onclick="navTo('v-catalog')"><span class="ic">🍱</span>Menu</button>
+    <button data-nav="v-orders" onclick="navTo('v-orders')"><span class="ic">📦</span>Pesanan</button>
+    <button data-nav="v-profile" onclick="navTo('v-profile')"><span class="ic">👤</span>Profil</button>
+  </div>
+
+  <!-- SHEETS -->
+  <div class="overlay" id="sheet-menu" onclick="if(event.target===this)closeSheet('sheet-menu')">
+    <div class="sheet"><h3>Menu</h3><div class="hint" style="margin-bottom:12px" id="menu-sub"></div>
+      <button class="btn btn-grey" style="margin-bottom:8px" onclick="closeSheet('sheet-menu');navTo('v-orders')">Pesanan Saya</button>
+      <button class="btn btn-grey" style="margin-bottom:8px" onclick="closeSheet('sheet-menu');go('v-catalog')">Kembali ke Menu</button>
+      <button class="btn btn-danger" onclick="closeSheet('sheet-menu');logout()">Keluar</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="sheet-order" onclick="if(event.target===this)closeSheet('sheet-order')">
+    <div class="sheet" id="sheet-order-body"></div>
+  </div>
+
+  <!-- SHEET PILIH AKUN GOOGLE (simulasi OAuth) -->
+  <div class="overlay" id="sheet-google" onclick="if(event.target===this)closeSheet('sheet-google')">
+    <div class="sheet">
+      <h3><span class="glogo"><span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span></span> Pilih akun</h3>
+      <div class="hint" style="margin-bottom:4px">untuk lanjut ke <b>goCatering</b> — simulasi OAuth, tidak ada jaringan</div>
+      <div style="height:10px"></div>
+      <div id="goog-list"></div>
+      <button class="btn btn-grey" style="margin-top:6px" onclick="closeSheet('sheet-google')">Batal</button>
+    </div>
+  </div>
+
+  <!-- v3: SHEET TAMBAH PESANAN (carousel) -->
+  <div class="overlay" id="sheet-add" onclick="if(event.target===this)closeSheet('sheet-add')">
+    <div class="sheet draggable" id="sheet-add-body">
+      <div class="grabber" id="add-grabber"></div>
+      <h3>Tambah Pesanan</h3>
+      <div class="hint" style="margin-bottom:12px" id="add-sub">Geser kartu ke kiri/kanan untuk melihat semua paket</div>
+      <div class="carwrap">
+        <div class="carousel" id="add-carousel"></div>
+        <div class="carnav"><button id="car-prev" onclick="carScroll(-1)">‹</button><button id="car-next" onclick="carScroll(1)">›</button></div>
+      </div>
+      <div class="dots" id="car-dots"></div>
+      <div class="sheetfoot">
+        <div class="sf"><div class="sft">Total pesanan saat ini</div><div class="sfv" id="add-total">Rp 0</div></div>
+        <button class="btn btn-grey btn-sm" style="width:auto;padding:12px 16px" onclick="clearCart()">Kosongkan</button>
+        <button class="btn btn-tosca" style="padding:12px 22px" onclick="closeSheet('sheet-add')">Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div></div>
+</div>
+
+<script>
+/* ================= DATA DUMMY ================= */
+const SHOPS = [
+ {id:'rm-sederhana', name:'RM Sederhana', tagline:'Catering harian & nasi kotak', logo:'🍛', phone:'6281234567801', seller:'seller1', rating:4.8, sold:1240,
+  packages:[
+   {id:'p1', name:'Paket Ayam Bakar + Nasi', price:15000, img:'assets/food/u1.jpg', desc:'Ayam bakar, kentang, sambal, nasi putih'},
+   {id:'p2', name:'Paket Nasi Uduk Komplit', price:16000, img:'assets/food/nasi-uduk-box.jpg', desc:'Nasi uduk, ayam goreng, telur, tempe'},
+   {id:'p3', name:'Paket Rendang + Nasi', price:20000, img:'assets/food/rendang.jpg', desc:'Rendang sapi, nasi putih, daun singkong'},
+   {id:'p4', name:'Paket Nasi Kotak Ekonomis', price:13000, img:'assets/food/nasi-kotak.jpg', desc:'Nasi, orek tempe, sayur, ayam'},
+   {id:'p5', name:'Paket Nasi Goreng Spesial', price:17000, img:'assets/food/nasi-goreng.jpg', desc:'Nasi goreng, telur, sate, kerupuk'},
+   {id:'p6', name:'Paket Soto Ayam', price:14000, img:'assets/food/soto-ayam.jpg', desc:'Soto ayam, nasi, koya, perkedel'}]},
+ {id:'dapur-nusantara', name:'Dapur Nusantara', tagline:'Masakan tradisional & tumpeng', logo:'🥘', phone:'6281234567802', seller:'seller2', rating:4.7, sold:860,
+  packages:[
+   {id:'p7', name:'Paket Ayam Penyet', price:16000, img:'assets/food/ayam-penyet.jpg', desc:'Ayam penyet, sambal bawel, tahu tempe'},
+   {id:'p8', name:'Paket Sate Ayam 20 Tusuk', price:25000, img:'assets/food/sate-ayam.jpg', desc:'Sate ayam, lontong, bumbu kacang'},
+   {id:'p9', name:'Paket Gado-Gado', price:15000, img:'assets/food/gado-gado.jpg', desc:'Sayur, tahu, tempe, telur, saus kacang'},
+   {id:'p10', name:'Paket Lontong Sayur', price:14000, img:'assets/food/lontong-sayam.jpg', desc:'Lontong, sayur labu, opor, sambal'},
+   {id:'p11', name:'Tumpeng Kecil Komplit', price:180000, img:'assets/food/tumpeng.jpg', desc:'Nasi kuning, 7 lauk, untuk 8-10 orang'},
+   {id:'p12', name:'Paket Rawon Daging', price:22000, img:'assets/food/rawon.jpg', desc:'Rawon hitam, tauge, kerupuk udang'}]},
+ {id:'catering-sehat', name:'Catering Sehat', tagline:'Menu rumahan rendah minyak', logo:'🥗', phone:'6281234567803', seller:'seller2', rating:4.9, sold:512,
+  packages:[
+   {id:'p13', name:'Paket Seafood Paella', price:32000, img:'assets/food/u2.jpg', desc:'Nasi seafood, udang, cumi, lemon'},
+   {id:'p14', name:'Paket Salad Protein', price:24000, img:'assets/food/u4.jpg', desc:'Ikan panggang, sayur, saus yoghurt'},
+   {id:'p15', name:'Paket Bakso Urat Jumbo', price:18000, img:'assets/food/bakso.jpg', desc:'Bakso urat, mie, kuah kaldu'}]},
+ {id:'kekinian-food', name:'Kekinian Food', tagline:'Menu western & comfort food', logo:'🍕', phone:'6281234567804', seller:'seller1', rating:4.5, sold:330,
+  packages:[
+   {id:'p16', name:'Paket Pizza Chicken', price:45000, img:'assets/food/u3.jpg', desc:'Pizza 8 slice, topping ayam & nanas'},
+   {id:'p17', name:'Paket Burger Beef', price:35000, img:'assets/food/u7.jpg', desc:'Burger sapi, keju, saus spesial'},
+   {id:'p18', name:'Paket Iga BBQ', price:48000, img:'assets/food/u1.jpg', desc:'Iga bakar, kentang, saus BBQ'},
+   {id:'p19', name:'Paket Nasi Lemak', price:20000, img:'assets/food/u8.jpg', desc:'Nasi santan, ayam, sambal, telur'}]}
+];
+
+const SELLERS = {
+ seller1:{email:'rm.sederhana@gocatering.id', password:'seller123', name:'Andi (RM Sederhana)', shops:['rm-sederhana','kekinian-food']},
+ seller2:{email:'dapur.nusantara@gocatering.id', password:'seller123', name:'Sari (Dapur Nusantara)', shops:['dapur-nusantara','catering-sehat']}
+};
+
+const PAYMENTS = {
+ qris:{name:'QRIS', ic:'📱', desc:'Scan dari semua bank & e-wallet', fee:700, feeLbl:'Biaya layanan Rp 700'},
+ va:{name:'Virtual Account', ic:'🏦', desc:'BCA / Mandiri / BNI / BRI', fee:2500, feeLbl:'Biaya transfer Rp 2.500'},
+ ewallet:{name:'GoPay / OVO / DANA', ic:'💳', desc:'Bayar dari saldo e-wallet', fee:0, feeLbl:'Tanpa biaya'},
+ cod:{name:'Bayar di tempat (COD)', ic:'💵', desc:'Bayar cash saat pesanan diantar', fee:0, feeLbl:'Tanpa biaya'}
+};
+
+const FLOW = ['new','confirmed','processing','shipped','completed'];
+/* v4: layanan kurir — ongkir per km dengan tarif minimal */
+const DELIVERY = {
+ gosend:{name:'GoSend', ic:'🛵', perKm:8000, min:12000, eta:'30–60 menit', desc:'Motor · tarif per km'},
+ grab:{name:'GrabExpress', ic:'🏍️', perKm:9000, min:14000, eta:'30–70 menit', desc:'Motor · tarif per km'}
+};
+const SLOTS = ['11.00 – 13.00','13.00 – 15.00','15.00 – 17.00','17.00 – 18.00'];
+/* akun Google simulasi — hanya nama, email, dan foto yang "dibagikan" OAuth */
+const GOOGLE_ACCOUNTS = [
+  {email:'sari.wijaya@gmail.com', name:'Sari Wijaya',   ava:'SW', tone:'#1a73e8'},
+  {email:'andiraen@gmail.com',    name:'Andi Ramadhan', ava:'AR', tone:'#0b8043'},
+  {email:'maya.kusuma@gmail.com', name:'Maya Kusuma',   ava:'MK', tone:'#c53929'}
+];
+const SLOT_WINDOW = '11.00 – 18.00 WIB';
+function slotLbl(i){ return SLOTS[i]||SLOTS[0]; }
+/* v4: alamat outlet untuk pengambilan di toko */
+const SHOP_ADDR = {
+ 'rm-sederhana':'Jl. Tunjungan No. 45, Surabaya',
+ 'dapur-nusantara':'Jl. Diponegoro No. 12, Surabaya',
+ 'catering-sehat':'Jl. Raya Kertajaya No. 8, Surabaya',
+ 'kekinian-food':'Jl. Basuki Rahmat No. 101, Surabaya'
+};
+const FLOW_LBL = {new:'Baru',confirmed:'Dikonfirmasi',processing:'Diproses',shipped:'Dikirim',completed:'Selesai',cancelled:'Dibatalkan'};
+const W = CATERING_WA = '6281234567890';
+
+const KEY='gocatering_v4';
+let state = load();
+let history = [];
+let currentShop=null, cart=[], payMethod='qris', pendingOrder=null, offline=false, payingExisting=false;
+/* v3: cart = [{id, qty}] — multi-item, satu toko per pesanan */
+/* v4: fulfillment = 'pickup' | 'delivery' */
+let fulfillment='delivery', deliveryService='gosend', distanceKm=5, pickupSlot=0, lastAddedId=null;
+
+function seed(){
+  const now=Date.now(), d=(n)=>new Date(now-n*86400000).toISOString();
+  const dt=(n)=>new Date(now-n*86400000).toISOString().slice(0,10);
+  const S=(id,q)=>({id,qty:q});
+  const sub=items=>items.reduce((a,i)=>a+pkgOf(i.id).price*i.qty,0);
+  const DEL=(service,km)=>({service,km,fee:Math.max(DELIVERY[service].min, Math.round(DELIVERY[service].perKm*km))});
+  const mk=(o)=>({...o, subtotal:sub(o.items), total:sub(o.items)+o.fee+(o.deliveryFee||0)});
+  return [
+   mk({id:'GC-2411-00A9', shopId:'rm-sederhana', items:[S('p2',6)], fee:0, method:'va', payStatus:'pending', status:'new',
+    fulfillment:'delivery', delivery:DEL('grab',6), deliveryFee:54000,
+    buyer:{name:'Maya Kusuma',phone:'081234567009',addr:'Jl. Ngagel Jaya Selatan B-14, Surabaya',note:'Invoice VA dikirim, transfer besok pagi'}, createdAt:d(0)}),
+   mk({id:'GC-2411-00A1', shopId:'rm-sederhana', items:[S('p1',10),S('p2',10)], fee:700, method:'qris', payStatus:'paid', status:'completed',
+    fulfillment:'delivery', delivery:DEL('gosend',4), deliveryFee:32000,
+    buyer:{name:'Rina Wulandari',phone:'081234567001',addr:'Jl. Melati No. 12, Surabaya',note:'20 kotak, tanpa sambal'}, createdAt:d(6), paidAt:d(6)}),
+   mk({id:'GC-2411-00A2', shopId:'dapur-nusantara', items:[S('p8',5)], fee:0, method:'ewallet', payStatus:'paid', status:'completed',
+    fulfillment:'pickup', pickup:{date:dt(4), slot:2, queue:'A-003'},
+    buyer:{name:'Dimas Prasetyo',phone:'081234567002',addr:'Perum Griya Asri B-7, Sidoarjo',note:'Bumbu pisah'}, createdAt:d(4), paidAt:d(4)}),
+   mk({id:'GC-2411-00A3', shopId:'rm-sederhana', items:[S('p3',8),S('p6',4),S('p4',4)], fee:2500, method:'va', payStatus:'paid', status:'processing',
+    fulfillment:'delivery', delivery:DEL('grab',7), deliveryFee:63000,
+    buyer:{name:'PT Sekuritas Maju',phone:'081234567003',addr:'Jl. Basuki Rahmat 88, Surabaya',note:'Untuk rapat 12.00'}, createdAt:d(1), paidAt:d(1)}),
+   mk({id:'GC-2411-00A4', shopId:'catering-sehat', items:[S('p13',3)], fee:700, method:'qris', payStatus:'paid', status:'confirmed',
+    fulfillment:'delivery', delivery:DEL('gosend',3), deliveryFee:24000,
+    buyer:{name:'Nadia Zahra',phone:'081234567004',addr:'Jl. Kayun III No. 4, Surabaya',note:''}, createdAt:d(1), paidAt:d(1)}),
+   mk({id:'GC-2411-00A5', shopId:'rm-sederhana', items:[S('p6',15)], fee:0, method:'cod', payStatus:'cod', status:'new',
+    fulfillment:'pickup', pickup:{date:dt(0), slot:0, queue:'A-007'},
+    buyer:{name:'Bu Tuti',phone:'081234567005',addr:'Ambil sendiri di toko',note:'Datang sendiri jam 11.00'}, createdAt:d(0)}),
+   mk({id:'GC-2411-00A6', shopId:'dapur-nusantara', items:[S('p11',1),S('p9',10),S('p10',10)], fee:700, method:'qris', payStatus:'paid', status:'new',
+    fulfillment:'pickup', pickup:{date:dt(0), slot:3, queue:'B-005'},
+    buyer:{name:'Acara 17-an RT 05',phone:'081234567006',addr:'Jl. Kertajaya Indah Timur 5, Surabaya',note:'Tambahan 10 potong ayam'}, createdAt:d(0)}),
+   mk({id:'GC-2411-00A7', shopId:'kekinian-food', items:[S('p16',4)], fee:0, method:'ewallet', payStatus:'paid', status:'shipped',
+    fulfillment:'delivery', delivery:DEL('grab',6), deliveryFee:54000,
+    buyer:{name:'Kevin Tan',phone:'081234567007',addr:'Grand City Office Tower 9F',note:''}, createdAt:d(2), paidAt:d(2)}),
+   mk({id:'GC-2411-00A8', shopId:'rm-sederhana', items:[S('p5',2)], fee:0, method:'va', payStatus:'failed', status:'cancelled',
+    fulfillment:'delivery', delivery:DEL('gosend',2), deliveryFee:16000,
+    buyer:{name:'Joko Susilo',phone:'081234567008',addr:'Jl. Ahmad Yani 45',note:'Batal: VA tidak dibayar'}, createdAt:d(3)})
+  ];
+}
+/* v4: nomor antrean per toko per hari, dibangun dari data seed */
+function seedAntrean(orders){
+  const m={}; const pref={'rm-sederhana':'A','dapur-nusantara':'B','catering-sehat':'C','kekinian-food':'D'};
+  orders.forEach(o=>{ if(o.fulfillment==='pickup'&&o.pickup){ const k=o.shopId+'|'+(o.pickup.processDate||o.pickup.date); m[k]=Math.max(m[k]||0, parseInt(o.pickup.queue.slice(2),10)); } });
+  Object.keys(pref).forEach(id=>{ const k=id+'|'+todayISO(); if(m[k]==null) m[k]=Math.floor(Math.random()*4)+2; });
+  return m;
+}
+function queueKey(shopId,date){ return shopId+'|'+date; }
+function nextQueueNo(shopId,date){
+  const n=(state.antrean[queueKey(shopId,date)]||0)+1;
+  const pref={'rm-sederhana':'A','dapur-nusantara':'B','catering-sehat':'C','kekinian-food':'D'}[shopId]||'Q';
+  return pref+'-'+String(n).padStart(3,'0');
+}
+function commitQueue(shopId,date){ state.antrean[queueKey(shopId,date)]=(state.antrean[queueKey(shopId,date)]||0)+1; }
+function load(){
+  let s=null;
+  try{const raw=localStorage.getItem(KEY); if(raw){ s=JSON.parse(raw); if(!s.antrean) s.antrean=seedAntrean(s.orders||[]); }}catch(e){}
+  if(!s){
+    const orders=seed();
+    s={users:{'budi@mail.com':{password:'1234',name:'Budi Santoso',phone:'081234567899',role:'buyer'}},
+      orders, queue:[], menuOff:{}, antrean:seedAntrean(orders)};
+  }
+  /* migrasi ringan v4.1: akun Google bawaan (non-destruktif, data lama tetap utuh) */
+  s.users=s.users||{};
+  if(!s.users['maya.kusuma@gmail.com'])
+    s.users['maya.kusuma@gmail.com']={password:'',name:'Maya Kusuma',phone:'081234567009',
+      addr:'Jl. Ngagel Jaya Selatan B-14, Surabaya',role:'buyer',google:true,ava:'MK',tone:'#c53929'};
+  if(s.user){ const r=s.users[s.user.email]; if(r&&r.google){ s.user.google=true; s.user.ava=r.ava; s.user.tone=r.tone; } }
+  return s;
+}
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
+function resetData(){ localStorage.removeItem(KEY); state=load(); save(); toast('Data demo direset','ok'); logout(); }
+
+/* ================= UTIL ================= */
+const rp=n=>'Rp '+n.toLocaleString('id-ID');
+const $=id=>document.getElementById(id);
+function toast(msg,type){ const t=$('toast'); t.textContent=msg; t.className='toast on '+(type||''); setTimeout(()=>t.className='toast '+(type||''),2600); }
+function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); }
+function niceDate(iso){ if(!iso) return 'besok'; const d=new Date(iso+'T00:00:00'); return isNaN(d)?'besok':d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+function shopOf(id){ return SHOPS.find(s=>s.id===id); }
+function pkgOf(id){ return SHOPS.flatMap(s=>s.packages).find(p=>p.id===id); }
+function allPkgs(){ return SHOPS.flatMap(s=>s.packages.map(p=>({...p,shopId:s.id,shopName:s.name}))); }
+
+/* ================= v3: CART HELPERS ================= */
+function cartRows(){ return cart.map(c=>({...pkgOf(c.id),qty:c.qty,line:c.qty*pkgOf(c.id).price})).filter(r=>!state.menuOff[r.id]); }
+function cartSubtotal(){ return cartRows().reduce((a,r)=>a+r.line,0); }
+function cartUnits(){ return cart.reduce((a,c)=>a+c.qty,0); }
+function cartLine(id){ const c=cart.find(x=>x.id===id); return c?c.qty:0; }
+function orderItems(o){ return (o.items||[{id:o.pkg.id,qty:o.qty}]).map(i=>({...pkgOf(i.id),qty:i.qty,line:i.qty*pkgOf(i.id).price})); }
+
+/* v4: ongkir, total, dan gerbang bayar-dulu */
+function deliveryFee(){ return fulfillment==='delivery'
+  ? Math.max(DELIVERY[deliveryService].min, Math.round(DELIVERY[deliveryService].perKm*distanceKm)) : 0; }
+function grandTotal(){ return cartSubtotal() + deliveryFee() + PAYMENTS[payMethod].fee; }
+function payMethodsAllowed(){ return Object.entries(PAYMENTS).filter(([k])=> !(k==='cod' && fulfillment==='delivery')); }
+function canProcess(o){ return o.payStatus==='paid' || (o.fulfillment==='pickup' && o.payStatus==='cod'); }
+function addLine(id,d,src){
+  const c=cart.find(x=>x.id===id);
+  if(c) c.qty=Math.max(0,Math.min(999,c.qty+d));
+  else if(d>0) cart.push({id,qty:Math.min(999,d)});
+  if(c&&c.qty<=0) cart=cart.filter(x=>x.id!==id);
+  if(!c&&d<=0) cart=cart.filter(x=>x.id!==id);
+  if(d>0){ lastAddedId=id; flyToCart(src,pkgOf(id)); }
+}
+
+/* ---------- v4: animasi "masuk pesanan" ---------- */
+const HATE_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function pulse(el){ if(!el||HATE_MOTION)return; el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
+function consumeAdded(){ const v=lastAddedId; lastAddedId=null; return v; }
+function flyToCart(src,p){
+  if(HATE_MOTION || !src || !p || !p.img) return;
+  const inSheet = $('sheet-add') && $('sheet-add').classList.contains('on');
+  const tgt = $(inSheet?'add-total':'cart-total');
+  const img = src.tagName==='IMG' ? src : (src.querySelector && src.querySelector('img'));
+  if(!tgt || !img || !img.getBoundingClientRect) return;
+  const a=img.getBoundingClientRect(), b=tgt.getBoundingClientRect();
+  if(!a.width || !b.width) return;
+  const f=document.createElement('div'); f.className='fly';
+  f.style.cssText=`left:${a.left}px;top:${a.top}px;width:${a.width}px;height:${a.height}px;background-image:url("${p.img}")`;
+  document.body.appendChild(f);
+  const dx=(b.left+b.width/2)-(a.left+a.width/2), dy=(b.top+b.height/2)-(a.top+a.height/2);
+  requestAnimationFrame(()=>{ f.style.transform=`translate(${dx}px,${dy}px) scale(.14) rotate(-14deg)`; f.style.opacity='.1'; });
+  setTimeout(()=>{ f.remove(); pulse(tgt); pulse($('cart-count')); },600);
+}
+let lastBarTotal=null, lastSheetTotal=null, lastPayTotal=null;
+function animNumber(el,from,to){
+  if(!el) return;
+  if(HATE_MOTION || from==null || from===to){ el.textContent=rp(to); return; }
+  const t0=performance.now(), dur=430;
+  (function step(t){
+    const k=Math.min(1,(t-t0)/dur), v=Math.round((from+(to-from)*k)/100)*100;
+    el.textContent=rp(k<1?v:to);
+    if(k<1) requestAnimationFrame(step);
+  })(t0);
+}
+
+/* ================= NAVIGASI ================= */
+function go(view,opts){
+  const cur=document.querySelector('.view.on');
+  if(cur && opts!==false && cur.id!==view) history.push(cur.id);
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  $(view).classList.add('on');
+  renderChrome(view);
+  onEnter(view);
+  $('body').scrollTop=0;
+}
+/* setiap kali halaman tampil, isi datanya — profil & pesanan tidak pernah basi */
+function onEnter(view){
+  if(!state.user) return;
+  if(view==='v-profile') renderProfile();
+  else if(view==='v-orders') renderOrders();
+}
+function goBack(){ const p=history.pop(); go(p||'v-login',false); }
+function navTo(view){ history=[]; go(view,false); }
+function renderChrome(view){
+  const buyer=['v-shops','v-catalog','v-orders','v-profile','v-checkout','v-co-ff','v-co-profil','v-co-pay'].includes(view);
+  $('bnav').style.display=(['v-shops','v-catalog','v-orders','v-profile'].includes(view))?'flex':'none';
+  document.querySelectorAll('.bnav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===view));
+  $('ab-back').style.display=['v-register','v-catalog','v-checkout','v-co-ff','v-co-profil','v-co-pay','v-payment','v-profile'].includes(view)?'block':'none';
+  $('ab-menu').style.display=['v-shops','v-catalog','v-orders','v-profile','v-seller'].includes(view)?'block':'none';
+  const titles={'v-login':['Newgocatering',''],'v-register':['Daftar','Isi biodata pengguna'],'v-shops':['Pilih Toko','Pembeli: '+(state.user?.name||'')],
+    'v-catalog':[currentShop?currentShop.name:'goCatering',currentShop?currentShop.tagline:''],'v-checkout':['CheckOut','1 · Isi Detail Paket'],
+    'v-co-ff':['CheckOut','2 · Metode Pengambilan'],'v-co-profil':['CheckOut','3 · Profil Pemesan'],'v-co-pay':['CheckOut','4 · Metode Pembayaran'],
+    'v-payment':['Pembayaran','goPay / QRIS / VA'], 'v-orders':['Pesanan Saya',''],'v-profile':['Profil',''],
+    'v-gcontact':['Lengkapi Kontak','Akun Google'],
+    'v-seller':['Dashboard Penjual',currentSeller()?shopNames(currentSeller()):'']};
+  const t=titles[view]||['Newgocatering',''];
+  $('ab-title').textContent=t[0]; $('ab-sub').textContent=t[1];
+  $('ab-menu').onclick=()=>{ $('menu-sub').textContent=(state.user?state.user.name+' — '+(state.user.role==='seller'?'penjual':'pembeli'):''); openSheet('sheet-menu'); };
+  $('appbar').className='appbar'+(view==='v-seller'?' tosca':'');
+}
+function openSheet(id){ $(id).classList.add('on'); }
+function closeSheet(id){ $(id).classList.remove('on'); }
+
+/* ================= AUTH ================= */
+let role='buyer';
+function pickRole(r){ role=r; $('role-buyer').classList.toggle('on',r==='buyer'); $('role-seller').classList.toggle('on',r==='seller'); }
+function currentSeller(){ if(state.user?.role!=='seller')return null; return Object.entries(SELLERS).find(([k,v])=>v.email===state.user.email)?.[0]; }
+function shopNames(s){ return SELLERS[s].shops.map(id=>shopOf(id).name).join(' • '); }
+function doLogin(){
+  const email=$('li-email').value.trim().toLowerCase(), pass=$('li-pass').value;
+  if(!email||!pass) return toast('Isi email dan password dulu','err');
+  const s=Object.values(SELLERS).find(x=>x.email===email);
+  if(s){ if(pass!==s.password) return toast('Password penjual salah','err');
+    state.user={email,name:s.name,role:'seller',phone:'0812xxxxxxx'}; save(); currentShop=shopOf(s.shops[0]);
+    go('v-seller',false); renderSeller(); toast('Selamat datang, '+s.name,'ok'); return; }
+  if(!state.users[email]){ state.users[email]={password:pass||'1234',name:email.split('@')[0],phone:'',role:'buyer'}; save(); toast('Akun pembeli dibuat otomatis','ok'); }
+  if(state.users[email].password!==pass) return toast('Password salah','err');
+  state.user={email,name:state.users[email].name,phone:state.users[email].phone||'',addr:state.users[email].addr||'',role:'buyer'}; save();
+  history=[]; go('v-shops',false); renderShops(); toast('Login berhasil','ok');
+}
+function doRegister(){
+  const n=$('rg-name').value.trim(),p=$('rg-phone').value.trim(),e=$('rg-email').value.trim().toLowerCase(),pw=$('rg-pass').value,r=$('rg-role').value;
+  if(!n||!p||!e||!pw) return toast('Lengkapi semua biodata','err');
+  if(pw.length<6) return toast('Password minimal 6 karakter','err');
+  if(state.users[e]) return toast('Email sudah terdaftar, silakan login','err');
+  state.users[e]={password:pw,name:n,phone:p,role:r,shopName:r==='seller'?$('rg-shop').value.trim():''}; save();
+  toast('Registrasi berhasil. Silakan login.','ok'); $('li-email').value=e; $('li-pass').value=pw; pickRole(r); go('v-login',false);
+}
+/* ---------- LOGIN GOOGLE (simulasi OAuth) ----------
+   Google hanya membagikan nama, email, foto. No. WA & alamat rumah diminta sekali
+   lalu disimpan ke database pembeli (state.users[email]). */
+let pendingGoogle=null;
+function openGoogleSheet(){
+  if(role==='seller') return toast('Akun penjual masuk dengan email + password','warn');
+  $('goog-list').innerHTML=GOOGLE_ACCOUNTS.map((g,i)=>{
+    const rec=state.users[g.email], ready=rec&&rec.phone;
+    return `<button type="button" class="gacc" onclick="googleLogin(${i})">
+      <div class="gav" style="background:${g.tone}">${g.ava}</div>
+      <div style="flex:1;min-width:0"><div class="gn">${g.name}</div><div class="gm">${g.email}</div>
+        <div class="hint" style="margin-top:2px">${ready?'Kontak sudah tersimpan — langsung masuk':'Butuh no. WA satu kali'}</div></div>
+      <div class="gm" style="color:#1a73e8">${ready?'→':'baru'}</div></button>`;
+  }).join('')+`<div class="hint" style="margin-top:2px">Tidak ada jaringan — akun ini bawaan prototype.</div>`;
+  openSheet('sheet-google');
+}
+function googleLogin(i){
+  const g=GOOGLE_ACCOUNTS[i]; closeSheet('sheet-google');
+  const rec=state.users[g.email]||{password:'',name:g.name,phone:'',addr:'',role:'buyer'};
+  rec.name=g.name; rec.role='buyer'; rec.google=true; rec.ava=g.ava; rec.tone=g.tone;
+  state.users[g.email]=rec;
+  state.user={email:g.email,name:rec.name,phone:rec.phone||'',addr:rec.addr||'',role:'buyer',google:true,ava:g.ava,tone:g.tone};
+  save(); history=[];
+  if(!rec.phone){
+    pendingGoogle=g.email;
+    $('gc-ava').textContent=g.ava; $('gc-ava').style.background=g.tone;
+    $('gc-name').textContent=g.name; $('gc-mail').textContent=g.email;
+    $('gc-phone').value=''; $('gc-addr').value=rec.addr||'';
+    go('v-gcontact',false);
+    toast('Google tidak membagikan no. WA — isi sekali','info');
+    return;
+  }
+  go('v-shops',false); renderShops();
+  toast('Masuk sebagai '+rec.name+' lewat Google','ok');
+}
+function saveGoogleContact(){
+  const p=$('gc-phone').value.trim(), a=$('gc-addr').value.trim();
+  const clean=p.replace(/[\s-]/g,'');
+  if(!/^0\d{8,13}$/.test(clean)&&!clean.startsWith('+62')) return toast('Nomor WA tidak valid — contoh 081234567890','err');
+  const rec=state.users[pendingGoogle]||{role:'buyer',google:true};
+  rec.phone=p; rec.addr=a; state.users[pendingGoogle]=rec;
+  if(state.user){ state.user.phone=p; state.user.addr=a; }
+  save(); pendingGoogle=null; history=[];
+  go('v-shops',false); renderShops();
+  toast('Kontak tersimpan di database pembeli','ok');
+}
+/* ================= PEMBELI: PROFIL + MASKING UU PDP ================= */
+let profileRevealed=false;
+function maskPhone(p){
+  if(!p) return 'belum disimpan';
+  const s=String(p).replace(/[\s-]/g,'');
+  if(s.length<=4) return '****';
+  return s.slice(0,s.length-4)+'****';
+}
+function maskEmail(e){
+  if(!e) return '-';
+  const at=e.indexOf('@');
+  return at<0?'****':('****'+e.slice(at));
+}
+function toggleProfileData(){
+  profileRevealed=!profileRevealed; renderProfile();
+  toast(profileRevealed?'Menampilkan data asli — hati-hati saat screenshot':'Data disamarkan kembali','info');
+}
+function renderProfile(){
+  if(!state.user) return;
+  const u=state.user, rec=state.users[u.email]||{};
+  const google=!!(u.google||rec.google);
+  const ph=u.phone||rec.phone||'';
+  const ava=$('pf-ava');
+  ava.textContent=google?(rec.ava||u.name||'?').slice(0,2):(u.name||'?').trim().charAt(0).toUpperCase();
+  ava.style.background=google?(rec.tone||'#1a73e8'):'linear-gradient(135deg,#FF6B35,#F7931E)';
+  $('pf-name').textContent=u.name||'-';
+  $('pf-mail').textContent='✉️ '+(profileRevealed?u.email:maskEmail(u.email))+(google?' · akun Google':'');
+  $('pf-phone').textContent='📱 '+(profileRevealed?(ph||'-'):(ph?maskPhone(ph):'nomor belum disimpan'));
+  $('pf-reveal').textContent=profileRevealed?'🙈 Samarkan':'👁 Lihat';
+  $('pf-src').innerHTML=google
+    ?`Masuk dengan <b>Google</b> · ${ph?'kontak lengkap':'kontak belum dilengkapi'} · salinan data tersimpan di HP ini (localStorage)`
+    :`Masuk dengan <b>email + password</b> · salinan data tersimpan di HP ini (localStorage)`;
+  const list=myOrders();
+  const paid=list.filter(o=>o.payStatus==='paid');
+  const done=list.filter(o=>o.status==='completed');
+  $('pf-orders').textContent=`${list.length} order · ${list.reduce((a,o)=>a+paxOf(o),0)} orang`;
+  $('pf-paid').textContent=`${rp(paid.reduce((a,o)=>a+o.total,0))} · ${paid.length} lunas`;
+  $('pf-done').textContent=done.length?`${done.length} dari ${list.length} order`:'0';
+  $('pf-hist-count').textContent=done.length?`${done.length} riwayat`:'';
+  $('pf-history').innerHTML = done.length
+    ? done.map(o=>{
+        const s=shopOf(o.shopId);
+        return `<div class="hrow"><div style="min-width:0"><div class="hl">${s?s.name:o.shopId}</div>
+          <div class="hs">${o.id} · ${paxOf(o)} orang · ${o.fulfillment==='pickup'?'🏪 ambil di toko':'🛵 diantar'}</div>
+          <div class="hs">Selesai ${o.completedAt?fmtDate(o.completedAt):'—'} · ${PAYMENTS[o.method].name}${o.payStatus==='cod'?' (COD di toko)':' (lunas)'}</div></div>
+          <div style="text-align:right;flex:0 0 auto"><b style="color:var(--merah)">${rp(o.total)}</b></div></div>`;
+      }).join('')
+    : `<div class="hint" style="padding:4px 2px">Belum ada pesanan selesai. Order berstatus <b>Selesai</b> akan muncul di sini sebagai history belanja Anda.</div>`;
+}
+
+function logout(){ state.user=null; currentShop=null; cart=[]; history=[]; profileRevealed=false; pendingGoogle=null; document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-login').classList.add('on'); renderChrome('v-login'); toast('Keluar dari aplikasi'); }
+function fillDemo(w){
+  if(w==='buyer'){ pickRole('buyer'); $('li-email').value='budi@mail.com'; $('li-pass').value='1234'; }
+  if(w==='seller1'){ pickRole('seller'); $('li-email').value=SELLERS.seller1.email; $('li-pass').value=SELLERS.seller1.password; }
+  if(w==='seller2'){ pickRole('seller'); $('li-email').value=SELLERS.seller2.email; $('li-pass').value=SELLERS.seller2.password; }
+  go('v-login',false); toast('Form terisi — tinggal klik LOGIN');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  $('rg-role').onchange=e=>$('rg-shopfield').style.display=e.target.value==='seller'?'block':'none';
+  $('clock').textContent=nowLbl();
+  setInterval(()=>{
+    $('clock').textContent=nowLbl();
+    const v=document.querySelector('.view.on');
+    if(v&&v.id.indexOf('v-co')===0) renderCutoff();
+  },30000);
+  renderChrome('v-login');
+  initCarouselDrag(); initSheetDrag();
+  /* kartu yang bisa ditebut: aktif dengan Enter/Space */
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ') return;
+    const el=e.target.closest && e.target.closest('[role="button"][tabindex="0"]');
+    if(el&&typeof el.onclick==='function'){ e.preventDefault(); el.click(); }
+  });
+});
+
+/* ================= PEMBELI: TOKO & KATALOG ================= */
+function renderShops(){
+  $('shop-list').innerHTML=SHOPS.map(s=>`<div class="card shopcard" role="button" tabindex="0" onclick="openShop('${s.id}')">
+    <div class="shoplogo">${s.logo}</div>
+    <div style="flex:1"><div class="shopname">${s.name}</div><div class="shopmeta">${s.tagline}</div>
+    <div class="shopmeta">⭐ ${s.rating} · ${s.sold} terjual · ${s.packages.length} paket</div></div>
+    <div style="font-size:20px;color:#b0bec5">›</div></div>`).join('');
+}
+function openShop(id){
+  const s=shopOf(id);
+  if(currentShop&&currentShop.id!==id&&cart.length) toast('Cart dikosongkan — satu pesanan untuk satu toko');
+  currentShop=s; cart=[]; go('v-catalog'); renderCatalog();
+}
+function renderCatalog(){
+  const ent=consumeAdded();
+  $('pkg-grid').innerHTML=currentShop.packages.filter(p=>!state.menuOff[p.id]).map(p=>{
+    const q=cartLine(p.id);
+    return `
+   <div class="pkg ${q?'on':''}" role="button" tabindex="0" onclick="addOne('${p.id}',event)">
+    ${q?`<div class="pgbadge${p.id===ent?' badge-pop':''}">${q}×</div>`:''}
+    <img src="${p.img}" alt="${p.name}" onerror="this.outerHTML='<div class=\\'imgfail\\'>🍽️</div>'">
+    <div class="pi"><div class="pn">${p.name}</div><div class="pp">${rp(p.price)}</div><div class="pd">${p.desc}</div></div>
+    <button class="addmini" onclick="event.stopPropagation();addOne('${p.id}',event)" title="Tambah ke pesanan">＋</button>
+   </div>`;}).join('');
+  updateCartBar();
+}
+function addOne(id,ev){
+  const src=(ev&&ev.target&&ev.target.closest)?ev.target.closest('.pkg'):null;
+  addLine(id,1,src); renderCatalog(); toast(`${pkgOf(id).name} masuk pesanan`,'ok');
+}
+function updateCartBar(){
+  animNumber($('cart-total'),lastBarTotal,cartSubtotal());
+  $('cart-count').textContent=cart.length?`${cart.length} jenis · ${cartUnits()} paket`:'0 paket dipilih';
+  lastBarTotal=cartSubtotal();
+}
+
+/* ================= PEMBELI: CHECKOUT ================= */
+/* ================= CHECKOUT 4 LANGKAH + JAM WIB ================= */
+function isoOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+let simHour=null;                      // null = jam asli HP
+const CUTOFF=16;                       // lewat jam 16.00 WIB -> order hari ini dimasak besok
+function wibNow(){
+  const d=new Date(), w=new Date(d.getTime()+(7*60+d.getTimezoneOffset())*60000);
+  if(simHour!=null) w.setHours(simHour,simHour>CUTOFF?5:0,0,0);
+  return w;
+}
+function nowLbl(){ const w=wibNow(); return String(w.getHours()).padStart(2,'0')+'.'+String(w.getMinutes()).padStart(2,'0')+' WIB'; }
+function todayISO(){ return isoOf(wibNow()); }
+function tomorrowISO(){ return isoOf(new Date(wibNow().getTime()+86400000)); }
+function nextDayISO(iso){ return isoOf(new Date(new Date(iso+'T00:00:00').getTime()+86400000)); }
+function pastCutoff(){ const w=wibNow(); return w.getHours()*60+w.getMinutes()>=CUTOFF*60; }
+function cutoffHit(iso){ return !!iso && iso===todayISO() && pastCutoff(); }
+function processDateFor(iso){ return cutoffHit(iso)?nextDayISO(iso):iso; }
+function niceDow(iso){ const d=new Date(iso+'T00:00:00'); return isNaN(d)?'Tanggal':d.toLocaleDateString('id-ID',{weekday:'long'}); }
+function renderCutoff(){
+  const el=$('warn-16'); if(!el) return;
+  const iso=$('co-date').value, hit=cutoffHit(iso);
+  el.style.display=hit?'flex':'none';
+  if(hit) $('w16-next').textContent='besok ('+niceDate(nextDayISO(iso))+')';
+  if(fulfillment==='pickup') refreshQueuePreview();
+}
+function shiftTomorrow(){
+  $('co-date').value=tomorrowISO();
+  toast('Tanggal digeser ke '+niceDate(tomorrowISO())+' — tidak kena batas 16.00','ok');
+  renderCheckout();
+}
+function setSimHour(h){
+  simHour=(h===null||h==='null')?null:+h;
+  document.querySelectorAll('#sim-hours button').forEach(b=>b.classList.toggle('on',String(b.dataset.h)===String(simHour)));
+  $('clock').textContent=nowLbl();
+  renderCheckout();
+  toast(simHour==null?'Jam memakai waktu HP asli':'Jam simulasi '+String(simHour).padStart(2,'0')+'.00 WIB'+(simHour>=CUTOFF?' — order hari ini dimasak besok':''),'info');
+}
+const CO_STEPS=['v-checkout','v-co-ff','v-co-profil','v-co-pay'];
+const CO_TAB=['Paket','Pengambilan','Profil','Pembayaran'];
+let coStep=0;
+function renderSteppers(){
+  document.querySelectorAll('.stepper').forEach(el=>{
+    el.innerHTML=CO_TAB.map((l,k)=>`<span class="stp${k===coStep?' on':''}${k<coStep?' done':''}"><b>${k<coStep?'✓':k+1}</b>${l}</span>`).join('');
+  });
+}
+function coGo(i){ coStep=i; go(CO_STEPS[i]); renderSteppers(); $('body').scrollTop=0; }
+function coPrev(){ if(coStep>0){ history.pop(); coStep--; go(CO_STEPS[coStep],false); renderSteppers(); } }
+function checkFulfillment(){
+  const iso=$('co-date').value;
+  if(!iso){ toast('Pilih tanggal '+(fulfillment==='pickup'?'ambil':'pengantaran')+' dulu','err'); return false; }
+  if(iso<todayISO()){ toast('Tanggal tidak boleh sebelum hari ini','err'); return false; }
+  if(fulfillment==='pickup'&&!$('co-slot').value){ toast('Pilih slot waktu ambil','err'); return false; }
+  return true;
+}
+function checkProfile(){
+  const nm=$('co-name').value.trim(),ph=$('co-phone').value.trim(),ad=$('co-addr').value.trim();
+  if(!nm){ toast('Nama pemesan wajib diisi','err'); $('co-name').focus(); return false; }
+  if(!ph){ toast('No. WA / HP wajib diisi','err'); $('co-phone').focus(); return false; }
+  if(!/^0\d{8,13}$/.test(ph.replace(/[\s-]/g,''))&&!ph.startsWith('+62')){ toast('Nomor WA/HP tidak valid','err'); $('co-phone').focus(); return false; }
+  if(fulfillment==='delivery'&&!ad){ toast('Alamat pengantaran wajib diisi untuk delivery','err'); $('co-addr').focus(); return false; }
+  return true;
+}
+function coNext(){
+  if(coStep===0){
+    if(!cart.length) return toast('Tambahkan minimal satu paket dulu','err');
+    if(!currentShop) return toast('Pilih toko dulu','err');
+    return coGo(1);
+  }
+  if(coStep===1) return checkFulfillment()?coGo(2):void 0;
+  if(coStep===2) return checkProfile()?coGo(3):void 0;
+  submitOrder();
+}
+function openCheckout(){
+  if(!cart.length) return toast('Tambahkan minimal satu paket dulu','err');
+  $('co-name').value=state.user?.name||''; $('co-phone').value=state.user?.phone||'';
+  $('co-addr').value=state.user?.addr||''; $('co-note').value='';
+  const d=$('co-date'); if(!d.value) d.value=tomorrowISO();
+  $('co-slot').innerHTML=SLOTS.map((s,i)=>`<option value="${i}">Ambil ${s}</option>`).join('');
+  pickupSlot=+$('co-slot').value||0; $('co-slot').value=pickupSlot;
+  $('co-km').value=distanceKm;
+  renderServices(); setFulfillment(fulfillment);
+  lastPayTotal=null; coStep=0; renderCheckout(); go('v-checkout'); renderSteppers();
+  if(!checkoutV4Ready) initCheckoutV4();
+}
+function renderCheckout(){
+  const rows=cartRows(), ent=consumeAdded();
+  $('co-count').textContent=`${rows.length} jenis · ${cartUnits()} paket`;
+  $('co-detail').innerHTML=rows.map(r=>`
+    <div class="citem${r.id===ent?' enter':''}">
+      <img src="${r.img}" onerror="this.style.visibility='hidden'">
+      <div class="ci">
+        <div class="cn">${r.name}</div>
+        <div class="cm">${rp(r.price)} / paket · ${currentShop.name}</div>
+        <div class="ct">${rp(r.line)}</div>
+      </div>
+      <div class="cq">
+        <button onclick="chQty('${r.id}',-1)">−</button><b>${r.qty}</b><button onclick="chQty('${r.id}',1)">+</button>
+      </div>
+      <button class="cx" onclick="removeLine('${r.id}')" title="Hapus item">✕</button>
+    </div>`).join('')
+    +`<div class="oline tot" style="margin-top:8px"><span>Subtotal ${rows.length} jenis paket</span><span style="color:var(--merah)">${rp(cartSubtotal())}</span></div>`
+    +`<div class="hint" style="margin-top:6px">Makanan baru dibuat setelah pembayaran lunas — COD hanya tersedia untuk ambil di toko.</div>`;
+  renderPax();
+  renderAddrStep();
+  renderCutoff();
+  renderFFNote();
+  renderPaySummary();
+  renderSteppers();
+}
+/* halaman 3: alamat hanya muncul untuk delivery; halaman 2: catatan langkah berikutnya */
+function renderAddrStep(){
+  const box=$('co-addr-box'); if(!box) return;
+  const pick=fulfillment==='pickup';
+  box.style.display=pick?'none':'';
+  $('addr-lbl').textContent=pick?'Alamat ambil di toko':'Alamat pengantaran';
+  $('addr-hint').textContent=pick
+    ?'Tidak perlu alamat — datang ke outlet pada slot yang dipilih.'
+    :'Alamat ini dipakai kurir untuk mengantar pesanan.';
+}
+function renderFFNote(){
+  const el=$('ff-note'); if(!el) return;
+  const iso=$('co-date').value||todayISO(), eff=processDateFor(iso);
+  if(fulfillment==='pickup'){
+    el.innerHTML=`Langkah berikutnya: isi profil pemesan. Antre <b>${nextQueueNo((currentShop||{}).id||'',eff)}</b> untuk ${niceDate(eff)} · slot ${slotLbl(pickupSlot)}.`;
+  } else {
+    el.innerHTML=`Ongkir <b>${rp(deliveryFee())}</b> sudah dihitung sekarang dan otomatis masuk total bayar di langkah 4.`;
+  }
+}
+/* v4: jumlah orang SELALU sama dengan total paket dari semua jenis (read-only) */
+let lastPax=null;
+function paxOf(o){ return o.buyer.pax!=null?o.buyer.pax:orderItems(o).reduce((a,i)=>a+i.qty,0); }
+function renderPax(){
+  const rows=cartRows(), units=cartUnits(), el=$('co-pax'); if(!el) return;
+  el.innerHTML=`<b>${units} orang</b><span class="paxq">${rows.length} jenis · ${units} paket</span>`;
+  $('co-pax-sub').innerHTML = rows.length
+    ? rows.map(r=>`${r.name} × ${r.qty}`).join(' · ')+` = ${units} paket`
+    : 'Otomatis mengikuti isi pesanan — 1 paket untuk 1 orang';
+  if(lastPax!==null&&lastPax!==units) pulse(el);
+  lastPax=units;
+}
+function chQty(id,d,src){
+  addLine(id,d,src);
+  if(!cart.length) return emptyCartFallback(`${pkgOf(id).name} dihapus`);
+  renderCheckout(); updateCartBar();
+  if($('sheet-add').classList.contains('on')){ refreshCard(id); syncSheetTotals(); }
+}
+function removeLine(id){
+  const p=pkgOf(id); cart=cart.filter(c=>c.id!==id);
+  if(!cart.length) return emptyCartFallback(`${p.name} dihapus`);
+  renderCheckout(); updateCartBar();
+  if($('sheet-add').classList.contains('on')){ refreshCard(id); syncSheetTotals(); }
+  toast(`${p.name} dihapus dari pesanan`);
+}
+function emptyCartFallback(msg){
+  closeSheet('sheet-add'); cart=[]; renderCatalog(); updateCartBar();
+  toast(msg+' — pesanan kosong, kembali ke katalog','err'); navTo('v-catalog');
+}
+function clearCart(){
+  if(!cart.length) return toast('Pesanan sudah kosong');
+  cart=[]; closeSheet('sheet-add'); renderCatalog(); updateCartBar();
+  toast('Pesanan dikosongkan','err'); navTo('v-catalog');
+}
+
+/* ================= v3: BOTTOM SHEET + CAROUSEL ================= */
+function openAddSheet(){
+  if(!currentShop) currentShop=SHOPS[0];
+  $('add-sub').textContent=`Geser kartu untuk melihat paket ${currentShop.name} — item baru langsung dijumlah ke pesanan`;
+  renderCarousel(); openSheet('sheet-add'); lastSheetTotal=cartSubtotal();
+  const pkgs=currentShop.packages.filter(p=>!state.menuOff[p.id]);
+  const idx=Math.max(0,pkgs.findIndex(p=>!cartLine(p.id)));
+  const c=$('add-carousel'), card=c.children[idx];
+  if(card) c.scrollLeft=idx*(card.offsetWidth+10);
+  requestAnimationFrame(()=>updateCarNav());
+}
+function cardActions(id){
+  const q=cartLine(id);
+  return q?`<button onclick="chQty('${id}',-1)">−</button><b class="cqcount">${q}</b><button onclick="chQty('${id}',1)">+</button>`
+        :`<button class="plus" onclick="carAdd('${id}',event)">＋ Tambah</button>`;
+}
+/* perbarui satu kartu saja — menjaga posisi scroll carousel */
+function refreshCard(id){
+  const card=document.querySelector(`#add-carousel .cslide[data-id="${id}"]`); if(!card) return;
+  card.classList.toggle('incart',cartLine(id)>0);
+  card.querySelector('.csa').innerHTML=cardActions(id);
+  const n=card.querySelector('.cqcount');
+  if(n&&cartLine(id)>0){ n.classList.add('badge-pop'); setTimeout(()=>n.classList.remove('badge-pop'),480); }
+}
+function renderCarousel(){
+  const c=$('add-carousel'), keep=c.scrollLeft;
+  const pkgs=currentShop.packages.filter(p=>!state.menuOff[p.id]);
+  c.innerHTML=pkgs.map(p=>`<div class="cslide ${cartLine(p.id)?'incart':''}" data-id="${p.id}">
+      <img src="${p.img}" alt="${p.name}" onerror="this.outerHTML='<div class=\\'imgfail\\'>🍽️</div>'">
+      <div class="csb">
+        <div class="csn">${p.name}</div>
+        <div class="csp">${rp(p.price)}</div>
+        <div class="csd">${p.desc}</div>
+        <div class="csa">${cardActions(p.id)}</div>
+      </div>
+    </div>`).join('')
+    ||`<div class="empty" style="padding:30px 10px"><div class="ic">🍽️</div>Tidak ada paket aktif di toko ini</div>`;
+  c.scrollLeft=keep;
+  syncSheetTotals();
+  buildDots(pkgs.length);
+}
+function carAdd(id,ev){
+  const card=(ev&&ev.target&&ev.target.closest)?ev.target.closest('.cslide'):null;
+  addLine(id,1,card); refreshCard(id); syncSheetTotals(); updateCartBar(); renderCheckout();
+  toast(`${pkgOf(id).name} dijumlah ke pesanan`,'ok');
+}
+function syncSheetTotals(){ animNumber($('add-total'),lastSheetTotal,cartSubtotal()); lastSheetTotal=cartSubtotal(); }
+function carScroll(dir){
+  const c=$('add-carousel'), card=c.querySelector('.cslide');
+  c.scrollBy({left:dir*((card?card.offsetWidth:160)+10)*2,behavior:'smooth'});
+}
+function updateCarNav(){
+  const c=$('add-carousel'); if(!c) return;
+  const max=c.scrollWidth-c.clientWidth;
+  $('car-prev').disabled=c.scrollLeft<=4;
+  $('car-next').disabled=c.scrollLeft>=max-4;
+  const cards=[...c.querySelectorAll('.cslide')];
+  if(cards.length){
+    const idx=Math.round(c.scrollLeft/((cards[0].offsetWidth+10)||1));
+    document.querySelectorAll('#car-dots i').forEach((d,i)=>d.classList.toggle('on',i===Math.min(idx,cards.length-1)));
+  }
+}
+function buildDots(n){
+  const show=Math.min(n,6);
+  $('car-dots').innerHTML=Array.from({length:show},(_,i)=>`<i class="${i===0?'on':''}"></i>`).join('');
+}
+/* drag carousel dengan pointer (mouse). PENTING: mode 'dragging' baru aktif
+   setelah pointer benar-benar bergeser > ambang, supaya klik/tap pada tombol
+   di dalam kartu tidak ikut dimatikan (bug v3 awal). */
+function initCarouselDrag(){
+  const c=$('add-carousel'); if(!c) return;
+  let down=false,sx=0,sl=0,moved=false;
+  c.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='mouse') return;      /* sentuh: pakai scroll native */
+    down=true; moved=false; sx=e.clientX; sl=c.scrollLeft;
+  });
+  c.addEventListener('pointermove',e=>{
+    if(!down) return;
+    const dx=e.clientX-sx;
+    if(!moved && Math.abs(dx)>6){ moved=true; c.classList.add('dragging'); c.setPointerCapture(e.pointerId); }
+    if(moved) c.scrollLeft=sl-dx;
+  });
+  const end=()=>{
+    if(!down) return; down=false;
+    if(moved){ c.classList.remove('dragging'); c._suppressClick=Date.now(); updateCarNav(); }
+    moved=false;
+  };
+  c.addEventListener('pointerup',end); c.addEventListener('pointercancel',end); c.addEventListener('pointerleave',end);
+  /* redam klik hanya jika barusan terjadi drag */
+  c.addEventListener('click',e=>{
+    if(c._suppressClick && Date.now()-c._suppressClick<250){ e.stopPropagation(); e.preventDefault(); c._suppressClick=0; }
+  },true);
+  c.addEventListener('scroll',()=>{ clearTimeout(c._t); c._t=setTimeout(updateCarNav,60); },{passive:true});
+  c.addEventListener('keydown',e=>{ if(e.key==='ArrowRight')carScroll(1); if(e.key==='ArrowLeft')carScroll(-1); });
+  c.tabIndex=0;
+}
+/* ================= v4: PEMILIH PENGAMBILAN / PENGANTARAN ================= */
+function renderServices(){
+  $('svc-grid').innerHTML=Object.entries(DELIVERY).map(([k,d])=>`
+    <button type="button" class="svc${k===deliveryService?' on':''}" onclick="setService('${k}')" aria-pressed="${k===deliveryService}">
+      <div class="svi">${d.ic}</div><div class="svn">${d.name}</div>
+      <div class="svp">${rp(d.perKm)} / km</div>
+      <div class="svd">min. ${rp(d.min)} · ${d.eta}</div>
+    </button>`).join('');
+}
+function setFulfillment(m){
+  fulfillment=m;
+  $('ff-pickup').classList.toggle('on',m==='pickup');
+  $('ff-delivery').classList.toggle('on',m==='delivery');
+  $('ff-pickup').setAttribute('aria-pressed',m==='pickup');
+  $('ff-delivery').setAttribute('aria-pressed',m==='delivery');
+  $('ff-pickup-box').style.display=m==='pickup'?'':'none';
+  $('ff-delivery-box').style.display=m==='delivery'?'':'none';
+  $('date-lbl').textContent=m==='pickup'?'Tanggal ambil':'Tanggal pengantaran';
+  if(m==='delivery' && payMethod==='cod'){ payMethod='qris'; toast('Delivery wajib bayar di muka — metode bayar diubah ke QRIS','warn'); }
+  if(m==='pickup') refreshQueuePreview();
+  renderPayList(); renderCheckout();
+}
+function setService(k){
+  deliveryService=k; renderServices();
+  $('ov-lbl').textContent=`Ongkos kirim ${DELIVERY[k].name} (${distanceKm} km)`;
+  $('ov-val').textContent=rp(deliveryFee());
+  $('ov-note').textContent=`Tarif minimal ${rp(DELIVERY[k].min)} · estimasi ${DELIVERY[k].eta} · otomatis masuk total bayar`;
+  renderPaySummary(); renderFFNote();
+  toast(`${DELIVERY[k].name} — ${rp(DELIVERY[k].perKm)}/km · estimasi ${DELIVERY[k].eta}`,'info');
+}
+function refreshQueuePreview(){
+  const shop=currentShop||shopOf(state.cartShop); if(!shop) return;
+  const iso=$('co-date').value||todayISO(), eff=processDateFor(iso);
+  $('q-preview').textContent=nextQueueNo(shop.id,eff);
+  $('q-shop').textContent=shop.name+' · '+niceDate(eff)+(eff!==iso?' — dimasak besok':'');
+}
+let checkoutV4Ready=false;
+function initCheckoutV4(){
+  checkoutV4Ready=true;
+  const km=$('co-km'), paint=()=>km.style.setProperty('--pct',((km.value-km.min)/(km.max-km.min)*100)+'%');
+  paint();
+  km.addEventListener('input',()=>{
+    distanceKm=+km.value; paint();
+    $('km-lbl').innerHTML=`Jarak dari toko — <b>${distanceKm} km</b>`;
+    $('ov-lbl').textContent=`Ongkos kirim ${DELIVERY[deliveryService].name} (${distanceKm} km)`;
+    const prev=parseFloat($('ov-val').dataset.v)||null;
+    animNumber($('ov-val'),prev,deliveryFee());
+    $('ov-val').dataset.v=deliveryFee();
+    $('ov-note').textContent=`Tarif minimal ${rp(DELIVERY[deliveryService].min)} · estimasi ${DELIVERY[deliveryService].eta} · otomatis masuk total bayar`;
+    renderPaySummary(); renderFFNote();
+  });
+  $('co-slot').addEventListener('change',e=>{ pickupSlot=+e.target.value;
+    toast(`Slot ambil ${slotLbl(pickupSlot)} — antrean ${$('q-preview').textContent}`,'ok'); renderFFNote(); });
+  $('co-date').addEventListener('change',()=>{ renderCheckout(); });
+  $('co-date').min=todayISO();
+  let t;
+  $('co-addr').addEventListener('input',()=>{ clearTimeout(t);
+    t=setTimeout(()=>{ if(state.user){ state.user.addr=$('co-addr').value.trim(); save(); } },500); });
+}
+/* geser grabber ke bawah untuk menutup sheet */
+function initSheetDrag(){
+  const h=$('add-grabber'), sheet=$('sheet-add-body'), ov=$('sheet-add');
+  if(!h) return; let sy=0,dy=0,on=false;
+  h.addEventListener('pointerdown',e=>{ on=true; sy=e.clientY; dy=0; sheet.style.transition='none'; h.setPointerCapture(e.pointerId); });
+  h.addEventListener('pointermove',e=>{ if(!on)return; dy=Math.max(0,e.clientY-sy); sheet.style.transform=`translateY(${dy}px)`; });
+  const end=()=>{ if(!on)return; on=false; sheet.style.transition='transform .18s ease';
+    if(dy>70){ sheet.style.transform='translateY(100%)'; setTimeout(()=>{ sheet.style.transform=''; closeSheet('sheet-add'); },180); }
+    else sheet.style.transform=''; };
+  h.addEventListener('pointerup',end); h.addEventListener('pointercancel',end);
+}
+function renderPayList(){
+  $('pay-list').innerHTML=payMethodsAllowed().map(([k,p])=>`
+   <div class="pay ${payMethod===k?'on':''}" onclick="pickPay('${k}')">
+    <div class="ic">${p.ic}</div><div><div class="nm">${p.name}</div>
+      <div class="ds">${k==='cod'&&fulfillment==='pickup'?'Bayar cash saat ambil di toko':p.desc}</div></div>
+    <div class="fee">${p.fee?rp(p.fee):'gratis'}</div></div>`).join('');
+  $('cod-note').style.display=fulfillment==='delivery'?'':'none';
+  $('pay-note').textContent=fulfillment==='delivery'?'wajib lunas dulu':'bayar di muka / COD';
+}
+function pickPay(k){
+  if(k==='cod'&&fulfillment==='delivery') return toast('COD hanya untuk ambil di toko','err');
+  payMethod=k; renderPayList(); renderPaySummary();
+}
+function renderPaySummary(){
+  const rows=cartRows(), ship=deliveryFee(), fee=PAYMENTS[payMethod].fee, tot=grandTotal();
+  $('pay-summary').innerHTML=
+   rows.map(r=>`<div class="oline"><span>${r.name} × ${r.qty}</span><b>${rp(r.line)}</b></div>`).join('')
+   +`<div class="oline"><span>Subtotal (${cartUnits()} paket)</span><b>${rp(cartSubtotal())}</b></div>`
+   +(fulfillment==='delivery'
+     ?`<div class="oline"><span>Ongkir ${DELIVERY[deliveryService].name} · ${distanceKm} km</span><b style="color:#e65100">${rp(ship)}</b></div>`
+     :`<div class="oline"><span>Ongkir — ambil di toko</span><b class="gratis">Rp 0</b></div>`)
+   +`<div class="oline"><span>Biaya ${PAYMENTS[payMethod].name}</span><b>${fee?rp(fee):'Rp 0'}</b></div>
+   <div class="oline tot"><span>Total${payMethod==='cod'?' (bayar di tempat)':' bayar'} (${cartUnits()} paket)</span><span style="color:var(--merah)" id="pay-total">${rp(tot)}</span></div>
+   <div class="hint" style="margin-top:6px">${payMethod==='cod'?'Tunai saat ambil di toko.':PAYMENTS[payMethod].feeLbl}</div>`;
+  const el=$('pay-total');
+  if(el && lastPayTotal!=null && lastPayTotal!==tot){ el.textContent=rp(lastPayTotal); animNumber(el,lastPayTotal,tot); }
+  lastPayTotal=tot;
+}
+function submitOrder(){
+  const pickup=fulfillment==='pickup';
+  if(!cart.length) return toast('Tambahkan minimal satu paket dulu','err');
+  if(!checkFulfillment()) return coGo(1);
+  if(!checkProfile()) return coGo(2);
+  if(!currentShop) return toast('Pilih toko dulu','err');
+  if(payMethod==='cod'&&!pickup) return toast('COD hanya untuk ambil di toko','err');
+  const nm=$('co-name').value.trim(),ph=$('co-phone').value.trim(),ad=$('co-addr').value.trim(),note=$('co-note').value.trim();
+  const date=$('co-date').value||tomorrowISO(), eff=processDateFor(date), late=eff!==date;
+  const queue=pickup?nextQueueNo(currentShop.id,eff):null;
+  const items=cart.map(c=>({id:c.id,qty:c.qty})), sub=cartSubtotal(), ship=deliveryFee(), fee=PAYMENTS[payMethod].fee, units=cartUnits();
+  const ord={id:'GC-'+Date.now().toString().slice(-6), shopId:currentShop.id, items, subtotal:sub, fee,
+    deliveryFee:ship, total:sub+ship+fee, method:payMethod,
+    payStatus:payMethod==='cod'?'cod':'pending', status:'new',
+    fulfillment:pickup?'pickup':'delivery',
+    pickup:pickup?{date,slot:pickupSlot,queue,processDate:eff,late}:null,
+    delivery:pickup?null:{service:deliveryService,km:distanceKm,fee:ship,processDate:eff,late},
+    buyer:{name:nm,phone:ph,addr:pickup?(SHOP_ADDR[currentShop.id]||'ambil di toko'):ad,
+      date,pax:units,note,pickup,processDate:eff,late},
+    createdAt:new Date().toISOString()};
+  if(payMethod==='cod'){ commitOrder(ord); finishOrder(ord); return; }
+  pendingOrder=ord; openPayment(ord);
+}
+function commitOrder(ord){
+  if(ord.fulfillment==='pickup'&&ord.pickup) commitQueue(ord.shopId,ord.pickup.processDate||ord.pickup.date);
+  state.orders.unshift(ord);
+  if(offline){ state.queue.push(ord.id); toast('Tersimpan di DB lokal — menunggu sinkronisasi'); }
+  save(); renderSyncBar();
+}
+function finishOrder(ord){
+  cart=[]; pendingOrder=null; payingExisting=false; lastBarTotal=0; lastSheetTotal=null; lastPayTotal=null; lastPax=null; coStep=0;
+  renderCatalog(); navTo('v-orders'); renderOrders();
+  openSheet('sheet-order'); $('sheet-order-body').innerHTML=orderSuccess(ord);
+}
+
+/* ================= PEMBAYARAN ================= */
+/* lunasi order yang sudah terkirim tapi belum dibayar */
+function payExisting(id){
+  const o=state.orders.find(x=>x.id===id); if(!o) return;
+  if(o.payStatus!=='pending') return toast('Pesanan ini sudah lunas','info');
+  pendingOrder=o; payingExisting=true; openPayment(o);
+}
+function openPayment(ord){
+  go('v-payment');
+  const p=PAYMENTS[ord.method];
+  const ship=ord.deliveryFee?`<br>sudah termasuk ongkir ${rp(ord.deliveryFee)}`:'';
+  const qn=ord.fulfillment==='pickup'&&ord.pickup?`<br>antre <b>${ord.pickup.queue}</b> · slot ${slotLbl(ord.pickup.slot)}`:'';
+  let inner='';
+  if(ord.method==='qris'){
+    inner=`<div class="center pad"><div class="shopname">${p.name}</div><div class="hint">Bayar ke ${ord.shopId} · goPay Sandbox</div>
+      <div class="qrbox" id="qr"></div>
+      <div class="hint">Statis · ${ord.id}<br>Nominal <b>${rp(ord.total)}</b>${ship}${qn}</div>
+      <div class="count">Berakhir dalam <b id="cd">04:59</b></div></div>`;
+  } else if(ord.method==='va'){
+    inner=`<div class="pad"><div class="shopname">Virtual Account BCA</div>
+      <div class="va"><div class="lbl">Nomor VA</div><div class="no">8808${ord.id.replace(/\D/g,'').slice(-10)}</div>
+      <button class="btn-sm btn-grey" style="margin-top:8px" onclick="toast('Nomor VA disalin','ok')">Salin nomor VA</button></div>
+      <div class="oline"><span>Nominal</span><b>${rp(ord.total)}</b></div>
+      ${ord.deliveryFee?`<div class="oline"><span>Rincian</span><b>${rp(ord.subtotal)} + ongkir ${rp(ord.deliveryFee)}</b></div>`:''}
+      ${qn?`<div class="oline"><span>Pengambilan</span><b>${ord.pickup.queue} · ${slotLbl(ord.pickup.slot)}</b></div>`:''}
+      <div class="oline"><span>Batas bayar</span><b>24 jam</b></div>
+      <div class="hint">Setelah transfer, status berubah otomatis (simulasi).</div></div>`;
+  } else {
+    inner=`<div class="pad center"><div class="shopname">GoPay / OVO / DANA</div>
+      <div class="hint" style="margin:6px 0 14px">Pilih aplikasi e-wallet untuk membayar ${rp(ord.total)}${ship}</div>
+      ${['GoPay','OVO','DANA'].map((w,i)=>`<button class="btn btn-grey" style="margin-bottom:8px" onclick="toast('Membuka ${w}… (simulasi)')">${['🟢','🟣','🔵'][i]} Bayar dengan ${w}</button>`).join('')}</div>`;
+  }
+  $('pay-body').innerHTML=`${inner}
+   <div class="pad" style="padding-top:0">
+     <button class="btn btn-tosca" onclick="verifyPayment()">SAYA SUDAH BAYAR</button>
+     ${payingExisting?'':'<button class="btn btn-grey" style="margin-top:8px" onclick="deferPayment()">Kirim order, bayar nanti (24 jam)</button>'}
+     <button class="btn btn-danger" style="margin-top:8px" onclick="failPayment()">Batalkan / simulasi gagal</button>
+     <div class="hint center" style="margin-top:10px">Diproses gateway pihak ketiga · data kartu tidak disimpan di HP</div>
+   </div>`;
+  if(ord.method==='qris') drawQR('qr');
+  startCountdown();
+}
+function drawQR(id){
+  const el=$(id); if(!el)return; let h='';
+  const seedv=[...pendingOrder.id].reduce((a,c)=>a+c.charCodeAt(0),0);
+  for(let y=0;y<21;y++)for(let x=0;x<21;x++){
+    const finder=(x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13);
+    const edge=finder&&((x===0||x===6||y===0||y===6)||(x>13&&(x===14||x===20)||(y>13&&(y===14||y===20)))||((x===0||x===6)&&(y<7))||((y===0||y===6)&&(x<7)));
+    const core=finder&&x>=2&&x<=4&&y>=2&&y<=4||finder&&x>=16&&x<=18&&y>=2&&y<=4||finder&&x>=2&&x<=4&&y>=16&&y<=18;
+    const rnd=((x*7+y*13+seedv)%5<2);
+    const on=finder?(edge||core):rnd;
+    h+=`<i class="${on?'b':''}"></i>`;
+  }
+  el.innerHTML=h;
+}
+let cdt;
+function startCountdown(){ clearInterval(cdt); let s=299; cdt=setInterval(()=>{ s--; if(!$('cd')){clearInterval(cdt);return;} const m=String(Math.floor(s/60)).padStart(2,'0'),x=String(s%60).padStart(2,'0'); $('cd').textContent=`${m}:${x}`; if(s<=0)clearInterval(cdt); },1000); }
+function verifyPayment(){
+  $('pay-body').innerHTML=`<div class="pad center" style="padding-top:60px"><div class="spinner"></div>
+    <div class="shopname">Memverifikasi pembayaran…</div><div class="hint">Menunggu respons gateway (simulasi 2 detik)</div></div>`;
+  setTimeout(()=>{
+    const ord=pendingOrder; if(!ord) return;
+    ord.payStatus='paid'; ord.paidAt=new Date().toISOString(); ord.status='confirmed';
+    if(payingExisting){ payingExisting=false; pendingOrder=null; save(); navTo('v-orders'); renderOrders();
+      toast('Pembayaran diterima — penjual boleh mulai memasak','ok'); return; }
+    commitOrder(ord); toast('Pembayaran berhasil diterima','ok'); finishOrder(ord);
+  },2000);
+}
+function deferPayment(){
+  const ord=pendingOrder; if(!ord) return;
+  ord.payStatus='pending'; ord.status='new'; ord.deferred=true;
+  commitOrder(ord);
+  toast('Order terkirim — produksi ditahan sampai pembayaran masuk','ok');
+  finishOrder(ord);
+}
+function failPayment(){
+  const ord=pendingOrder; if(!ord)return;
+  ord.payStatus='failed'; ord.status='cancelled'; ord.buyer.note='Dibatalkan: pembayaran tidak selesai';
+  if(payingExisting){ payingExisting=false; pendingOrder=null; save(); navTo('v-orders'); renderOrders();
+    toast('Pembayaran gagal — pesanan dibatalkan','err'); return; }
+  state.orders.unshift(ord); save();
+  pendingOrder=null; navTo('v-orders'); renderOrders();
+  toast('Pembayaran gagal — status pesanan dikembalikan','err');
+}
+
+/* ================= PEMBELI: PESANAN ================= */
+function myOrders(){
+  if(!state.user) return [];
+  return state.orders.filter(o=>o.buyer&&(o.buyer.name===state.user.name||o._owner===state.user.email));
+}
+function renderOrders(){
+  const list=myOrders();
+  renderSchedule(list);
+  $('order-list').innerHTML = list.length? list.map(orderCard).join('')
+   : `<div class="empty"><div class="ic">📦</div>Belum ada pesanan<br><span class="hint">Pesan paket dari tab Menu</span></div>`;
+}
+/* Jadwal Saya: order pengujung dikelompokkan per tanggal (bisa beda-beda hari untuk satu akun) */
+function renderSchedule(list){
+  const box=$('sched-box'); if(!box) return;
+  const withDate=(list||myOrders()).filter(o=>o.buyer&&o.buyer.date);
+  if(!withDate.length){ box.innerHTML=''; return; }
+  const byDate={};
+  withDate.forEach(o=>{ (byDate[o.buyer.date]=byDate[o.buyer.date]||[]).push(o); });
+  const days=Object.keys(byDate).sort();
+  box.innerHTML=`<div class="pad" style="padding-bottom:0;display:flex;align-items:center;gap:8px">
+      <b style="font-size:14px;flex:1">Jadwal Saya</b>
+      <span class="hint">${days.length} tanggal · ${withDate.length} order</span>
+      <button type="button" class="btn-sm btn-tosca" onclick="cart.length?openCheckout():toast('Pilih paket dulu di tab Menu, lalu atur tanggalnya','warn')">＋ Tanggal lain</button></div>
+    <div class="sched">`+days.map(d=>{
+      const os=byDate[d], orang=os.reduce((a,o)=>a+paxOf(o),0), tot=os.reduce((a,o)=>a+o.total,0);
+      const today=d===todayISO(), late=os.some(o=>o.buyer.late), unpaid=os.filter(o=>o.payStatus==='pending').length;
+      return `<div class="sday${today?' today':''}${late?' late':''}">
+        <div class="sd">${today?'HARI INI':niceDow(d)}</div>
+        <div class="sn">${niceDate(d)}</div>
+        <div class="sm">${os.length} order · ${orang} orang · ${rp(tot)}</div>
+        <div class="sos">${os.map(o=>`<button type="button" class="schip" onclick="openDetail('${o.id}')">${o.id.slice(-5)} · ${rp(o.total)}</button>`).join('')}</div>
+        ${late?`<div class="hint" style="margin-top:5px">⏱ lewat 16.00 — dimasak ${niceDate(nextDayISO(d))}</div>`:''}
+        ${unpaid?`<div class="hint" style="margin-top:3px;color:#e65100;font-weight:700">${unpaid} belum lunas</div>`:''}
+      </div>`;
+    }).join('')+`</div>`;
+}
+function itemsSummary(o){
+  const it=orderItems(o);
+  return it.length===1 ? `<b>${it[0].name}</b> × ${it[0].qty}`
+   : `<b>${it[0].name}</b> × ${it[0].qty} <span class="hint">+${it.length-1} lainnya</span>`;
+}
+function payLabel(o){
+  return o.payStatus==='paid'?'<b style="color:#2e7d32">LUNAS</b>'
+    : o.payStatus==='cod'?'<b style="color:#1565C0">COD — bayar saat ambil</b>'
+    : '<b style="color:#e65100">Menunggu pembayaran</b>';
+}
+function fulfillLine(o){
+  const s=shopOf(o.shopId);
+  const late=o.buyer&&o.buyer.late&&o.buyer.processDate?` <span class="latechip">⏱ dimasak ${niceDate(o.buyer.processDate)}</span>`:'';
+  if(o.fulfillment==='pickup'){
+    const p=o.pickup||{};
+    return `🏪 <b>Ambil di ${s?s.name:'toko'}</b> · ${niceDate(p.date||o.buyer.date)} · slot ${slotLbl(p.slot)}`
+      +(p.queue?` · antre <span class="qno">${p.queue}</span>`:'')+late;
+  }
+  const d=o.delivery||{}, dl=DELIVERY[d.service]||DELIVERY.gosend;
+  return `${dl.ic} <b>Diantar ${dl.name}</b> · ${d.km!=null?d.km+' km':'—'} · ongkir <b>${rp(d.fee||o.deliveryFee||0)}</b> · ${niceDate(o.buyer.date)}`+late;
+}
+function orderCard(o){
+  const synced=state.queue.includes(o.id)?'<span class="tag" style="background:#fff3e0;color:#e65100">lokal</span>':'';
+  const units=orderItems(o).reduce((a,i)=>a+i.qty,0);
+  return `<div class="ord"><div class="oh"><span class="oid">${o.id}</span>
+    <span class="chip c-${o.status}">${FLOW_LBL[o.status]}</span></div>
+    <div class="ob">${itemsSummary(o)} · ${shopOf(o.shopId).name}<br>
+    ${rp(o.total)} · ${units} paket = ${paxOf(o)} orang · ${PAYMENTS[o.method].name} ${o.payStatus==='paid'?'<span class="chip c-paid">lunas</span>':o.payStatus==='cod'?'<span class="chip c-unpaid">COD</span>':`<span class="chip c-unpaid">${o.payStatus}</span>`} ${synced}<br>
+    <div class="ffline">${fulfillLine(o)}</div>
+    ${o.payStatus==='pending'?'<div class="locknote">🔒 Belum lunas — penjual menahan produksi sampai pembayaran masuk.</div>':''}
+    <span class="hint">${fmtDate(o.createdAt)}</span></div>
+    <div class="oa"><button class="btn-sm btn-grey" onclick="openDetail('${o.id}')">Detail</button>
+    ${o.payStatus==='pending'?`<button class="btn-sm btn-tosca" onclick="payExisting('${o.id}')">Bayar sekarang</button>`:''}
+    <button class="btn-sm btn-wa" onclick="waOrder('${o.id}')">Share WA</button></div>
+    ${statusFlow(o)}</div>`;
+}
+function statusFlow(o){
+  if(o.status==='cancelled') return `<div class="flow"><span class="hint" style="color:#c62828;font-weight:700">Pesanan dibatalkan</span></div>`;
+  const i=FLOW.indexOf(o.status);
+  return `<div class="flow">${FLOW.map((s,x)=>`<div class="step ${x<i?'done':x===i?'cur':''}"><div class="dot">${x<i?'✓':x+1}</div>${FLOW_LBL[s]}</div>`).join('')}</div>`;
+}
+function openDetail(id){
+  const o=state.orders.find(x=>x.id===id); if(!o)return;
+  const it=orderItems(o);
+  openSheet('sheet-order');
+  $('sheet-order-body').innerHTML=`<h3>${o.id}</h3><div class="hint" style="margin-bottom:12px">${shopOf(o.shopId).name} · ${it.length} jenis paket</div>
+   <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${it.map(i=>`<img src="${i.img}" onerror="this.outerHTML='<div class=\\'imgfail\\' style=\\'width:80px;height:60px\\'>🍽️</div>'" style="width:80px;height:60px;object-fit:cover;border-radius:9px;flex:0 0 auto"></img>`).join('')}</div>
+   <div style="margin-top:12px">
+    ${it.map(i=>`<div class="oline"><span>${i.name} <span class="hint">${rp(i.price)}</span></span><b>× ${i.qty} · ${rp(i.line)}</b></div>`).join('')}
+    <div class="oline"><span>Subtotal (${it.reduce((a,i)=>a+i.qty,0)} paket)</span><b>${rp(o.subtotal)}</b></div>
+    <div class="oline"><span>Jumlah orang (= total paket)</span><b>${paxOf(o)} orang</b></div>
+    ${o.fulfillment==='delivery'?`<div class="oline"><span>Ongkir ${(DELIVERY[(o.delivery||{}).service]||{}).name||'kurir'} · ${(o.delivery||{}).km!=null?o.delivery.km+' km':''}</span><b style="color:#e65100">${rp(o.deliveryFee||0)}</b></div>`:''}
+    <div class="oline"><span>Biaya layanan</span><b>${rp(o.fee)}</b></div>
+    <div class="oline tot"><span>Total</span><span>${rp(o.total)}</span></div>
+    <div class="oline"><span>Pembayaran</span><b>${PAYMENTS[o.method].name} · ${o.payStatus==='paid'?'LUNAS':o.payStatus==='cod'?'COD di toko':o.payStatus}</b></div>
+   </div>
+   <div class="card" style="margin:12px 0;background:#f5f7f9;box-shadow:none">
+    <div class="ffline">${fulfillLine(o)}</div>
+    <div class="oline" style="margin-top:6px"><span>Tanggal ${o.buyer.pickup?'ambil':'kirim'}</span><b>${niceDate(o.buyer.date)}</b></div>
+    ${o.buyer.late?`<div class="hint" style="margin-top:4px;color:#b7791f;font-weight:700">⏱ Dipesan lewat jam 16.00 WIB — dapur mulai memasak ${niceDate(o.buyer.processDate)}.</div>`:''}
+    <div style="height:6px"></div>
+    <b style="font-size:13px">${o.buyer.name}</b><div class="hint">${o.buyer.phone}</div>
+    <div style="font-size:12.5px;margin-top:6px">${o.buyer.addr}</div>
+    ${o.buyer.note?`<div class="hint" style="margin-top:6px">Catatan: ${o.buyer.note}</div>`:''}
+    ${o.payStatus==='paid'||o.payStatus==='cod'?'':`<div class="hint" style="margin-top:6px;color:#c62828;font-weight:700">Belum dibayar — penjual belum mulai memasak.</div>`}</div>
+   <div style="display:flex;gap:8px"><button class="btn-sm btn-wa" style="flex:1" onclick="waOrder('${o.id}')">Chat via WA</button>
+   <button class="btn-sm btn-grey" style="flex:1" onclick="closeSheet('sheet-order')">Tutup</button></div>`;
+}
+function waOrder(id){
+  const o=state.orders.find(x=>x.id===id); const s=shopOf(o.shopId);
+  const it=orderItems(o), isPick=o.fulfillment==='pickup', dv=o.delivery||{};
+  const ff=isPick
+    ? ['Diambil di toko: '+s.name+' ('+(SHOP_ADDR[s.id]||'-')+')',
+       'Jadwal ambil: '+niceDate((o.pickup||{}).date||o.buyer.date)+' · slot '+slotLbl((o.pickup||{}).slot),
+       'Nomor antre: '+((o.pickup||{}).queue||'-')]
+    : ['Diantar: '+(DELIVERY[dv.service]||{}).name+' · '+(dv.km!=null?dv.km+' km':'-'),
+       'Ongkir: '+rp(o.deliveryFee||0),
+       'Alamat: '+o.buyer.addr];
+  const pay=o.payStatus==='paid'?'LUNAS':o.payStatus==='cod'?'COD / bayar di tempat':'belum dibayar';
+  const late=o.buyer.late?['Catatan dapur: dipesan lewat jam 16.00 WIB, mulai dimasak '+niceDate(o.buyer.processDate)]:[];
+  const lines=['Halo '+s.name+', saya '+o.buyer.name+'.','Order '+o.id,'Pesanan:']
+    .concat(it.map(i=>'   - '+i.name+' x '+i.qty+' = '+rp(i.line)))
+    .concat(['Subtotal: '+rp(o.subtotal),
+             'Jumlah orang: '+paxOf(o)+' orang (= '+it.reduce((a,i)=>a+i.qty,0)+' paket)'])
+    .concat(ff)
+    .concat(late)
+    .concat(['Total: '+rp(o.total)+' ('+PAYMENTS[o.method].name+' · '+pay+')',
+             'Catatan: '+(o.buyer.note||'-'),'No. WA: '+o.buyer.phone]);
+  window.open('https://wa.me/'+s.phone+'?text='+encodeURIComponent(lines.join('\n')),'_blank');
+  toast('Membuka WhatsApp dengan ringkasan order');
+}
+function orderSuccess(o){
+  const s=shopOf(o.shopId), its=orderItems(o);
+  const box = o.fulfillment==='pickup'
+   ? `<div class="qbox" style="margin:0 0 10px">
+        <div><div class="ql">Nomor antre Anda</div><div class="qn">${o.pickup.queue}</div></div>
+        <div class="qh">${s.name}<br>${niceDate(o.pickup.date)}<br>slot ${slotLbl(o.pickup.slot)}</div></div>
+      <div class="hint center" style="margin:0 0 12px">Tunjukkan nomor ini saat ambil di ${SHOP_ADDR[s.id]||s.name}.</div>`
+   : `<div class="card" style="margin:0 0 12px;background:#e3f2fd;box-shadow:none">
+        <div style="font-size:13px"><b>${DELIVERY[o.delivery.service].ic} Diantar ${DELIVERY[o.delivery.service].name}</b></div>
+        <div class="hint" style="margin-top:4px">${o.delivery.km} km · estimasi ${DELIVERY[o.delivery.service].eta} · ongkir ${rp(o.delivery.fee)}</div>
+        <div style="font-size:12.5px;margin-top:6px">${o.buyer.addr}</div></div>`;
+  const lateNote = o.buyer.late
+    ? `<div class="warn16" style="display:flex;margin:0 0 12px"><div>⏱ Order dibuat lewat jam 16.00 WIB untuk <b>hari ini</b> — dapur mulai memasak <b>${niceDate(o.buyer.processDate)}</b>.</div></div>` : '';
+  return `<div class="center"><div style="font-size:44px">✅</div><h3>Terima Kasih!</h3>
+   <p class="hint" style="margin:8px 0 14px">Kami akan menghubungi anda secepatnya. Pastikan No. WA / HP anda aktif.</p></div>
+   ${box}${lateNote}
+   <div class="card" style="margin:0 0 12px;background:#f5f7f9;box-shadow:none">
+    <div class="oline"><span>No. order</span><b>${o.id}</b></div>
+    <div class="oline"><span>Paket</span><b>${its.length===1?its[0].name+' × '+its[0].qty:its.length+' jenis, '+its.reduce((a,i)=>a+i.qty,0)+' paket'}</b></div>
+    <div class="oline"><span>Jumlah orang</span><b>${paxOf(o)} orang (= ${its.reduce((a,i)=>a+i.qty,0)} paket)</b></div>
+    ${its.length>1?`<div class="hint" style="padding:2px 0 6px">${its.map(i=>i.name+' × '+i.qty).join(', ')}</div>`:''}
+    ${o.deliveryFee?`<div class="oline"><span>Ongkir</span><b>${rp(o.deliveryFee)}</b></div>`:''}
+    <div class="oline"><span>Bayar</span><b>${rp(o.total)}</b></div>
+    <div class="oline"><span>Pembayaran</span><b>${PAYMENTS[o.method].name} · ${payLabel(o)}</b></div>
+    <div class="oline"><span>Status</span><b>${o.status==='cancelled'?'Dibatalkan':FLOW_LBL[o.status]}</b></div>
+    <div class="hint" style="padding-top:8px">${o.payStatus==='paid'
+        ?'Pembayaran diterima — penjual langsung memulai proses memasak.'
+        :o.payStatus==='cod'
+        ?'Makanan disiapkan setelah order dikonfirmasi penjual; bayar tunai saat ambil di toko.'
+        :'Order sudah terkirim, tapi <b>makanan baru dimasak setelah pembayaran masuk</b> (maks. 24 jam).'}</div></div>
+   <div style="display:flex;gap:8px"><button class="btn-sm btn-wa" style="flex:1" onclick="waOrder('${o.id}')">Share via WA</button>
+   <button class="btn-sm btn-tosca" style="flex:1" onclick="closeSheet('sheet-order');navTo('v-catalog')">Order lagi</button></div>`;
+}
+
+/* ================= PENJUAL ================= */
+let tab='all';
+function myShopIds(){ const s=currentSeller(); return s?SELLERS[s].shops:[]; }
+function sellerOrders(){ const ids=myShopIds(); return state.orders.filter(o=>ids.includes(o.shopId)); }
+function renderSeller(){
+  const os=sellerOrders();
+  const done=os.filter(o=>o.status==='completed');
+  $('st-new').textContent=os.filter(o=>o.status==='new').length;
+  $('st-proc').textContent=os.filter(o=>['confirmed','processing'].includes(o.status)).length;
+  $('st-done').textContent=done.length;
+  $('st-rev').textContent=Math.floor(done.reduce((a,o)=>a+o.total,0)/1000);
+  renderSellerList();
+}
+function setTab(t){ tab=t; document.querySelectorAll('#seller-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); renderSellerList(); }
+function renderSellerList(){
+  const ids=myShopIds();
+  if(tab==='menu'){
+    $('seller-list').innerHTML=SHOPS.filter(s=>ids.includes(s.id)).map(s=>`
+     <div class="card" style="margin-top:12px"><b style="font-size:14px">${s.logo} ${s.name}</b>
+     ${s.packages.map(p=>`<div class="mrow"><img src="${p.img}" onerror="this.src='assets/food/nasi-kotak.jpg'">
+      <div class="mi"><div class="mn">${p.name}</div><div class="mp">${rp(p.price)} · ${p.desc}</div></div>
+      <div class="sw ${state.menuOff[p.id]?'':'on'}" onclick="toggleMenu('${p.id}')"></div></div>`).join('')}</div>`).join('');
+    return;
+  }
+  const list=tab==='all'?sellerOrders():sellerOrders().filter(o=>o.status===tab);
+  $('seller-list').innerHTML=list.length?list.map(sellerCard).join('')
+   :`<div class="empty"><div class="ic">📋</div>Tidak ada pesanan${tab==='all'?' di toko Anda':' berstatus '+FLOW_LBL[tab]}</div>`;
+}
+function sellerCard(o){
+  const i=FLOW.indexOf(o.status), locked=i<FLOW.length-1 && FLOW[i+1]==='processing' && !canProcess(o);
+  return `<div class="ord"><div class="oh"><span class="oid">${o.id} · ${shopOf(o.shopId).name}</span>
+    <span class="chip c-${o.status}">${FLOW_LBL[o.status]}</span></div>
+    <div class="ob">${orderItems(o).map(x=>`<div style="display:flex;justify-content:space-between;gap:8px"><span><b>${x.name}</b> × ${x.qty}</span><span>${rp(x.line)}</span></div>`).join('')}
+    <span class="hint">Total ${rp(o.total)}${o.deliveryFee?' · termasuk ongkir '+rp(o.deliveryFee):''}</span><br>
+    <div class="ffline">${fulfillLine(o)}</div>
+    ${o.buyer.name} · ${o.buyer.phone} · <b>${paxOf(o)} orang</b><br>${o.buyer.addr}<br>
+    <span class="hint">${fmtDate(o.createdAt)} · ${PAYMENTS[o.method].name} · ${o.payStatus==='paid'?'<b style="color:#2e7d32">LUNAS</b>':o.payStatus==='cod'?'<b>Bayar di tempat (ambil di toko)</b>':o.payStatus}</span>
+    ${o.buyer.note?`<br><span class="hint">📝 ${o.buyer.note}</span>`:''}
+    ${o.buyer.late?`<br><span class="latechip">⏱ baru dimasak ${niceDate(o.buyer.processDate)}</span>`:''}
+    ${locked?'<div class="locknote">🔒 Belum lunas — makanan tidak dapat dibuat sebelum pembayaran masuk.</div>':''}</div>
+    <div class="oa">
+      ${i<FLOW.length-1?`<button class="btn-sm ${locked?'btn-grey':'btn-tosca'}" style="flex:2" onclick="advance('${o.id}')">${locked?'🔒 ':''}→ ${FLOW_LBL[FLOW[i+1]]}</button>`:'<button class="btn-sm btn-grey" disabled style="flex:2">Selesai</button>'}
+      <button class="btn-sm btn-wa" onclick="waOrder('${o.id}')">WA</button>
+      <button class="btn-sm btn-danger" onclick="cancelOrder('${o.id}')">Batal</button>
+    </div>${statusFlow(o)}</div>`;
+}
+function advance(id){
+  const o=state.orders.find(x=>x.id===id); const i=FLOW.indexOf(o.status);
+  if(i>=FLOW.length-1) return;
+  const next=FLOW[i+1];
+  if(next==='processing'&&!canProcess(o)){
+    toast('Terkunci: bayar dulu — makanan baru boleh dibuat setelah lunas (COD hanya untuk ambil di toko)','err');
+    return;
+  }
+  o.status=next; if(next==='completed'&&!o.completedAt) o.completedAt=new Date().toISOString();
+  save(); renderSeller(); toast(`${id} → ${FLOW_LBL[next]}`,'ok');
+  if(o.status==='shipped') toast('Notifikasi FCM terkirim ke pembeli','ok');
+  if(o.status==='processing'&&o.fulfillment==='pickup') toast(`Makanan ${o.pickup.queue} masuk antrean produksi`,'ok');
+}
+function cancelOrder(id){
+  const o=state.orders.find(x=>x.id===id); o.status='cancelled'; save(); renderSeller(); toast('Pesanan dibatalkan','err');
+}
+function toggleMenu(id){ state.menuOff[id]=!state.menuOff[id]; save(); renderSellerList(); toast(state.menuOff[id]?'Paket disembunyikan dari katalog':'Paket ditampilkan','ok'); }
+
+/* ================= OFFLINE / SYNC ================= */
+function setOffline(v){
+  offline=v; $('mb-online').classList.toggle('on',!v); $('mb-offline').classList.toggle('on',v);
+  const sw=$('sw-offline'); if(sw) sw.classList.toggle('on',v);
+  toast(v?'Mode offline: data disimpan di Room DB lokal':'Kembali online','ok'); renderSyncBar();
+}
+function renderSyncBar(){
+  const bar=$('syncbar');
+  if(!state.queue.length){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  $('sync-text').textContent=`${state.queue.length} order menunggu sinkronisasi ke Firestore`;
+}
+function flushQueue(){
+  if(!offline&&state.queue.length){ state.queue=[]; save(); renderSyncBar(); renderOrders(); toast('Semua data tersinkron ke Firestore','ok'); }
+  else toast('Masih offline — sinkronisasi ditunda','err');
+}
+
+/* ================= INIT ================= */
+renderSyncBar();
+</script>
+</body>
+</html>

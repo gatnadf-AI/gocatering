@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>goCatering - Prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+            border: 12px solid #1a1a1a;
+        }
+
+        .screen {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
+            padding: 16px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header .back-btn {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .header .menu-btn {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 8px 0;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #1976D2;
+        }
+
+        .btn-secondary {
+            background: #757575;
+        }
+
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+        }
+
+        .btn-success:hover {
+            background: #388E3C;
+        }
+
+        .input-group {
+            margin: 16px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        /* Login Screen */
+        .logo-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            color: #FF6B35;
+            margin-bottom: 10px;
+        }
+
+        .logo-sub {
+            font-size: 24px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-btn:hover {
+            border-color: #2196F3;
+            background: #E3F2FD;
+        }
+
+        .role-btn.active {
+            border-color: #2196F3;
+            background: #E3F2FD;
+        }
+
+        .role-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        /* Catalog Screen */
+        .total-bar {
+            background: #f0f0f0;
+            padding: 12px 16px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .package-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .package-card {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .package-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .package-card.selected {
+            border-color: #2196F3;
+            box-shadow: 0 0 0 2px #2196F3;
+        }
+
+        .package-img {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .package-info {
+            padding: 12px;
+        }
+
+        .package-name {
+            font-weight: bold;
+            color: #E91E63;
+            margin-bottom: 4px;
+        }
+
+        .package-price {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Checkout Screen */
+        .checkout-section {
+            margin: 20px 0;
+        }
+
+        .checkout-section h3 {
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .quantity-selector button {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .quantity-selector span {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Order Status */
+        .order-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .order-id {
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-new { background: #FFF3E0; color: #E65100; }
+        .status-confirmed { background: #E3F2FD; color: #1565C0; }
+        .status-processing { background: #F3E5F5; color: #6A1B9A; }
+        .status-shipped { background: #E8F5E9; color: #2E7D32; }
+        .status-completed { background: #E0F2F1; color: #00695C; }
+
+        .order-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .modal h3 {
+            margin-bottom: 12px;
+        }
+
+        .modal p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Seller Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom-color: #2196F3;
+            color: #2196F3;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <!-- Login Screen -->
+        <div class="screen active" id="screen-login">
+            <div class="header">goCatering</div>
+            <div class="content">
+                <div class="logo-container">
+                    <div class="logo">GO</div>
+                    <div class="logo-sub">CATERING</div>
+                </div>
+                
+                <div class="role-selector">
+                    <div class="role-btn active" onclick="selectRole('buyer')">
+                        <div class="role-icon">🛒</div>
+                        <div>Pembeli</div>
+                    </div>
+                    <div class="role-btn" onclick="selectRole('seller')">
+                        <div class="role-icon">👨‍🍳</div>
+                        <div>Penjual</div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" placeholder="email@example.com">
+                </div>
+                
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
+                </div>
+
+                <button class="btn" onclick="login()">Login</button>
+                <button class="btn btn-secondary" onclick="showScreen('screen-register')">Daftar</button>
+            </div>
+        </div>
+
+        <!-- Register Screen -->
+        <div class="screen" id="screen-register">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('screen-login')">←</button>
+                Daftar
+            </div>
+            <div class="content">
+                <div class="input-group">
+                    <label>Nama</label>
+                    <input type="text" id="reg-name" placeholder="Nama lengkap">
+                </div>
+                
+                <div class="input-group">
+                    <label>No. Handphone</label>
+                    <input type="tel" id="reg-phone" placeholder="081234567890">
+                </div>
+                
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" placeholder="email@example.com">
+                </div>
+                
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" placeholder="••••••••">
+                </div>
+
+                <button class="btn" onclick="register()">Simpan</button>
+            </div>
+        </div>
+
+        <!-- Catalog Screen (Buyer) -->
+        <div class="screen" id="screen-catalog">
+            <div class="header">
+                <div class="menu-btn" onclick="showMenu()">⋮</div>
+                goCatering
+            </div>
+            <div class="total-bar">
+                TotalHarga: Rp. <span id="total-price">0</span>
+            </div>
+            <div class="content">
+                <div class="package-grid" id="package-grid">
+                    <!-- Packages will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkout Screen -->
+        <div class="screen" id="screen-checkout">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('screen-catalog')">←</button>
+                CheckOut
+            </div>
+            <div class="content">
+                <div class="checkout-section">
+                    <h3>Isi Detail Paket</h3>
+                    <div id="checkout-package-info"></div>
+                    <div class="quantity-selector">
+                        <button onclick="changeQuantity(-1)">-</button>
+                        <span id="quantity-display">1</span>
+                        <button onclick="changeQuantity(1)">+</button>
+                    </div>
+                </div>
+
+                <div class="checkout-section">
+                    <h3>Isi Profil Pemesan</h3>
+                    <div class="input-group">
+                        <input type="text" id="checkout-name" placeholder="Nama">
+                    </div>
+                    <div class="input-group">
+                        <input type="tel" id="checkout-phone" placeholder="No. Handphone">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="checkout-address" placeholder="Alamat/share via WA">
+                    </div>
+                    <small style="color: #999;">* Isi alamat pemesan atau share ke no. WA kami</small>
+                </div>
+
+                <button class="btn btn-success" onclick="placeOrder()">ORDER</button>
+                <button class="btn btn-secondary" onclick="showScreen('screen-catalog')">MENU</button>
+            </div>
+        </div>
+
+        <!-- Order Success Modal -->
+        <div class="modal-overlay" id="modal-success">
+            <div class="modal">
+                <h3>✓ Pesanan Berhasil!</h3>
+                <p>Terima Kasih! Kami akan menghubungi anda secepatnya. Pastikan No. WA / HP anda aktif</p>
+                <button class="btn" onclick="closeModal('modal-success'); showScreen('screen-orders')">OK</button>
+            </div>
+        </div>
+
+        <!-- Orders Screen (Buyer) -->
+        <div class="screen" id="screen-orders">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('screen-catalog')">←</button>
+                Pesanan Saya
+            </div>
+            <div class="content" id="orders-list">
+                <!-- Orders will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Seller Dashboard -->
+        <div class="screen" id="screen-seller-dashboard">
+            <div class="header">
+                <div class="menu-btn" onclick="logout()">⋮</div>
+                Dashboard Penjual
+            </div>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-new">0</div>
+                        <div class="stat-label">Pesanan Baru</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-processing">0</div>
+                        <div class="stat-label">Diproses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-completed">0</div>
+                        <div class="stat-label">Selesai</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-revenue">0</div>
+                        <div class="stat-label">Pendapatan (Rb)</div>
+                    </div>
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab active" onclick="switchTab('new')">Baru</div>
+                    <div class="tab" onclick="switchTab('processing')">Diproses</div>
+                    <div class="tab" onclick="switchTab('completed')">Selesai</div>
+                </div>
+
+                <div id="seller-orders-list">
+                    <!-- Orders will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Modal -->
+        <div class="modal-overlay" id="modal-menu">
+            <div class="modal">
+                <h3>Menu</h3>
+                <button class="btn" onclick="closeModal('modal-menu'); showScreen('screen-orders')">Pesanan Saya</button>
+                <button class="btn btn-secondary" onclick="closeModal('modal-menu')">Kembali</button>
+                <button class="btn btn-secondary" onclick="closeModal('modal-menu'); logout()">Keluar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        let currentRole = 'buyer';
+        let currentUser = null;
+        let selectedPackage = null;
+        let quantity = 1;
+        let currentTab = 'new';
+
+        const packages = [
+            { id: 1, name: 'Paket1', price: 15000, emoji: '🍱' },
+            { id: 2, name: 'Paket2', price: 15000, emoji: '🍛' },
+            { id: 3, name: 'Paket3', price: 15000, emoji: '🍜' },
+            { id: 4, name: 'Paket4', price: 15000, emoji: '🍲' },
+            { id: 5, name: 'Paket5', price: 15000, emoji: '🥘' },
+            { id: 6, name: 'Paket6', price: 15000, emoji: '🍽️' }
+        ];
+
+        let orders = JSON.parse(localStorage.getItem('gocatering_orders') || '[]');
+
+        // Initialize
+        renderPackages();
+
+        // Functions
+        function selectRole(role) {
+            currentRole = role;
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.role-btn').classList.add('active');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId === 'screen-catalog') renderPackages();
+            if (screenId === 'screen-orders') renderOrders();
+            if (screenId === 'screen-seller-dashboard') renderSellerDashboard();
+        }
+
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                alert('Mohon isi email dan password');
+                return;
+            }
+            
+            currentUser = { email, role: currentRole, name: email.split('@')[0] };
+            
+            if (currentRole === 'buyer') {
+                showScreen('screen-catalog');
+            } else {
+                showScreen('screen-seller-dashboard');
+            }
+        }
+
+        function register() {
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            
+            if (!name || !phone || !email || !password) {
+                alert('Mohon lengkapi semua data');
+                return;
+            }
+            
+            alert('Registrasi berhasil! Silakan login.');
+            showScreen('screen-login');
+        }
+
+        function renderPackages() {
+            const grid = document.getElementById('package-grid');
+            grid.innerHTML = packages.map(pkg => `
+                <div class="package-card ${selectedPackage?.id === pkg.id ? 'selected' : ''}" 
+                     onclick="selectPackage(${pkg.id})">
+                    <div class="package-img">${pkg.emoji}</div>
+                    <div class="package-info">
+                        <div class="package-name">${pkg.name} | Rp. ${pkg.price.toLocaleString()}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectPackage(id) {
+            selectedPackage = packages.find(p => p.id === id);
+            renderPackages();
+            
+            setTimeout(() => {
+                document.getElementById('checkout-package-info').innerHTML = `
+                    <div class="order-card">
+                        <strong>${selectedPackage.name}</strong><br>
+                        Rp. ${selectedPackage.price.toLocaleString()} per paket
+                    </div>
+                `;
+                showScreen('screen-checkout');
+            }, 300);
+        }
+
+        function changeQuantity(delta) {
+            quantity = Math.max(1, quantity + delta);
+            document.getElementById('quantity-display').textContent = quantity;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            if (selectedPackage) {
+                const total = selectedPackage.price * quantity;
+                document.getElementById('total-price').textContent = total.toLocaleString();
+            }
+        }
+
+        function placeOrder() {
+            const name = document.getElementById('checkout-name').value;
+            const phone = document.getElementById('checkout-phone').value;
+            const address = document.getElementById('checkout-address').value;
+            
+            if (!name || !phone || !address) {
+                alert('Mohon lengkapi profil pemesan');
+                return;
+            }
+            
+            const order = {
+                id: 'ORD-' + Date.now(),
+                package: selectedPackage,
+                quantity: quantity,
+                total: selectedPackage.price * quantity,
+                customer: { name, phone, address },
+                status: 'new',
+                createdAt: new Date().toISOString()
+            };
+            
+            orders.push(order);
+            localStorage.setItem('gocatering_orders', JSON.stringify(orders));
+            
+            document.getElementById('modal-success').classList.add('active');
+            
+            // Reset form
+            quantity = 1;
+            document.getElementById('quantity-display').textContent = '1';
+            document.getElementById('checkout-name').value = '';
+            document.getElementById('checkout-phone').value = '';
+            document.getElementById('checkout-address').value = '';
+        }
+
+        function renderOrders() {
+            const list = document.getElementById('orders-list');
+            
+            if (orders.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <div>Belum ada pesanan</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = orders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-id">${order.id}</span>
+                        <span class="status-badge status-${order.status}">${getStatusText(order.status)}</span>
+                    </div>
+                    <div class="order-details">
+                        ${order.package.name} x ${order.quantity}<br>
+                        Total: Rp. ${order.total.toLocaleString()}<br>
+                        ${order.customer.name} - ${order.customer.phone}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'new': 'Baru',
+                'confirmed': 'Dikonfirmasi',
+                'processing': 'Diproses',
+                'shipped': 'Dikirim',
+                'completed': 'Selesai'
+            };
+            return statusMap[status] || status;
+        }
+
+        function renderSellerDashboard() {
+            const newOrders = orders.filter(o => o.status === 'new').length;
+            const processingOrders = orders.filter(o => o.status === 'processing' || o.status === 'confirmed').length;
+            const completedOrders = orders.filter(o => o.status === 'completed').length;
+            const revenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0);
+            
+            document.getElementById('stat-new').textContent = newOrders;
+            document.getElementById('stat-processing').textContent = processingOrders;
+            document.getElementById('stat-completed').textContent = completedOrders;
+            document.getElementById('stat-revenue').textContent = Math.floor(revenue / 1000);
+            
+            renderSellerOrders();
+        }
+
+        function renderSellerOrders() {
+            const list = document.getElementById('seller-orders-list');
+            const filteredOrders = orders.filter(o => {
+                if (currentTab === 'new') return o.status === 'new';
+                if (currentTab === 'processing') return o.status === 'confirmed' || o.status === 'processing';
+                if (currentTab === 'completed') return o.status === 'completed' || o.status === 'shipped';
+                return true;
+            });
+            
+            if (filteredOrders.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div>Tidak ada pesanan</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = filteredOrders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-id">${order.id}</span>
+                        <span class="status-badge status-${order.status}">${getStatusText(order.status)}</span>
+                    </div>
+                    <div class="order-details">
+                        ${order.package.name} x ${order.quantity}<br>
+                        Total: Rp. ${order.total.toLocaleString()}<br>
+                        ${order.customer.name} - ${order.customer.phone}<br>
+                        ${order.customer.address}
+                    </div>
+                    <button class="btn" style="margin-top: 12px;" onclick="updateOrderStatus('${order.id}')">
+                        Update Status
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateOrderStatus(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            const statusFlow = ['new', 'confirmed', 'processing', 'shipped', 'completed'];
+            const currentIndex = statusFlow.indexOf(order.status);
+            
+            if (currentIndex < statusFlow.length - 1) {
+                order.status = statusFlow[currentIndex + 1];
+                localStorage.setItem('gocatering_orders', JSON.stringify(orders));
+                renderSellerDashboard();
+                alert(`Status pesanan ${orderId} diubah menjadi: ${getStatusText(order.status)}`);
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderSellerOrders();
+        }
+
+        function showMenu() {
+            document.getElementById('modal-menu').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function logout() {
+            currentUser = null;
+            selectedPackage = null;
+            quantity = 1;
+            showScreen('screen-login');
+        }
+    </script>
+</body>
+</html>

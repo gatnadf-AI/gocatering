@@ -1,0 +1,15 @@
+# Dokumentasi internal: gambar hasil ekstrak "User Manual goCatering V.1.0.pdf"
+# dan screenshot QA. Bukan bagian dari prototype, tidak untuk dipublikasi.
+reference/
+
+# Alat bantu lokal: paket Python vendored (pypdf) untuk membaca PDF manual.
+.tools/
+
+# Scratch: salinan <script> yang diekstrak untuk pengecekan sintaks (node --check).
+tools/
+
+# Sistem operasi / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log
