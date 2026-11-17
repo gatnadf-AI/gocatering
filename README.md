@@ -21,7 +21,8 @@ lalu buka `https://gatnadf-AI.github.io/gocatering/gocatering-prototype-v4.html`
 
 | Berkas | Isi |
 | --- | --- |
-| `gocatering-prototype-v4.html` | **Versi utama** — checkout 4 halaman, pembayaran, login Google, profil + UU PDP, dashboard pesanan per toko |
+| `gocatering-prototype-v5.html` | **Basis pekerjaan berikutnya** — salinan persis v4, tempat fitur registrasi penjual & toko dibangun |
+| `gocatering-prototype-v4.html` | **Versi utama yang dipublikasi** — checkout 4 halaman, pembayaran, login Google, profil + UU PDP, dashboard pesanan per toko |
 | `gocatering-prototype-v3.html` | Bottom sheet "+ Tambah Pesanan" dengan carousel paket |
 | `gocatering-prototype-v2.html` | Dummy data, foto makanan, pembayaran digital |
 | `gocatering-prototype.html` | Versi dasar (v1) |
