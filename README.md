@@ -1,4 +1,4 @@
-# goCatering — Prototype Aplikasi Mobile
+# goCatering — Prototype Aplikasi Mobile (Memakai Qoder AI Alibaba
 
 Prototipe interaktif (single-file HTML) untuk aplikasi pemesanan katering **goCatering**:
 pembeli memilih paket, menentukan ambil di outlet atau diantar, membayar, lalu penjual
