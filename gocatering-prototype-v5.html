@@ -328,6 +328,15 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   .fly{display:none}
   .citem.enter,.pulse,.badge-pop{animation:none}
 }
+/* ===== v5: registrasi penjual ===== */
+.ferr{color:#c53929;font-size:11.5px;margin-top:3px;min-height:14px}
+.filein{width:100%;font-size:12px;margin-top:4px}
+.photoprev{display:none;width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid #eceff1;margin:6px 0}
+.formnav{display:flex;gap:8px;margin-top:14px}
+.formnav .btn{margin-top:0}
+.stepbar{display:flex;gap:6px;margin-bottom:8px}
+.stepbar span{flex:1;height:4px;border-radius:4px;background:#e0e6ea}
+.stepbar span.on{background:#00a08a}
 </style>
 </head>
 <body>
@@ -420,6 +429,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="field"><label>Password</label><input id="li-pass" type="password" placeholder="••••••••"></div>
         <button class="btn btn-tosca" onclick="doLogin()">LOGIN</button>
         <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-register')">Daftar</button>
+        <button class="btn btn-grey" style="margin-top:8px" onclick="toSellerReg()">Daftar sebagai penjual</button>
         <div class="divider">atau</div>
         <button class="btn btn-google" onclick="openGoogleSheet()"><span class="glogo"><span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span></span> Masuk dengan Google</button>
         <div class="hint center" style="margin-top:8px">Khusus akun pembeli. Google hanya membagikan nama, email, dan foto — no. WA diminta sekali.</div>
@@ -440,10 +450,56 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="field"><label>Password</label><input id="rg-pass" type="password" placeholder="min. 6 karakter"></div>
         <div class="field"><label>Role</label><select id="rg-role"><option value="buyer">Pembeli</option><option value="seller">Penjual (buka toko)</option></select></div>
         <div class="field" id="rg-shopfield" style="display:none"><label>Nama toko</label><input id="rg-shop" placeholder="cth: Warung Sehat"></div>
-        <button class="btn btn-tosca" onclick="doRegister()">SIMPAN</button>
+        <button class="btn btn-tosca" id="rg-cta" onclick="regCta()">SIMPAN</button>
         <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-login')">Kembali ke Login</button>
       </div>
     </div>
+
+    <!-- PENJUAL: DAFTAR 1 · DATA DIRI -->
+    <div class="view" id="v-reg-seller-1">
+      <div class="pad">
+        <div class="stepbar"><span class="on"></span><span></span></div>
+        <div class="hint" style="margin-bottom:10px"><b>Langkah 1 dari 2</b> · Data Diri Penjual</div>
+        <div class="field"><label>Gelar</label>
+          <select id="rs-gelar"><option value="">— pilih gelar —</option><option value="Tn">Tn</option><option value="Ny">Ny</option><option value="Nona">Nona</option></select>
+          <div class="ferr" id="rs-gelar-err"></div></div>
+        <div class="field"><label>Nama lengkap (sesuai KTP)</label><input id="rs-nama" placeholder="cth: Huang Budi"><div class="ferr" id="rs-nama-err"></div></div>
+        <div class="field"><label>Email Gmail</label><input id="rs-email" type="email" placeholder="nama@gmail.com"><div class="ferr" id="rs-email-err"></div></div>
+        <div class="field"><label>No. KTP (NIK)</label><input id="rs-nik" inputmode="numeric" maxlength="16" placeholder="16 digit angka"><div class="ferr" id="rs-nik-err"></div></div>
+        <div class="field"><label>No. WhatsApp pemilik</label><input id="rs-phone" placeholder="0812xxxxxxxx"><div class="ferr" id="rs-phone-err"></div></div>
+        <div class="field"><label>Foto penjual <span class="hint">(opsional)</span></label>
+          <input class="filein" id="rs-photo" type="file" accept="image/*" onchange="pickPhoto('rs-photo','rs-photo-prev','rs-photo-btn')">
+          <div><img class="photoprev" id="rs-photo-prev" alt="Pratinjau foto penjual"></div>
+          <button class="btn-sm btn-grey" id="rs-photo-btn" type="button" onclick="$('rs-photo').click()">Pilih Foto</button>
+          <div class="ferr" id="rs-photo-err"></div></div>
+        <div class="formnav"><button class="btn btn-grey" style="flex:1" onclick="go('v-login')">Batal</button>
+          <button class="btn btn-tosca" style="flex:1.5" onclick="nextIdentity()">Sesudah &rarr;</button></div>
+        <div class="hint" style="margin-top:10px">NIK menjadi penanda pemilik dan tidak dikirim ke mana pun — prototype ini hanya menyimpannya di perangkat ini. Punya lebih dari satu restoran? <b>Login dulu, lalu pilih Tambah Toko.</b></div>
+      </div>
+    </div>
+
+    <!-- PENJUAL: DAFTAR 2 · DATA TOKO -->
+    <div class="view" id="v-reg-seller-2">
+      <div class="pad">
+        <div class="stepbar"><span class="on"></span><span class="on"></span></div>
+        <div class="hint" style="margin-bottom:10px"><b>Langkah 2 dari 2</b> · Data Toko</div>
+        <div class="field"><label>Nama restoran</label><input id="rs-shop" placeholder="cth: Warung Huang"><div class="ferr" id="rs-shop-err"></div></div>
+        <div class="field"><label>Alamat fisik restoran</label><textarea id="rs-addr" rows="2" placeholder="Jalan, nomor, kelurahan, kota"></textarea><div class="ferr" id="rs-addr-err"></div></div>
+        <div class="field"><label>Alamat di Google Maps</label><input id="rs-map" type="url" placeholder="https://maps.app.goo.gl/…"><div class="ferr" id="rs-map-err"></div></div>
+        <div class="field"><label>No. WhatsApp customer service</label><input id="rs-cs" placeholder="0821xxxxxxxx"><div class="ferr" id="rs-cs-err"></div></div>
+        <div class="field"><label>Foto restoran <span class="hint">(opsional)</span></label>
+          <input class="filein" id="rs-shop-photo" type="file" accept="image/*" onchange="pickPhoto('rs-shop-photo','rs-shop-photo-prev','rs-shop-photo-btn')">
+          <div><img class="photoprev" id="rs-shop-photo-prev" alt="Pratinjau foto restoran"></div>
+          <button class="btn-sm btn-grey" id="rs-shop-photo-btn" type="button" onclick="$('rs-shop-photo').click()">Pilih Foto</button>
+          <div class="ferr" id="rs-shop-photo-err"></div></div>
+        <div class="formnav"><button class="btn btn-grey" style="flex:1" onclick="go('v-reg-seller-1')">&larr; Sebelum</button>
+          <button class="btn btn-tosca" style="flex:1.5" onclick="submitSellerForm()">Sesudah · DAFTARKAN</button></div>
+        <div class="hint" style="margin-top:10px">Nomor customer service boleh berbeda dari nomor pemilik. Ini yang terlihat pembeli saat menyentuh kode restoran.</div>
+      </div>
+    </div>
+
+    <!-- PENJUAL: AKUN TERBIT (dipakai Task 6) -->
+    <div class="view" id="v-reg-done"><div class="pad"><div id="reg-done-body"></div></div></div>
 
     <!-- BUYER: SHOPS -->
     <div class="view" id="v-shops"><div class="pad" style="padding-bottom:4px"><div class="hint">Pilih toko catering. Setiap toko punya paket &amp; penjual sendiri.</div></div><div id="shop-list" style="padding-bottom:14px"></div></div>
@@ -1041,13 +1097,16 @@ function load(){
   s._imported=imported;
   return ensureSchema(s);
 }
+/* Isilan antar-langkah wizard bukan data permanen, dan newUser membawa password:
+   keduanya dibuang sebelum ditulis, supaya tidak tertinggal di localStorage. */
+function stripTemp(s){ const c=JSON.parse(JSON.stringify(s)); ['tmpSeller','tmpShop','newUser'].forEach(k=>delete c[k]); return c }
 function save(){
-  const copy=JSON.parse(JSON.stringify(state));
+  const copy=stripTemp(state);
   cryptRows(copy.owners,CRYPT.owners,enc); cryptRows(copy.shops,CRYPT.shops,enc);
   try{ localStorage.setItem(KEY,JSON.stringify(copy)); return true; }
   catch(e){
     /* kuota penuh: ulangi tanpa foto (foto memang opsional, lihat spec §8) */
-    const slim=JSON.parse(JSON.stringify(state));
+    const slim=stripTemp(state);
     (slim.shops||[]).forEach(s=>{ if(String(s.photo||'').indexOf('data:')===0) s.photo=''; });
     Object.values(slim.owners||{}).forEach(o=>{ if(String(o.photo||'').indexOf('data:')===0) o.photo=''; });
     cryptRows(slim.owners,CRYPT.owners,enc); cryptRows(slim.shops,CRYPT.shops,enc);
@@ -1058,7 +1117,7 @@ function save(){
 }
 /* save() versi jujur: localStorage punya kuota ±5 MB, foto bukti pengambilan
    bisa membuatnya penuh. Dipakai di alur yang menyimpan data besar. */
-function saveOr(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); return true; }catch(e){ return false; } }
+function saveOr(){ try{ localStorage.setItem(KEY,JSON.stringify(stripTemp(state))); return true; }catch(e){ return false; } }
 function resetData(){ localStorage.removeItem(KEY); state=load(); save(); toast('Data demo direset','ok'); logout(); }
 
 /* ================= UTIL ================= */
@@ -1150,9 +1209,11 @@ function renderChrome(view){
   const buyer=['v-shops','v-catalog','v-orders','v-profile','v-checkout','v-co-ff','v-co-profil','v-co-pay'].includes(view);
   $('bnav').style.display=(['v-shops','v-catalog','v-orders','v-profile'].includes(view))?'flex':'none';
   document.querySelectorAll('.bnav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===view));
-  $('ab-back').style.display=['v-register','v-catalog','v-checkout','v-co-ff','v-co-profil','v-co-pay','v-payment','v-profile','v-sdash'].includes(view)?'block':'none';
+  $('ab-back').style.display=['v-register','v-reg-seller-1','v-reg-seller-2','v-catalog','v-checkout','v-co-ff','v-co-profil','v-co-pay','v-payment','v-profile','v-sdash'].includes(view)?'block':'none';
   $('ab-menu').style.display=['v-shops','v-catalog','v-orders','v-profile','v-seller'].includes(view)?'block':'none';
-  const titles={'v-login':['Newgocatering',''],'v-register':['Daftar','Isi biodata pengguna'],'v-shops':['Pilih Toko','Pembeli: '+(state.user?.name||'')],
+  const titles={'v-login':['Newgocatering',''],'v-register':['Daftar','Isi biodata pengguna'],
+    'v-reg-seller-1':['Daftar Penjual','1 · Data Diri'],'v-reg-seller-2':['Daftar Penjual','2 · Data Toko'],
+    'v-shops':['Pilih Toko','Pembeli: '+(state.user?.name||'')],
     'v-catalog':[currentShop?currentShop.name:'goCatering',currentShop?currentShop.tagline:''],'v-checkout':['CheckOut','1 · Isi Detail Paket'],
     'v-co-ff':['CheckOut','2 · Metode Pengambilan'],'v-co-profil':['CheckOut','3 · Profil Pemesan'],'v-co-pay':['CheckOut','4 · Metode Pembayaran'],
     'v-payment':['Pembayaran','goPay / QRIS / VA'], 'v-orders':['Pesanan Saya',''],'v-profile':['Profil',''],
@@ -1206,6 +1267,116 @@ function doRegister(){
   state.users[e]={password:pw,name:n,phone:p,role:r,shopName:r==='seller'?$('rg-shop').value.trim():''}; save();
   toast('Registrasi berhasil. Silakan login.','ok'); $('li-email').value=e; $('li-pass').value=pw; pickRole(r); go('v-login',false);
 }
+
+/* ================= REGISTRASI PENJUAL (spec §4, §5.1–5.2) =================
+   Dua layar: langkah 1 data diri, langkah 2 data toko. Nilai antar-langkah
+   ditahan di state.tmpSeller / state.tmpShop dan TIDAK PERNAH disimpan —
+   baru masuk basis data setelah submitSellerForm() di Task 6.
+   Catatan: kualitas JPEG foto registrasi memakai REG_PHOTO_Q (0.7) supaya
+   PHOTO_Q=0.6 milik foto bukti ambil (B.4) tidak ikut berubah. */
+const PHOTO_MAX_PX=640, PHOTO_MAX_BYTES=8*1024*1024, REG_PHOTO_Q=0.7;
+function fv(id){ const el=$(id); return el?String(el.value||'').trim():'' }
+function setErr(id,msg){ const e=$(id+'-err'); if(e) e.textContent=msg||''; return !!msg }
+function readPhoto(id){ const el=$(id); return (el&&el.dataset&&el.dataset.photo)||'' }
+function photoErr(file){
+  if(!file) return 'Tidak ada file dipilih';
+  if(!/^image\//.test(file.type||'')) return 'File bukan gambar';
+  if(file.size>PHOTO_MAX_BYTES) return 'Foto terlalu besar';
+  return '';
+}
+function validateIdentity(){
+  const e={};
+  const gelar=fv('rs-gelar'); if(GELAR.indexOf(gelar)<0) e.gelar='Pilih gelar (Tn / Ny / Nona)';
+  const nama=fv('rs-nama'); if(!NAME_OK.test(nama)) e.nama='Nama minimal 3 huruf, tanpa angka atau tanda khusus';
+  const email=fv('rs-email').toLowerCase();
+  if(!RE_GMAIL.test(email)) e.email='Email harus berakhiran @gmail.com';
+  else if(state.users[email]) e.email='Email sudah dipakai akun pembeli, pakai email lain';
+  else if(findOwner('email',email)) e.email='Email sudah terdaftar sebagai penjual — login saja';
+  const nik=fv('rs-nik');
+  if(!RE_NIK.test(nik)) e.nik='NIK harus 16 digit angka';
+  else { const o=findOwner('nik',nik); if(o) e.nik='NIK sudah terdaftar atas nama '+o.nama+'. Login dulu, lalu pilih Tambah Toko'; }
+  const phone=fv('rs-phone').replace(/[\s-]/g,'');
+  if(!RE_PHONE.test(phone)) e.phone='Nomor WA tidak valid — contoh 081234567890';
+  const order=[['rs-gelar',e.gelar],['rs-nama',e.nama],['rs-email',e.email],['rs-nik',e.nik],['rs-phone',e.phone]];
+  order.forEach(p=>setErr(p[0],p[1]||''));
+  const first=order.find(p=>p[1]);
+  return {ok:!first, first:first?first[0]:'', values:{gelar,nama,email,nik,phone}};
+}
+function validateShop(){
+  const e={};
+  const name=fv('rs-shop');
+  if(name.length<3) e.shop='Nama restoran minimal 3 huruf';
+  else if(state.shops.some(s=>String(s.name).toLowerCase()===name.toLowerCase())) e.shop='Nama restoran sudah dipakai';
+  const addr=fv('rs-addr'); if(addr.length<10) e.addr='Alamat fisik belum lengkap (min. 10 karakter)';
+  const mapUrl=fv('rs-map'); if(!RE_MAP.test(mapUrl)) e.map='Tempel link Google Maps (https://maps…)';
+  const csWa=fv('rs-cs').replace(/[\s-]/g,''); if(!RE_PHONE.test(csWa)) e.cs='No. WhatsApp customer service tidak valid';
+  const order=[['rs-shop',e.shop],['rs-addr',e.addr],['rs-map',e.map],['rs-cs',e.cs]];
+  order.forEach(p=>setErr(p[0],p[1]||''));
+  const first=order.find(p=>p[1]);
+  return {ok:!first, first:first?first[0]:'', values:{name,addr,mapUrl,csWa,photo:readPhoto('rs-shop-photo')}};
+}
+/* validasi form daftar biasa; dipakai regCta() sebelum melompat ke wizard penjual */
+function buyerFormOk(){
+  const n=fv('rg-name'),p=fv('rg-phone'),e=fv('rg-email').toLowerCase(),pw=($('rg-pass').value||'');
+  if(!n||!p||!e||!pw){ toast('Lengkapi semua biodata','err'); return false }
+  if(pw.length<6){ toast('Password minimal 6 karakter','err'); return false }
+  if(state.users[e]){ toast('Email sudah terdaftar, silakan login','err'); return false }
+  if(findOwner('email',e)){ toast('Email ini akun penjual — pilih role Penjual saat login','err'); return false }
+  state.newUser={name:n,phone:p,email:e,password:pw};
+  return true;
+}
+function regCta(){
+  if($('rg-role').value!=='seller') return doRegister();
+  if(!buyerFormOk()) return;
+  toSellerReg();
+}
+function toSellerReg(){
+  pickRole('seller');
+  const u=state.newUser||{};
+  go('v-reg-seller-1');
+  /* hanya pra-isi kalau langkah 1 masih kosong, supaya tombol "Sebelum" tidak menimpa */
+  if(!fv('rs-nama')){
+    $('rs-nama').value=u.name||''; $('rs-email').value=u.email||''; $('rs-phone').value=u.phone||'';
+  }
+}
+function nextIdentity(){
+  const v=validateIdentity();
+  if(!v.ok){ toast('Periksa lagi isian Data Diri Penjual','err'); $(v.first).focus(); return }
+  v.values.photo=readPhoto('rs-photo');
+  state.tmpSeller=v.values;
+  if(!fv('rs-cs')) $('rs-cs').value=v.values.phone;      /* default, boleh diganti (spec §2 butir 7) */
+  go('v-reg-seller-2');
+}
+/* pratinjau & kompresi foto (spec §2 butir 5) — memakai shrinkImage() yang sudah ada */
+function pickPhoto(inpId,prevId,btnId){
+  const inp=$(inpId), file=(inp.files||[])[0];
+  const msg=photoErr(file);
+  if(msg){ inp.value=''; setErr(inpId,msg); toast(msg,'err'); return }
+  setErr(inpId,'');
+  compressImage(file).then(url=>{
+    inp.dataset.photo=url;
+    const p=$(prevId); p.src=url; p.style.display='block';
+    $(btnId).textContent='Ganti Foto';
+    toast('Foto siap (dikompres '+PHOTO_MAX_PX+' px)','ok');
+  }).catch(err=>{ inp.value=''; delete inp.dataset.photo; setErr(inpId,err.message); toast(err.message,'err'); });
+}
+function compressImage(file,opt){
+  opt=opt||{}; const max=opt.max||PHOTO_MAX_PX, q=opt.q||REG_PHOTO_Q;
+  return new Promise((resolve,reject)=>{
+    const bad=photoErr(file); if(bad) return reject(new Error(bad));
+    const fr=new FileReader();
+    fr.onerror=()=>reject(new Error('Gagal membaca berkas'));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('File bukan gambar'));
+      img.onload=()=>resolve(shrinkImage(img,max,q));
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+/* stub: Task 6 yang mengisi isi sebenarnya */
+function submitSellerForm(){ toast('Menyelesaikan registrasi… (Task 6)'); }
 /* ---------- LOGIN GOOGLE (simulasi OAuth) ----------
    Google hanya membagikan nama, email, foto. No. WA & alamat rumah diminta sekali
    lalu disimpan ke database pembeli (state.users[email]). */
@@ -1310,7 +1481,13 @@ function fillDemo(w){
   go('v-login',false); toast('Form terisi — tinggal klik LOGIN');
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  $('rg-role').onchange=e=>$('rg-shopfield').style.display=e.target.value==='seller'?'block':'none';
+  /* Nama toko tidak lagi diminta di form daftar biasa — pengisian toko pindah
+     ke wizard 2 langkah (v-reg-seller-1/2), jadi field lama tetap tersembunyi. */
+  $('rg-role').onchange=e=>{
+    const seller=e.target.value==='seller';
+    $('rg-shopfield').style.display='none';
+    $('rg-cta').textContent=seller?'DAFTARKAN TOKO':'SIMPAN';
+  };
   $('clock').textContent=nowLbl();
   setInterval(()=>{
     $('clock').textContent=nowLbl();

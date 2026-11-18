@@ -948,7 +948,38 @@ git commit -m "feat(v5): state.owners & state.shops sebagai sumber tunggal + mig
   - `PHOTO_MAX_PX=640`, `PHOTO_Q=0.7`, `PHOTO_MAX_BYTES=8*1024*1024`
   - `state.tmpSeller`, `state.tmpShop` (tempat singgah antar langkah, tidak pernah disimpan)
 
-- [ ] **Step 1: Tulis uji yang gagal**
+- [x] **Step 1: Tulis uji yang gagal**
+
+> **Catatan rekonsiliasi Task 5 (ditemukan saat eksekusi, sudah diperbaiki):**
+> 1. `const PHOTO_MAX_PX=640, PHOTO_Q=0.7` di Step 5 tidak bisa dipakai apa adanya — v5
+>    sudah punya `const PHOTO_MAX=480, PHOTO_Q=0.6` untuk foto bukti ambil (B.4). Redeklarasi
+>    `const` adalah SyntaxError, dan menaikkan `PHOTO_Q` diam-diam mengubah fitur itu.
+>    Yang dibuat: `PHOTO_MAX_PX=640`, `PHOTO_MAX_BYTES=8MB`, dan kualitas baru bernama
+>    `REG_PHOTO_Q=0.7`. Uji `photoErr` kini menegaskan kedua pasang angka: registrasi
+>    `640:0.7`, bukti ambil tetap `480:0.6`.
+> 2. `compressImage()` tidak menggambar canvas sendiri; ia memanggil `shrinkImage(img,max,q)`
+>    yang sudah ada (satu jalur kompresi untuk seluruh aplikasi).
+> 3. Blok uji Step 1 punya dua cacat:
+>    - contoh alamat "terlalu pendek" `'Jl. Singkat'` panjangnya 11 karakter sehingga justru
+>      LOLOS di ambang spec §4 (min. 10). Diganti `'Jl.'`.
+>    - `form(b, {...}); has(b.els.get('rs-shop-err')...)` tanpa memanggil `validateShop()`
+>      di antaranya membaca pesan **sisa** validasi sebelumnya. Setiap kasus sekarang direset
+>      ke `GOOD_SHOP` lalu divalidasi, sehingga `r.first` juga ikut teruji.
+> 4. Uji "email milik pembeli ditolak" memakai `budi@mail.com`, yang tertahan di aturan Gmail
+>    lebih dulu sehingga pesan "akun pembeli" tidak pernah muncul. Sekarang akun Gmail dibuat
+>    lebih dulu sebelum validasi; cabang email penjual (`login saja`) juga diuji. Konsekuensi
+>    yang perlu diputuskan Task 6/7: selama registrasi wajib Gmail, cabang "email sudah
+>    terdaftar sebagai penjual" tidak terjangkau data contoh beralamat `@gocatering.id`.
+> 5. Klaim "tmpSeller/tmpShop tidak pernah disimpan" (baris 949) belum ada penjagaannya:
+>    `save()`/`saveOr()` menulis `state` apa adanya, sehingga isian wizard dan `newUser`
+>    (berisi password) ikut masuk `localStorage`. Ditambahkan `stripTemp()` yang membuang
+>    `tmpSeller`, `tmpShop`, `newUser` dari salinan sebelum ditulis, plus uji yang membacanya
+>    langsung dari `localStorage`.
+> 6. Judul layar `v-reg-seller-1`/`v-reg-seller-2` dan tombol `ab-back` ditambah di Task 5
+>    (rencana menundanya ke Task 6) karena Task 5-lah yang memperkenalkan layarnya, dan
+>    Step 8 meminta layar itu dicek di browser.
+> 7. Harness lokal (`tools/harness.js`) kini merekam `document.addEventListener` dan
+>    menyediakan `b.fire(type)`, supaya handler `DOMContentLoaded` (Step 6) bisa diuji.
 
 ```js
 console.log('\n== TASK 5 — validasi form registrasi ==');
@@ -1024,11 +1055,11 @@ t('photoErr menolak berkas cacat sebelum membaca isinya', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan, pastikan gagal**
+- [x] **Step 2: Jalankan, pastikan gagal**
 
 Run: `node tools/test.js` → blok Task 5 GAGAL (`validateIdentity is not defined`), Task 1–4 hijau.
 
-- [ ] **Step 3: Markup dua layar (sisipkan setelah blok `<!-- REGISTER -->` penutup `</div>`-nya, v4:408)**
+- [x] **Step 3: Markup dua layar (sisipkan setelah blok `<!-- REGISTER -->` penutup `</div>`-nya, v4:408)**
 
 ```html
     <!-- PENJUAL: DAFTAR 1 · DATA DIRI -->
@@ -1084,7 +1115,7 @@ Run: `node tools/test.js` → blok Task 5 GAGAL (`validateIdentity is not define
 function submitSellerForm(){ toast('Menyelesaikan registrasi… (Task 6)'); }
 ```
 
-- [ ] **Step 4: CSS (tepat sebelum `</style>`)**
+- [x] **Step 4: CSS (tepat sebelum `</style>`)**
 
 ```css
 /* ===== v5: registrasi penjual ===== */
@@ -1098,7 +1129,7 @@ function submitSellerForm(){ toast('Menyelesaikan registrasi… (Task 6)'); }
 .stepbar span.on{background:#00a08a}
 ```
 
-- [ ] **Step 5: Fungsi validasi & navigasi (setelah `doRegister()`, v4:909)**
+- [x] **Step 5: Fungsi validasi & navigasi (setelah `doRegister()`, v4:909)**
 
 ```js
 /* ================= REGISTRASI PENJUAL ================= */
@@ -1210,7 +1241,7 @@ function compressImage(file,opt){
 }
 ```
 
-- [ ] **Step 6: Tombol daftar & role**
+- [x] **Step 6: Tombol daftar & role**
 
 Ganti tombol SIMPAN di `v-register` (v4:406):
 
@@ -1234,15 +1265,15 @@ Tambahkan satu tautan di layar login, sesudah tombol `Daftar` (v4:384):
         <button class="btn btn-grey" style="margin-top:8px" onclick="toSellerReg()">Daftar sebagai penjual</button>
 ```
 
-- [ ] **Step 7: Jalankan test sampai hijau**
+- [x] **Step 7: Jalankan test sampai hijau**
 
 Run: `node tools/test.js` → Task 1–5 hijau.
 
-- [ ] **Step 8: Cek browser (klik nyata)**
+- [x] **Step 8: Cek browser (klik nyata)**
 
 Clear storage → muat → klik `Daftar` → pilih Role `Penjual (buka toko)` (label tombol harus berubah jadi `DAFTARKAN TOKO`) → isi 4 biodata → `DAFTARKAN TOKO` → layar `v-reg-seller-1` tampil dengan nama/email/WA sudah terisi → kosongkan NIK lalu klik `Sesudah →` → pesan "NIK harus 16 digit" muncul di bawah field → isi NIK demo Andi `3578010203044567` → pesan "sudah terdaftar … Tambah Toko". `list_console_messages` kosong.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add gocatering-prototype-v5.html tools/test.js
