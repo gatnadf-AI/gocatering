@@ -1296,7 +1296,38 @@ git commit -m "feat(v5): layar registrasi penjual 2 langkah, validasi, dan foto 
   - `doLogin()` berbasis role; `state.user = {email,name,role:'seller',ownerKey}`
   - View `v-reg-done` dengan `#reg-done-body` diisi oleh `renderRegDone()`
 
-- [ ] **Step 1: Tulis uji yang gagal**
+**Catatan rekonsiliasi Task 6 (dibaca dari berkas, bukan dari asumsi):**
+
+1. `renderShops()` ternyata masih memetakan konstanta lama `SHOPS`, bukan
+   `state.shops` — tanpa diubah, uji "toko baru tampil di katalog pembeli" mustahil
+   hijau. Sumber daftar dipindah ke `_shopList()` (satu baris; `Files:` rencana
+   tidak menyebutnya).
+2. Cabang `if(o.mustReset){ … go('v-s-reset') }` pada `doLogin()` sengaja **mundur
+   ke Task 7**. Layar `v-s-reset` dan `#np-hint` baru ditulis di sana, jadi
+   memanggilnya sekarang menghasilkan layar kosong + `TypeError` dan langkah 7
+   cek browser tidak bisa diselesaikan. Task 6 mengunci flag `mustReset`,
+   Task 7 yang membacanya.
+3. `state.regCreds` membawa password plaintext, jadi ikut dibuang `stripTemp()`
+   bersama `tmpSeller`/`tmpShop`/`newUser`; uji menambah `hasnt(raw, 'regCreds')`.
+4. `ensureSchema()` menormalkan `s.user = s.user || null` supaya "tidak ada sesi"
+   punya satu bentuk (uji mengharapkan `null`, bukan kunci yang hilang).
+5. Bug warisan v4 yang ketutup lewat jalur ini: `logout()` tidak `save()`, sehingga
+   sesi lama bangkit lagi setelah muat ulang (terbukti di browser: `state.user`
+   pembeli masih ada padahal layar login). Sekarang `logout()` menyimpan.
+6. `renderRegDone()` memakai ikon `✅` 44px seperti layar "Terima Kasih" (v5:2171);
+   `<div class="logo">` pada rencana adalah wordmark oranye 52px, bukan medali.
+   Semua sisipan lewat `esc()`.
+7. `currentShop=shopOf(o.shops[0])` tetap dipertahankan saat login penjual karena
+   sheet "＋ Tambah Pesanan" di dashboard membaca `currentShop` (v5:1778).
+   Sinkronisasi dengan toko aktif baru terjadi di Task 8 (`setSellerShop`).
+8. `v-reg-done` sengaja tidak diberi tombol back: kembali ke wizard setelah akun
+   terbit hanya menghasilkan validasi yang sudah pasti gagal.
+9. `nextShopCode()` (Task 3) menyaring dengan `s.ownerOwnerKey` yang tidak pernah
+   ada di objek toko, jadi running selalu mulai dari 1 dan baru naik lewat loop
+   tumbukan. Hasilnya tetap benar untuk semua kasus yang diuji (`H4567001`,
+   `A4567001`→`A4567002`); dibiarkan sampai Task 8 menuntutnya.
+
+- [x] **Step 1: Tulis uji yang gagal**
 
 ```js
 console.log('\n== TASK 6 — akun terbit & login ==');
@@ -1374,11 +1405,11 @@ t('login: email/password penjual, arah role yang salah, dan sesi pemilik', () =>
 });
 ```
 
-- [ ] **Step 2: Jalankan, pastikan gagal**
+- [x] **Step 2: Jalankan, pastikan gagal**
 
 Run: `node tools/test.js` → blok Task 6 GAGAL (`submitRegistration is not defined` dsb.).
 
-- [ ] **Step 3: `addShop` + `submitRegistration` + dispatcher (setelah `nextIdentity()`)**
+- [x] **Step 3: `addShop` + `submitRegistration` + dispatcher (setelah `nextIdentity()`)**
 
 ```js
 function addShop(ownerKey,form){
@@ -1446,7 +1477,7 @@ function gotoLoginAsSeller(){
 function submitAddShop(){ toast('Tambah toko tersedia setelah Task 8','err'); }
 ```
 
-- [ ] **Step 4: Ganti `doRegister()` dan `doLogin()`**
+- [x] **Step 4: Ganti `doRegister()` dan `doLogin()`**
 
 `doRegister()` (pemanggilnya sekarang `regCta()`):
 
@@ -1486,7 +1517,7 @@ function doLogin(){
 }
 ```
 
-- [ ] **Step 5: Judul layar untuk view baru (di `renderChrome`, tambahkan entri)**
+- [x] **Step 5: Judul layar untuk view baru (di `renderChrome`, tambahkan entri)**
 
 ```js
     'v-reg-seller-1':['Daftar Penjual','1 · Data Diri Penjual'],
@@ -1497,15 +1528,15 @@ function doLogin(){
 
 Tambahkan juga `'v-reg-seller-1','v-reg-seller-2','v-s-reset'` ke daftar view yang menampilkan tombol back (`$('ab-back').style.display=…`, v4:870).
 
-- [ ] **Step 6: Jalankan test sampai hijau**
+- [x] **Step 6: Jalankan test sampai hijau**
 
 Run: `node tools/test.js` → Task 1–6 hijau. Bila uji `'registrasi baru: …'` gagal karena `state.shops.length` 5 tapi kode bukan `H4567001`, periksa apakah `findOwner('nik',…)` ikut membandingkan pemilik hasil `buildShops` (NIK contoh `3578010203044567`) — NIK uji `3578090807064567` harus berbeda.
 
-- [ ] **Step 7: Cek browser penuh**
+- [x] **Step 7: Cek browser penuh**
 
 Clear storage → `Daftar` → role Penjual → isi biodata → `DAFTARKAN TOKO` → lengkapi langkah 1 (NIK `3578090807064567`) → `Sesudah →` → isi toko (`Warung Huang`, alamat panjang, `https://maps.app.goo.gl/abc`, WA `082190000101`) → `Sesudah · DAFTARKAN` → layar akun menampilkan `H4567001` + ID 6 angka + password 8 karakter → `LOGIN SEKARANG` → email terisi, password kosong → tempel password → LOGIN. Konsol bersih.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add gocatering-prototype-v5.html tools/test.js

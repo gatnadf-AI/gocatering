@@ -970,6 +970,7 @@ function ensureSchema(s){
   DEV_KEY=s.devKey;
   cryptRows(s.owners,CRYPT.owners,dec); cryptRows(s.shops,CRYPT.shops,dec);
   s.seqId=s.seqId||100000;
+  s.user=s.user||null;   /* bentuk sesi stabil: tidak ada sesi = null, bukan kunci hilang */
   if(!s.sellerShop||!s.shops.some(x=>x.id===s.sellerShop)) s.sellerShop=s.shops[0].id;
   s.schema=SCHEMA;
   return s;
@@ -1097,9 +1098,9 @@ function load(){
   s._imported=imported;
   return ensureSchema(s);
 }
-/* Isilan antar-langkah wizard bukan data permanen, dan newUser membawa password:
-   keduanya dibuang sebelum ditulis, supaya tidak tertinggal di localStorage. */
-function stripTemp(s){ const c=JSON.parse(JSON.stringify(s)); ['tmpSeller','tmpShop','newUser'].forEach(k=>delete c[k]); return c }
+/* Isilan antar-langkah wizard bukan data permanen, dan newUser/regCreds membawa
+   password: keduanya dibuang sebelum ditulis, supaya tidak tertinggal di localStorage. */
+function stripTemp(s){ const c=JSON.parse(JSON.stringify(s)); ['tmpSeller','tmpShop','newUser','regCreds'].forEach(k=>delete c[k]); return c }
 function save(){
   const copy=stripTemp(state);
   cryptRows(copy.owners,CRYPT.owners,enc); cryptRows(copy.shops,CRYPT.shops,enc);
@@ -1213,6 +1214,7 @@ function renderChrome(view){
   $('ab-menu').style.display=['v-shops','v-catalog','v-orders','v-profile','v-seller'].includes(view)?'block':'none';
   const titles={'v-login':['Newgocatering',''],'v-register':['Daftar','Isi biodata pengguna'],
     'v-reg-seller-1':['Daftar Penjual','1 · Data Diri'],'v-reg-seller-2':['Daftar Penjual','2 · Data Toko'],
+    'v-reg-done':['Akun Penjual Terbit','Simpan password sementara'],
     'v-shops':['Pilih Toko','Pembeli: '+(state.user?.name||'')],
     'v-catalog':[currentShop?currentShop.name:'goCatering',currentShop?currentShop.tagline:''],'v-checkout':['CheckOut','1 · Isi Detail Paket'],
     'v-co-ff':['CheckOut','2 · Metode Pengambilan'],'v-co-profil':['CheckOut','3 · Profil Pemesan'],'v-co-pay':['CheckOut','4 · Metode Pembayaran'],
@@ -1246,26 +1248,36 @@ function shopNames(){ const o=currentOwner(); if(!o) return ''; return o.shops.m
 function activeShop(){ return shopOf(activeShopId()); }
 function sellerOrdersFor(id){ return state.orders.filter(o=>o.shopId===id); }
 function ensureSellerShop(){ const o=currentOwner(); if(!o) return; if(o.shops.indexOf(state.sellerShop)<0){ state.sellerShop=o.shops[0]||null; sellerShopId=state.sellerShop; } }
+/* doLogin berbasis role: satu email boleh ada di dua kotak data yang berbeda,
+   tapi hanya kotak yang sesuai role yang dibaca (spec §4). */
 function doLogin(){
-  const email=$('li-email').value.trim().toLowerCase(), pass=$('li-pass').value;
+  const email=fv('li-email').toLowerCase(), pass=$('li-pass').value||'';
   if(!email||!pass) return toast('Isi email dan password dulu','err');
-  const ow=findOwner('email',email);
-  if(ow){ if(pass!==ow.password) return toast('Password penjual salah','err');
-    state.user={email:ow.email,name:ow.nama,role:'seller',ownerKey:ow.key,phone:ow.phone};
-    state.sellerShop=ow.shops[0]; sellerShopId=state.sellerShop; save(); currentShop=shopOf(ow.shops[0]);
-    go('v-seller',false); renderSeller(); toast('Selamat datang, '+ow.nama,'ok'); return; }
+  const o=findOwner('email',email), isBuyer=!!state.users[email];
+  if(role==='seller'){
+    if(!o) return toast(isBuyer?'Email ini akun pembeli — pilih role Pembeli':'Email atau password penjual salah','err');
+    if(pass!==o.password) return toast('Email atau password penjual salah','err');
+    state.user={email,name:o.nama,role:'seller',ownerKey:o.key,phone:o.phone};
+    state.sellerShop=o.shops[0]; sellerShopId=state.sellerShop; save();
+    /* sheet "Tambah Pesanan" di dashboard membaca currentShop (warisan v4) */
+    currentShop=shopOf(o.shops[0]);
+    go('v-seller',false); ensureSellerShop(); renderSeller();
+    toast('Selamat datang, '+o.nama,'ok'); return;
+  }
+  if(o) return toast('Email ini akun penjual — pilih role Penjual','err');
   if(!state.users[email]){ state.users[email]={password:pass||'1234',name:email.split('@')[0],phone:'',role:'buyer'}; save(); toast('Akun pembeli dibuat otomatis','ok'); }
   if(state.users[email].password!==pass) return toast('Password salah','err');
-  state.user={email,name:state.users[email].name,phone:state.users[email].phone||'',addr:state.users[email].addr||'',role:'buyer'}; save();
-  history=[]; go('v-shops',false); renderShops(); toast('Login berhasil','ok');
+  const r=state.users[email];
+  state.user={email,name:r.name,phone:r.phone||'',addr:r.addr||'',role:'buyer',google:!!r.google,ava:r.ava,tone:r.tone};
+  save(); history=[]; go('v-shops',false); renderShops(); toast('Login berhasil','ok');
 }
 function doRegister(){
-  const n=$('rg-name').value.trim(),p=$('rg-phone').value.trim(),e=$('rg-email').value.trim().toLowerCase(),pw=$('rg-pass').value,r=$('rg-role').value;
-  if(!n||!p||!e||!pw) return toast('Lengkapi semua biodata','err');
-  if(pw.length<6) return toast('Password minimal 6 karakter','err');
-  if(state.users[e]) return toast('Email sudah terdaftar, silakan login','err');
-  state.users[e]={password:pw,name:n,phone:p,role:r,shopName:r==='seller'?$('rg-shop').value.trim():''}; save();
-  toast('Registrasi berhasil. Silakan login.','ok'); $('li-email').value=e; $('li-pass').value=pw; pickRole(r); go('v-login',false);
+  if(!buyerFormOk()) return;
+  const u=state.newUser;
+  state.users[u.email]={password:u.password,name:u.name,phone:u.phone,role:'buyer'}; save();
+  state.newUser=null;
+  toast('Registrasi berhasil. Silakan login.','ok');
+  $('li-email').value=u.email; $('li-pass').value=u.password; pickRole('buyer'); go('v-login',false);
 }
 
 /* ================= REGISTRASI PENJUAL (spec §4, §5.1–5.2) =================
@@ -1375,8 +1387,72 @@ function compressImage(file,opt){
     fr.readAsDataURL(file);
   });
 }
-/* stub: Task 6 yang mengisi isi sebenarnya */
-function submitSellerForm(){ toast('Menyelesaikan registrasi… (Task 6)'); }
+/* ---------- KIRIM REGISTRASI (spec §5.3, §6) ----------
+   addShop() satu-satunya tempat toko baru lahir: id 6 angka, kode dari
+   aturan A.6, dan satu paket contoh supaya toko langsung bisa dipesan. */
+function addShop(ownerKey,form){
+  const o=state.owners[ownerKey]; if(!o) return null;
+  const id=newShopId(state.shops.map(s=>s.id));
+  const shop={ id, code:nextShopCode({name:o.nama,nik:o.nik,ownerKey,shops:state.shops}),
+    name:form.name, tagline:'Restoran baru di goCatering', logo:'🍽️', rating:0, sold:0,
+    /* satu paket awal supaya toko baru bisa langsung dipesan & diuji alurnya */
+    packages:[{id:'p-'+id+'-1',name:'Paket perkenalan',price:15000,img:'assets/food/nasi-kotak.jpg',
+               desc:'Paket bawaan hasil registrasi — atur lewat Menu Saya.'}],
+    ownerKey, addr:form.addr, mapUrl:form.mapUrl, csWa:form.csWa||o.phone,
+    photo:form.photo||'', builtin:false };
+  state.shops.push(shop); o.shops.push(id);
+  return shop;
+}
+/* dispatcher: wizard yang sama dipakai registrasi penuh (Task 6) dan
+   Tambah Toko untuk pemilik yang sudah login (Task 8) */
+function submitSellerForm(){
+  if(currentOwner()&&!state.tmpSeller) return submitAddShop();
+  return submitRegistration();
+}
+function submitRegistration(){
+  const sv=validateShop();
+  if(!sv.ok){ toast('Periksa lagi isian Data Toko','err'); $(sv.first).focus(); return }
+  const id=state.tmpSeller;
+  if(!id){ toast('Mulai ulang dari Data Diri Penjual','err'); go('v-reg-seller-1'); return }
+  const key=ownerKeyOf(id.nik);
+  if(state.owners[key]){ toast('NIK sudah terdaftar. Login dulu, lalu pilih Tambah Toko','err'); state.tmpSeller=null; go('v-reg-seller-1'); return }
+  const pw=tempPassword();
+  state.owners[key]={key,gelar:id.gelar,nama:id.nama,nik:id.nik,email:id.email,phone:id.phone,
+    photo:id.photo||'',password:pw,mustReset:true,createdAt:new Date().toISOString(),shops:[]};
+  const shop=addShop(key,sv.values);
+  state.tmpSeller=null; state.tmpShop=null; state.newUser=null; state.user=null;
+  /* regCreds ditahan in-memory saja (stripTemp membuangnya sebelum ditulis)
+     dan hilang lagi setelah pengguna pindah ke layar login. */
+  state.regCreds={email:id.email,code:shop.code,id:shop.id,password:pw};
+  save(); renderRegDone(); go('v-reg-done');
+}
+function renderRegDone(){
+  const c=state.regCreds||{};
+  $('reg-done-body').innerHTML=`<div class="center" style="padding:16px 0 10px">
+      <div style="font-size:44px">✅</div>
+      <h3 style="margin:10px 0 2px">Akun penjual Anda sudah terbit</h3>
+      <div class="hint">Simpan password di bawah ini — tidak ditampilkan dua kali.</div></div>
+    <div class="card" style="box-shadow:none;background:#f5f7f9">
+      <div class="oline"><span>Email</span><b>${esc(c.email||'—')}</b></div>
+      <div class="oline"><span>Kode restoran</span><b>${esc(c.code||'—')}</b></div>
+      <div class="oline"><span>ID restoran</span><b>${esc(c.id||'—')}</b></div>
+      ${c.password
+        ? `<div class="oline"><span>Password sementara</span><b style="font-family:ui-monospace,monospace;letter-spacing:1px">${esc(c.password)}</b></div>
+           <div class="hint" style="margin-top:6px">Password ini hanya tampil sekali dan wajib diganti setelah login.</div>`
+        : `<div class="hint" style="margin-top:6px">Toko bertambah. Password akun Anda tetap seperti biasa.</div>`}
+    </div>
+    <button class="btn btn-tosca" style="margin-top:12px" onclick="gotoLoginAsSeller()">LOGIN SEKARANG</button>
+    <div class="hint center" style="margin-top:8px">ID restoran hanya untuk Anda; pembeli hanya melihat kode.</div>`;
+}
+function gotoLoginAsSeller(){
+  pickRole('seller');
+  $('li-email').value=(state.regCreds&&state.regCreds.email)||'';
+  $('li-pass').value='';
+  state.regCreds=null;
+  go('v-login',false); toast('Email terisi — tempel password sementara Anda');
+}
+/* stub: Task 8 yang mengisi jalur Tambah Toko */
+function submitAddShop(){ toast('Tambah toko belum tersedia','err'); }
 /* ---------- LOGIN GOOGLE (simulasi OAuth) ----------
    Google hanya membagikan nama, email, foto. No. WA & alamat rumah diminta sekali
    lalu disimpan ke database pembeli (state.users[email]). */
@@ -1473,7 +1549,7 @@ function renderProfile(){
     : `<div class="hint" style="padding:4px 2px">Belum ada pesanan selesai. Order berstatus <b>Selesai</b> akan muncul di sini sebagai history belanja Anda.</div>`;
 }
 
-function logout(){ state.user=null; currentShop=null; cart=[]; history=[]; profileRevealed=false; pendingGoogle=null; document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-login').classList.add('on'); renderChrome('v-login'); toast('Keluar dari aplikasi'); }
+function logout(){ state.user=null; currentShop=null; cart=[]; history=[]; profileRevealed=false; pendingGoogle=null; save(); document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-login').classList.add('on'); renderChrome('v-login'); toast('Keluar dari aplikasi'); }
 function fillDemo(w){
   if(w==='buyer'){ pickRole('buyer'); $('li-email').value='budi@mail.com'; $('li-pass').value='1234'; }
   if(w==='seller1'){ pickRole('seller'); $('li-email').value=DEMO_OWNER[0].email; $('li-pass').value=DEMO_OWNER[0].password; }
@@ -1506,7 +1582,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 /* ================= PEMBELI: TOKO & KATALOG ================= */
 function renderShops(){
-  $('shop-list').innerHTML=SHOPS.map(s=>`<div class="card shopcard" role="button" tabindex="0" onclick="openShop('${s.id}')">
+  /* sumber daftar = state.shops, bukan konstanta SHOPS lama, supaya toko hasil
+     registrasi langsung terlihat pembeli */
+  $('shop-list').innerHTML=_shopList().map(s=>`<div class="card shopcard" role="button" tabindex="0" onclick="openShop('${s.id}')">
     <div class="shoplogo">${s.logo}</div>
     <div style="flex:1"><div class="shopname">${s.name}</div><div class="shopmeta">${s.tagline}</div>
     <div class="shopmeta">⭐ ${s.rating} · ${s.sold} terjual · ${s.packages.length} paket</div></div>
