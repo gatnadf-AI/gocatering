@@ -276,37 +276,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .schip{font-size:10.5px;background:#eceff1;border:0;border-radius:6px;padding:2px 7px;cursor:pointer;color:#37474f;font-family:inherit;text-align:left}
 .schip:hover{background:#d7e2e9}
 .latechip{font-size:10.5px;font-weight:700;color:#8d6e00;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:1px 6px;white-space:nowrap}
-/* --- dashboard penjual v4.2: pemilih toko + widget --- */
-.shopswitch{display:flex;gap:8px;align-items:center;padding:10px 12px 2px}
-.shopswitch .sl{font-size:11px;font-weight:800;color:var(--abu);letter-spacing:.04em}
-.swrap{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
-.swchip{flex:0 0 auto;background:#fff;border:1px solid var(--garis);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:700;color:#455a64;cursor:pointer;white-space:nowrap}
-.swchip.on{background:var(--biru);border-color:var(--biru);color:#fff}
-.swchip .rc{font-size:10.5px;font-weight:600;color:#90a4ae;margin-left:4px}
-.swchip.on .rc{color:#cfe6fb}
-.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px 2px}
-.widget{background:#fff;border:none;border-radius:13px;padding:13px;text-align:left;cursor:pointer;
-  box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:4px solid var(--biru);font:inherit}
-.widget:hover{box-shadow:0 3px 10px rgba(0,0,0,.13)}
-.widget .wn{font-size:26px;font-weight:900;line-height:1;color:var(--biru)}
-.widget .wl{font-size:11px;font-weight:800;color:#37474f;margin-top:5px;line-height:1.3}
-.widget .wd{font-size:10.5px;color:var(--abu);margin-top:3px}
-.widget.w-q{border-left-color:var(--biru)} .widget.w-q .wn{color:var(--biru-t)}
-.widget.w-x{border-left-color:#e53935} .widget.w-x .wn{color:#c62828}
-.widget.w-n{border-left-color:#ef6c00} .widget.w-n .wn{color:#e65100}
-.widget.w-d{border-left-color:var(--tosca)} .widget.w-d .wn{color:var(--tosca-t)}
-.searchbar{padding:0 12px 8px}
-.searchbar input{width:100%;border:1px solid var(--garis);border-radius:10px;padding:10px 12px;font-size:12.5px;background:#fff}
-.track{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;color:#455a64;background:#f7f9fb;border-radius:9px;padding:9px 11px;margin:8px 0 2px}
-.track .k{font-size:10.5px;font-weight:800;color:#90a4ae;text-transform:uppercase;letter-spacing:.03em}
-.track .v{font-weight:600;color:#263238;word-break:break-word}
-.track .v.money{color:var(--tosca-t)}
-.proof{display:flex;align-items:center;gap:9px;margin-top:8px;background:#e8f5e9;border-radius:9px;padding:8px 10px}
-.proof img{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#c8e6c9}
-.proof .pl{font-size:12.5px;font-weight:700;color:#1b5e20}
-.taken{display:flex;align-items:center;gap:8px;margin-top:7px;background:#e0f2f1;border-radius:9px;padding:7px 9px}
-.taken img{width:44px;height:44px;object-fit:cover;border-radius:7px;background:#b2dfdb}
-.taken b{font-size:12.5px;color:#00695c}
 /* login Google + profil (UU PDP) */
 .divider{display:flex;align-items:center;gap:10px;margin:12px 0 10px;font-size:11px;color:#90a4ae;font-weight:700}
 .divider::before,.divider::after{content:"";height:1px;background:var(--garis);flex:1}
@@ -347,14 +316,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <li><b>Batas jam 16.00 WIB.</b> Order bertanggal hari ini yang dibuat lewat jam 16.00 diberi banner &mdash; dapur mulai memasak besok, dan nomor antre terbit untuk tanggal proses. Tombol <b>Geser ke besok</b> menghapus warning.</li>
     <li><b>Jadwal Saya.</b> Satu akun pembeli bisa punya beberapa order pada tanggal berbeda; tab Pesanan menampilkan kartu per tanggal (jumlah orang, total, status belum lunas).</li>
     <li><b>Bayar sekarang</b> pada order yang tertahan (dipilih &quot;kirim order, bayar nanti&quot;) &mdash; setelah lunas, tombol &rarr; Diproses penjual terbuka.</li>
-  </ul>
-  <h2>Baru di v4.2 — manajemen pesanan penjual</h2>
-  <ul>
-    <li><b>Dashboard per toko.</b> Akun dengan lebih dari satu toko mendapat pemilih toko di atas dasbor; toko tunggal tidak menampilkan opsi. Semua angka mengikuti toko yang dipilih.</li>
-    <li><b>4 widget:</b> Antrean Pesanan, Batal &middot; Kedaluarsa, Batal &middot; Tidak Diambil, Pesanan Selesai &mdash; masing-masing bisa diklik untuk membuka detailnya.</li>
-    <li><b>Lacak per pesanan:</b> id restoran, id pesanan, rincian paket, nama &amp; no. WA pemesan, alamat, metode ambil, nomor antre, total pembayaran. Bisa dicari.</li>
-    <li><b>Kedaluarsa otomatis.</b> Order belum lunas lewat 2 jam dibatalkan sistem saat dasbor dibuka &mdash; terpisah dari batal &quot;tidak diambil&quot; yang diputuskan CS.</li>
-    <li><b>Sudah Diambil + foto.</b> CS mengisi nama pengambil dan mengunggah foto bukti (dikompres ke 480 px); pembeli langsung melihat status Selesai beserta bukti pengambilan.</li>
   </ul>
   <h2>Baru di v3</h2>
   <ul>
@@ -596,8 +557,12 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
     <!-- SELLER: DASHBOARD -->
     <div class="view" id="v-seller">
-      <div id="dash-shop"></div>
-      <div class="wgrid" id="dash-widgets"></div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="st-new">0</div><div class="l">Pesanan baru</div></div>
+        <div class="stat"><div class="n" id="st-proc">0</div><div class="l">Diproses</div></div>
+        <div class="stat"><div class="n" id="st-done">0</div><div class="l">Selesai</div></div>
+        <div class="stat"><div class="n" id="st-rev">0</div><div class="l">Omzet (Rp rb)</div></div>
+      </div>
       <div class="tabs" id="seller-tabs">
         <button class="on" data-tab="all" onclick="setTab('all')">Semua</button>
         <button data-tab="new" onclick="setTab('new')">Baru</button>        <button data-tab="confirmed" onclick="setTab('confirmed')">Dikonfirmasi</button>
@@ -607,13 +572,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <button data-tab="menu" onclick="setTab('menu')">Menu</button>
       </div>
       <div id="seller-list" style="padding:12px 0 16px"></div>
-    </div>
-
-    <!-- SELLER: DETAIL WIDGET (lacak pesanan per toko) -->
-    <div class="view" id="v-sdash">
-      <div class="pad" style="padding-bottom:6px" id="sdash-head"></div>
-      <div class="searchbar"><input id="sdash-q" placeholder="Cari id pesanan, nomor antre, atau nama pemesan" oninput="renderDashList()"></div>
-      <div id="sdash-list" style="padding:2px 0 18px"></div>
     </div>
 
   </div>
@@ -636,16 +594,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
   <div class="overlay" id="sheet-order" onclick="if(event.target===this)closeSheet('sheet-order')">
     <div class="sheet" id="sheet-order-body"></div>
-  </div>
-
-  <!-- SHEET: TANDAI SUDAH DIAMBIL (B.4 + B.5) -->
-  <div class="overlay" id="sheet-collect" onclick="if(event.target===this)closeSheet('sheet-collect')">
-    <div class="sheet" id="sheet-collect-body"></div>
-  </div>
-
-  <!-- SHEET: ALASAN PEMBATALAN (B.1) -->
-  <div class="overlay" id="sheet-cancel" onclick="if(event.target===this)closeSheet('sheet-cancel')">
-    <div class="sheet" id="sheet-cancel-body"></div>
   </div>
 
   <!-- SHEET PILIH AKUN GOOGLE (simulasi OAuth) -->
@@ -713,12 +661,6 @@ const SHOPS = [
    {id:'p18', name:'Paket Iga BBQ', price:48000, img:'assets/food/u1.jpg', desc:'Iga bakar, kentang, saus BBQ'},
    {id:'p19', name:'Paket Nasi Lemak', price:20000, img:'assets/food/u8.jpg', desc:'Nasi santan, ayam, sambal, telur'}]}
 ];
-
-/* Kode restoran (aturan A.6: inisial pemilik + 4 digit NIK + running number).
-   Toko demo dipatok di peta ini supaya kodenya stabil; toko hasil registrasi A
-   membawa s.rcode sendiri. ID restoran 6 angka untuk seller = shopId yang ada. */
-const RCODE = {'rm-sederhana':'A4567701','kekinian-food':'A4567703','dapur-nusantara':'S4567702','catering-sehat':'S4567704'};
-function rcodeOf(id){ const s=shopOf(id); return (s&&(s.rcode||RCODE[s.id]))||'—'; }
 
 const SELLERS = {
  seller1:{email:'rm.sederhana@gocatering.id', password:'seller123', name:'Andi (RM Sederhana)', shops:['rm-sederhana','kekinian-food']},
@@ -803,27 +745,8 @@ function seed(){
     fulfillment:'delivery', delivery:DEL('grab',6), deliveryFee:54000,
     buyer:{name:'Kevin Tan',phone:'081234567007',addr:'Grand City Office Tower 9F',note:''}, createdAt:d(2), paidAt:d(2)}),
    mk({id:'GC-2411-00A8', shopId:'rm-sederhana', items:[S('p5',2)], fee:0, method:'va', payStatus:'failed', status:'cancelled',
-    cancelReason:'expired',
     fulfillment:'delivery', delivery:DEL('gosend',2), deliveryFee:16000,
-    buyer:{name:'Joko Susilo',phone:'081234567008',addr:'Jl. Ahmad Yani 45',note:'Batal: VA tidak dibayar'}, createdAt:d(3)}),
-   /* --- v4.2 manajemen pesanan: contoh tiap keranjang widget terisi --- */
-   mk({id:'GC-2411-00B1', shopId:'rm-sederhana', items:[S('p4',6)], fee:0, method:'qris', payStatus:'paid', status:'cancelled',
-    cancelReason:'notcollected',
-    fulfillment:'pickup', pickup:{date:dt(1), slot:0, queue:'A-011'},
-    buyer:{name:'Hendra Gunawan',phone:'081234567011',addr:'Ambil sendiri di toko',note:'Janji ambil jam 11.00'}, createdAt:d(2), paidAt:d(2),
-    collected:null, cancelNote:'Slot 11.00–13.00 lewat, pembeli tidak datang'}),
-   mk({id:'GC-2411-00B2', shopId:'dapur-nusantara', items:[S('p9',8)], fee:700, method:'cod', payStatus:'cod', status:'cancelled',
-    cancelReason:'notcollected',
-    fulfillment:'pickup', pickup:{date:dt(2), slot:2, queue:'B-009'},
-    buyer:{name:'Yuliana Sari',phone:'081234567012',addr:'Ambil sendiri di toko',note:''}, createdAt:d(3)}),
-   mk({id:'GC-2411-00B3', shopId:'catering-sehat', items:[S('p14',4)], fee:700, method:'qris', payStatus:'pending', status:'cancelled',
-    cancelReason:'expired',
-    fulfillment:'delivery', delivery:DEL('grab',5), deliveryFee:45000,
-    buyer:{name:'Bagas Nugroho',phone:'081234567013',addr:'Jl. Semolowaru No. 21, Surabaya',note:'QRIS tidak discan'}, createdAt:d(4)}),
-   mk({id:'GC-2411-00B4', shopId:'kekinian-food', items:[S('p17',3),S('p19',2)], fee:0, method:'ewallet', payStatus:'paid', status:'completed',
-    fulfillment:'pickup', pickup:{date:dt(1), slot:1, queue:'D-006'},
-    buyer:{name:'Melissa Chandra',phone:'081234567014',addr:'Ambil sendiri di toko',note:'Asisten yang ambil'}, createdAt:d(2), paidAt:d(2),
-    collected:{name:'Tia (asisten)',photo:'assets/food/u3.jpg',at:d(1)}})
+    buyer:{name:'Joko Susilo',phone:'081234567008',addr:'Jl. Ahmad Yani 45',note:'Batal: VA tidak dibayar'}, createdAt:d(3)})
   ];
 }
 /* v4: nomor antrean per toko per hari, dibangun dari data seed */
@@ -854,16 +777,9 @@ function load(){
     s.users['maya.kusuma@gmail.com']={password:'',name:'Maya Kusuma',phone:'081234567009',
       addr:'Jl. Ngagel Jaya Selatan B-14, Surabaya',role:'buyer',google:true,ava:'MK',tone:'#c53929'};
   if(s.user){ const r=s.users[s.user.email]; if(r&&r.google){ s.user.google=true; s.user.ava=r.ava; s.user.tone=r.tone; } }
-  /* migrasi ringan v4.2: pesanan lama yang dibatalkan belum punya alasan pembatalan.
-     Alasan ditebak dari status pembayaran supaya widget tidak kosong, data lama tetap utuh. */
-  (s.orders||[]).forEach(o=>{ if(o.status==='cancelled'&&!o.cancelReason)
-    o.cancelReason=(o.payStatus==='paid'||o.payStatus==='cod')?'notcollected':'expired'; });
   return s;
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
-/* save() versi jujur: localStorage punya kuota ±5 MB, foto bukti pengambilan
-   bisa membuatnya penuh. Dipakai di alur yang menyimpan data besar. */
-function saveOr(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); return true; }catch(e){ return false; } }
 function resetData(){ localStorage.removeItem(KEY); state=load(); save(); toast('Data demo direset','ok'); logout(); }
 
 /* ================= UTIL ================= */
@@ -871,8 +787,6 @@ const rp=n=>'Rp '+n.toLocaleString('id-ID');
 const $=id=>document.getElementById(id);
 function toast(msg,type){ const t=$('toast'); t.textContent=msg; t.className='toast on '+(type||''); setTimeout(()=>t.className='toast '+(type||''),2600); }
 function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); }
-/* esc(): teks input pengguna (nama pengambil, catatan pembatalan) masuk ke innerHTML */
-function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function niceDate(iso){ if(!iso) return 'besok'; const d=new Date(iso+'T00:00:00'); return isNaN(d)?'besok':d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
 function shopOf(id){ return SHOPS.find(s=>s.id===id); }
 function pkgOf(id){ return SHOPS.flatMap(s=>s.packages).find(p=>p.id===id); }
@@ -953,16 +867,14 @@ function renderChrome(view){
   const buyer=['v-shops','v-catalog','v-orders','v-profile','v-checkout','v-co-ff','v-co-profil','v-co-pay'].includes(view);
   $('bnav').style.display=(['v-shops','v-catalog','v-orders','v-profile'].includes(view))?'flex':'none';
   document.querySelectorAll('.bnav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===view));
-  $('ab-back').style.display=['v-register','v-catalog','v-checkout','v-co-ff','v-co-profil','v-co-pay','v-payment','v-profile','v-sdash'].includes(view)?'block':'none';
+  $('ab-back').style.display=['v-register','v-catalog','v-checkout','v-co-ff','v-co-profil','v-co-pay','v-payment','v-profile'].includes(view)?'block':'none';
   $('ab-menu').style.display=['v-shops','v-catalog','v-orders','v-profile','v-seller'].includes(view)?'block':'none';
   const titles={'v-login':['Newgocatering',''],'v-register':['Daftar','Isi biodata pengguna'],'v-shops':['Pilih Toko','Pembeli: '+(state.user?.name||'')],
     'v-catalog':[currentShop?currentShop.name:'goCatering',currentShop?currentShop.tagline:''],'v-checkout':['CheckOut','1 · Isi Detail Paket'],
     'v-co-ff':['CheckOut','2 · Metode Pengambilan'],'v-co-profil':['CheckOut','3 · Profil Pemesan'],'v-co-pay':['CheckOut','4 · Metode Pembayaran'],
     'v-payment':['Pembayaran','goPay / QRIS / VA'], 'v-orders':['Pesanan Saya',''],'v-profile':['Profil',''],
     'v-gcontact':['Lengkapi Kontak','Akun Google'],
-    'v-seller':['Dashboard Penjual',activeShopId()?shopOf(activeShopId()).name:''],
-    'v-sdash':[(WIDGETS.find(x=>x.k===dashKind)||{}).lbl||'Detail Pesanan',
-               activeShopId()?shopOf(activeShopId()).name+' · id restoran '+restaurantId(activeShopId()):'']};
+    'v-seller':['Dashboard Penjual',currentSeller()?shopNames(currentSeller()):'']};
   const t=titles[view]||['Newgocatering',''];
   $('ab-title').textContent=t[0]; $('ab-sub').textContent=t[1];
   $('ab-menu').onclick=()=>{ $('menu-sub').textContent=(state.user?state.user.name+' — '+(state.user.role==='seller'?'penjual':'pembeli'):''); openSheet('sheet-menu'); };
@@ -1686,13 +1598,6 @@ function fulfillLine(o){
   const d=o.delivery||{}, dl=DELIVERY[d.service]||DELIVERY.gosend;
   return `${dl.ic} <b>Diantar ${dl.name}</b> · ${d.km!=null?d.km+' km':'—'} · ongkir <b>${rp(d.fee||o.deliveryFee||0)}</b> · ${niceDate(o.buyer.date)}`+late;
 }
-function collectBadge(o){
-  if(!o.collected) return '';
-  const c=o.collected;
-  return `<div class="taken">${c.photo?`<img src="${c.photo}" alt="foto pengambil">`:''}
-    <div><b>Diambil oleh ${esc(c.name)}</b>
-    <div class="hint">${fmtDate(c.at)} WIB — status pesanan Anda <b>Selesai</b></div></div></div>`;
-}
 function orderCard(o){
   const synced=state.queue.includes(o.id)?'<span class="tag" style="background:#fff3e0;color:#e65100">lokal</span>':'';
   const units=orderItems(o).reduce((a,i)=>a+i.qty,0);
@@ -1701,8 +1606,6 @@ function orderCard(o){
     <div class="ob">${itemsSummary(o)} · ${shopOf(o.shopId).name}<br>
     ${rp(o.total)} · ${units} paket = ${paxOf(o)} orang · ${PAYMENTS[o.method].name} ${o.payStatus==='paid'?'<span class="chip c-paid">lunas</span>':o.payStatus==='cod'?'<span class="chip c-unpaid">COD</span>':`<span class="chip c-unpaid">${o.payStatus}</span>`} ${synced}<br>
     <div class="ffline">${fulfillLine(o)}</div>
-    ${o.status==='cancelled'?`<div class="locknote">✕ Dibatalkan (${REASON_LBL[o.cancelReason]||'dibatalkan'})${o.cancelNote?' — '+esc(o.cancelNote):''}</div>`:''}
-    ${o.collected?collectBadge(o):''}
     ${o.payStatus==='pending'?'<div class="locknote">🔒 Belum lunas — penjual menahan produksi sampai pembayaran masuk.</div>':''}
     <span class="hint">${fmtDate(o.createdAt)}</span></div>
     <div class="oa"><button class="btn-sm btn-grey" onclick="openDetail('${o.id}')">Detail</button>
@@ -1711,7 +1614,7 @@ function orderCard(o){
     ${statusFlow(o)}</div>`;
 }
 function statusFlow(o){
-  if(o.status==='cancelled') return `<div class="flow"><span class="hint" style="color:#c62828;font-weight:700">✕ Pesanan dibatalkan — ${REASON_LBL[o.cancelReason]||'dibatalkan'}</span></div>`;
+  if(o.status==='cancelled') return `<div class="flow"><span class="hint" style="color:#c62828;font-weight:700">Pesanan dibatalkan</span></div>`;
   const i=FLOW.indexOf(o.status);
   return `<div class="flow">${FLOW.map((s,x)=>`<div class="step ${x<i?'done':x===i?'cur':''}"><div class="dot">${x<i?'✓':x+1}</div>${FLOW_LBL[s]}</div>`).join('')}</div>`;
 }
@@ -1732,16 +1635,13 @@ function openDetail(id){
    </div>
    <div class="card" style="margin:12px 0;background:#f5f7f9;box-shadow:none">
     <div class="ffline">${fulfillLine(o)}</div>
-    <div class="oline" style="margin-top:6px"><span>Kode restoran</span><b>${rcodeOf(o.shopId)}</b></div>
-    <div class="oline" style="margin-top:4px"><span>Tanggal ${o.fulfillment==='pickup'?'ambil':'kirim'}</span><b>${tglLbl(o)}</b></div>
+    <div class="oline" style="margin-top:6px"><span>Tanggal ${o.buyer.pickup?'ambil':'kirim'}</span><b>${niceDate(o.buyer.date)}</b></div>
     ${o.buyer.late?`<div class="hint" style="margin-top:4px;color:#b7791f;font-weight:700">⏱ Dipesan lewat jam 16.00 WIB — dapur mulai memasak ${niceDate(o.buyer.processDate)}.</div>`:''}
     <div style="height:6px"></div>
     <b style="font-size:13px">${o.buyer.name}</b><div class="hint">${o.buyer.phone}</div>
     <div style="font-size:12.5px;margin-top:6px">${o.buyer.addr}</div>
     ${o.buyer.note?`<div class="hint" style="margin-top:6px">Catatan: ${o.buyer.note}</div>`:''}
-    ${o.payStatus==='paid'||o.payStatus==='cod'?'':`<div class="hint" style="margin-top:6px;color:#c62828;font-weight:700">Belum dibayar — penjual belum mulai memasak.</div>`}
-    ${o.status==='cancelled'?`<div class="hint" style="margin-top:6px;color:#c62828;font-weight:700">✕ Dibatalkan (${REASON_LBL[o.cancelReason]||'dibatalkan'})${o.cancelNote?' — '+esc(o.cancelNote):''}.</div>`:''}
-    ${o.collected?collectBadge(o):''}</div>
+    ${o.payStatus==='paid'||o.payStatus==='cod'?'':`<div class="hint" style="margin-top:6px;color:#c62828;font-weight:700">Belum dibayar — penjual belum mulai memasak.</div>`}</div>
    <div style="display:flex;gap:8px"><button class="btn-sm btn-wa" style="flex:1" onclick="waOrder('${o.id}')">Chat via WA</button>
    <button class="btn-sm btn-grey" style="flex:1" onclick="closeSheet('sheet-order')">Tutup</button></div>`;
 }
@@ -1802,150 +1702,24 @@ function orderSuccess(o){
    <button class="btn-sm btn-tosca" style="flex:1" onclick="closeSheet('sheet-order');navTo('v-catalog')">Order lagi</button></div>`;
 }
 
-/* ================= MANAJEMEN PESANAN v4.2 =================
-   Dua jenis pembatalan dibedakan sejak awal, karena widget dashboard
-   menghitungnya terpisah:
-     expired      = kedaluarsa  (belum lunas lewat batas bayar)
-     notcollected = tidak diambil (sudah siap tapi pembeli tidak datang)
-   "Kedaluarsa" dikerjakan sistem (sapuan otomatis saat dasbor dibuka),
-   "tidak diambil" selalu keputusan CS — lihat alasan di dialog batal. */
-const PAY_WINDOW_H=2;              // batas waktu lunas sebelum order dianggap kedaluarsa
-const REASON_LBL={expired:'Kedaluarsa',notcollected:'Tidak diambil'};
-
-function isExpired(o){ return o.status==='cancelled' && o.cancelReason==='expired'; }
-function isNotCollected(o){ return o.status==='cancelled' && o.cancelReason==='notcollected'; }
-function isInQueue(o){ return ['new','confirmed','processing','shipped'].includes(o.status); }
-
-/* Hanya menandai order yang belum lunas lewat PAY_WINDOW_H. Order pickup yang
-   lewat slot TIDAK otomatis dibatalkan — itu wilayah keputusan CS. */
-function sweepExpired(){
-  const hit=[], limit=PAY_WINDOW_H*3600000;
-  state.orders.forEach(o=>{
-    if(!isInQueue(o) || o.payStatus!=='pending') return;
-    if(Date.now()-new Date(o.createdAt).getTime()<=limit) return;
-    o.status='cancelled'; o.cancelReason='expired'; o.cancelNote='Belum lunas lewat '+PAY_WINDOW_H+' jam';
-    hit.push(o.id);
-  });
-  if(hit.length) save();
-  return hit;
-}
-
-/* Keranjang widget: semua hitungan selalu dipersempit ke toko yang dipilih. */
-function dashBucket(kind,ids){
-  const os=state.orders.filter(o=>ids.includes(o.shopId));
-  if(kind==='queue') return os.filter(isInQueue);
-  if(kind==='expired') return os.filter(isExpired);
-  if(kind==='notcollected') return os.filter(isNotCollected);
-  if(kind==='done') return os.filter(o=>o.status==='completed');
-  return [];
-}
-
 /* ================= PENJUAL ================= */
-let tab='all', sellerShopId=null, dashKind='queue';
-/* id restoran sementara masih memakai id toko — fitur A menggantinya dengan id 6 angka */
-function restaurantId(shopId){ return shopId; }
-const WIDGETS=[
-  {k:'queue',cls:'w-q',lbl:'Antrean Pesanan',sub:'baru → dikirim',money:'nilai antrean'},
-  {k:'expired',cls:'w-x',lbl:'Batal · Kedaluarsa',sub:'lewat batas bayar',money:'nilai hangus'},
-  {k:'notcollected',cls:'w-n',lbl:'Batal · Tidak Diambil',sub:'ditandai CS',money:'nilai hangus'},
-  {k:'done',cls:'w-d',lbl:'Pesanan Selesai',sub:'sudah diterima',money:'omzet'}
-];
+let tab='all';
 function myShopIds(){ const s=currentSeller(); return s?SELLERS[s].shops:[]; }
-function activeShopId(){ const ids=myShopIds(); return ids.includes(sellerShopId)?sellerShopId:(ids[0]||null); }
-/* Semua hitungan & daftar di dasbor mengikuti toko yang sedang dipilih (B.1) */
-function sellerOrders(){ const id=activeShopId(); return state.orders.filter(o=>o.shopId===id); }
-function sweepNote(){                        /* dipanggil tiap dasbor atau detailnya disajikan */
-  const hit=sweepExpired();
-  if(hit.length) toast(`${hit.length} order kedaluarsa — belum lunas lewat ${PAY_WINDOW_H} jam`,'warn');
-  return hit;
-}
+function sellerOrders(){ const ids=myShopIds(); return state.orders.filter(o=>ids.includes(o.shopId)); }
 function renderSeller(){
-  sweepNote();
-  renderShopSwitch(); renderWidgets(); renderSellerList();
-}
-function renderShopSwitch(){
-  const ids=myShopIds(), box=$('dash-shop');
-  if(ids.length<2){ box.innerHTML=''; return; }          /* satu toko: tidak ada opsi */
-  box.innerHTML=`<div class="shopswitch"><span class="sl">TOKO</span><div class="swrap">`+ids.map(id=>{
-    const s=shopOf(id);
-    return `<button type="button" class="swchip${id===activeShopId()?' on':''}" onclick="setSellerShop('${id}')">${s.logo} ${s.name}<span class="rc">${restaurantId(id)}</span></button>`;
-  }).join('')+`</div></div>`;
-}
-function setSellerShop(id){ sellerShopId=id; tab='all'; renderSeller(); renderChrome('v-seller'); toast('Dashboard: '+shopOf(id).name,'ok'); }
-function renderWidgets(){
-  const id=activeShopId(), ids=id?[id]:[];
-  $('dash-widgets').innerHTML=WIDGETS.map(w=>{
-    const os=dashBucket(w.k,ids), sum=os.reduce((a,o)=>a+o.total,0);
-    return `<button type="button" class="widget ${w.cls}" onclick="openDash('${w.k}')">
-      <div class="wn">${os.length}</div><div class="wl">${w.lbl}</div>
-      <div class="wd">${os.length?w.money+' '+rp(sum):w.sub}</div></button>`;
-  }).join('');
-}
-function openDash(kind){
-  dashKind=kind; renderSeller(); $('sdash-q').value='';
-  go('v-sdash'); renderDashHead(); renderDashList();
-}
-function dashOrders(){ const id=activeShopId(); return dashBucket(dashKind,id?[id]:[]); }
-function renderDashHead(){
-  const w=WIDGETS.find(x=>x.k===dashKind), s=shopOf(activeShopId()), os=dashOrders();
-  $('sdash-head').innerHTML=`<b style="font-size:15px">${w.lbl}</b>
-    <div class="hint">${s.logo} ${s.name} · id restoran <b>${restaurantId(s.id)}</b> · ${os.length} pesanan · ketik untuk mencari</div>`;
-}
-function renderDashList(){
-  const q=($('sdash-q').value||'').trim().toLowerCase();
-  let os=dashOrders();
-  if(q) os=os.filter(o=>{ const p=o.pickup||{};
-    return (restaurantId(o.shopId)+' '+o.id+' '+(p.queue||'')+' '+o.buyer.name+' '+o.buyer.phone).toLowerCase().includes(q); });
-  $('sdash-list').innerHTML=os.length?os.map(trackCard).join('')
-   :`<div class="empty"><div class="ic">${q?'🔍':'📋'}</div>${q?'Tidak ada yang cocok':'Belum ada pesanan di kategori ini'}</div>`;
-}
-/* B.3 — satu baris lacak memuat seluruh jejak pesanan */
-/* tanggal yang benar: pickup pakai jadwal ambil, antar pakai tanggal kirim pesanan */
-function tglLbl(o){ const t=o.fulfillment==='pickup'?((o.pickup||{}).date||o.buyer.date):o.buyer.date; return t?niceDate(t):'—'; }
-function proofHtml(c){
-  if(!c) return '';
-  const img=c.photo?`<img src="${c.photo}" onerror="this.style.display='none'">`:'';
-  return `<div class="proof">${img}<div><div class="pl">Diambil oleh ${esc(c.name)}</div>
-    <div class="hint">${fmtDate(c.at)} WIB</div></div></div>`;
-}
-function trackCard(o){
-  const it=orderItems(o), p=o.pickup||{}, d=o.delivery||{}, dl=DELIVERY[d.service]||DELIVERY.gosend;
-  const active=isInQueue(o);
-  const met=o.fulfillment==='pickup'
-    ? `🏪 Ambil di toko · ${niceDate(p.date||o.buyer.date)} · slot ${slotLbl(p.slot)}`
-    : `${dl.ic} Diantar ${dl.name} · ${d.km!=null?d.km+' km':'—'} · ${niceDate(o.buyer.date)}`;
-  const bayar=o.payStatus==='paid'?'<b style="color:#2e7d32">lunas</b>':o.payStatus==='cod'?'<b style="color:#1565C0">COD</b>':'<b style="color:#e65100">belum lunas</b>';
-  return `<div class="ord"><div class="oh"><span class="oid">${o.id}</span>
-    <span class="chip c-${o.status}">${FLOW_LBL[o.status]}${o.cancelReason?' · '+REASON_LBL[o.cancelReason]:''}</span></div>
-    <div class="ob"><div class="track">
-      <div class="k">ID Restoran</div><div class="v">${restaurantId(o.shopId)}</div>
-      <div class="k">ID Pesanan</div><div class="v">${o.id}</div>
-      <div class="k">Rincian</div><div class="v">${it.map(x=>x.name+' × '+x.qty).join('<br>')}
-        <div class="hint">${it.reduce((a,x)=>a+x.qty,0)} paket = ${paxOf(o)} orang</div></div>
-      <div class="k">Pemesan</div><div class="v">${o.buyer.name}</div>
-      <div class="k">No. WA</div><div class="v">${o.buyer.phone}</div>
-      <div class="k">Alamat</div><div class="v">${o.buyer.addr}</div>
-      <div class="k">Metode ambil</div><div class="v">${met}</div>
-      <div class="k">No. antre</div><div class="v">${p.queue?`<span class="qno">${p.queue}</span>`:'— (pengantaran)'}</div>
-      <div class="k">Total bayar</div><div class="v money">${rp(o.total)} · ${PAYMENTS[o.method].name} · ${bayar}</div>
-    </div>
-    ${o.buyer.note?`<div class="hint">📝 ${o.buyer.note}</div>`:''}
-    ${o.cancelNote?`<div class="locknote">ℹ️ ${o.cancelNote}</div>`:''}
-    ${proofHtml(o.collected)}
-    </div>
-    <div class="oa">
-      ${active&&o.fulfillment==='pickup'?`<button class="btn-sm btn-tosca" style="flex:2" onclick="markCollected('${o.id}')">✓ Sudah Diambil · 📸 bukti</button>`:''}
-      ${active&&o.fulfillment!=='pickup'?`<button class="btn-sm btn-tosca" style="flex:2" onclick="advance('${o.id}')">→ ${FLOW_LBL[FLOW[FLOW.indexOf(o.status)+1]]}</button>`:''}
-      ${active?`<button class="btn-sm btn-danger" onclick="askCancel('${o.id}')">Batal</button>`:''}
-      <button class="btn-sm btn-wa" onclick="waOrder('${o.id}')">WA</button>
-      <button class="btn-sm btn-grey" onclick="openDetail('${o.id}')">Detail</button>
-    </div>${statusFlow(o)}</div>`;
+  const os=sellerOrders();
+  const done=os.filter(o=>o.status==='completed');
+  $('st-new').textContent=os.filter(o=>o.status==='new').length;
+  $('st-proc').textContent=os.filter(o=>['confirmed','processing'].includes(o.status)).length;
+  $('st-done').textContent=done.length;
+  $('st-rev').textContent=Math.floor(done.reduce((a,o)=>a+o.total,0)/1000);
+  renderSellerList();
 }
 function setTab(t){ tab=t; document.querySelectorAll('#seller-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); renderSellerList(); }
 function renderSellerList(){
-  const id=activeShopId();
+  const ids=myShopIds();
   if(tab==='menu'){
-    $('seller-list').innerHTML=SHOPS.filter(s=>s.id===id).map(s=>`
+    $('seller-list').innerHTML=SHOPS.filter(s=>ids.includes(s.id)).map(s=>`
      <div class="card" style="margin-top:12px"><b style="font-size:14px">${s.logo} ${s.name}</b>
      ${s.packages.map(p=>`<div class="mrow"><img src="${p.img}" onerror="this.src='assets/food/nasi-kotak.jpg'">
       <div class="mi"><div class="mn">${p.name}</div><div class="mp">${rp(p.price)} · ${p.desc}</div></div>
@@ -1954,7 +1728,7 @@ function renderSellerList(){
   }
   const list=tab==='all'?sellerOrders():sellerOrders().filter(o=>o.status===tab);
   $('seller-list').innerHTML=list.length?list.map(sellerCard).join('')
-   :`<div class="empty"><div class="ic">📋</div>Tidak ada pesanan${tab==='all'?' di toko ini':' berstatus '+FLOW_LBL[tab]}</div>`;
+   :`<div class="empty"><div class="ic">📋</div>Tidak ada pesanan${tab==='all'?' di toko Anda':' berstatus '+FLOW_LBL[tab]}</div>`;
 }
 function sellerCard(o){
   const i=FLOW.indexOf(o.status), locked=i<FLOW.length-1 && FLOW[i+1]==='processing' && !canProcess(o);
@@ -1967,14 +1741,11 @@ function sellerCard(o){
     <span class="hint">${fmtDate(o.createdAt)} · ${PAYMENTS[o.method].name} · ${o.payStatus==='paid'?'<b style="color:#2e7d32">LUNAS</b>':o.payStatus==='cod'?'<b>Bayar di tempat (ambil di toko)</b>':o.payStatus}</span>
     ${o.buyer.note?`<br><span class="hint">📝 ${o.buyer.note}</span>`:''}
     ${o.buyer.late?`<br><span class="latechip">⏱ baru dimasak ${niceDate(o.buyer.processDate)}</span>`:''}
-    ${locked?'<div class="locknote">🔒 Belum lunas — makanan tidak dapat dibuat sebelum pembayaran masuk.</div>':''}
-    ${proofHtml(o.collected)}</div>
+    ${locked?'<div class="locknote">🔒 Belum lunas — makanan tidak dapat dibuat sebelum pembayaran masuk.</div>':''}</div>
     <div class="oa">
-      ${o.fulfillment==='pickup'&&isInQueue(o)&&canProcess(o)
-        ?`<button class="btn-sm btn-tosca" style="flex:2" onclick="markCollected('${o.id}')">✓ Sudah Diambil · 📸</button>`
-        :(i<FLOW.length-1?`<button class="btn-sm ${locked?'btn-grey':'btn-tosca'}" style="flex:2" onclick="advance('${o.id}')">${locked?'🔒 ':''}→ ${FLOW_LBL[FLOW[i+1]]}</button>`:'<button class="btn-sm btn-grey" disabled style="flex:2">Selesai</button>')}
+      ${i<FLOW.length-1?`<button class="btn-sm ${locked?'btn-grey':'btn-tosca'}" style="flex:2" onclick="advance('${o.id}')">${locked?'🔒 ':''}→ ${FLOW_LBL[FLOW[i+1]]}</button>`:'<button class="btn-sm btn-grey" disabled style="flex:2">Selesai</button>'}
       <button class="btn-sm btn-wa" onclick="waOrder('${o.id}')">WA</button>
-      ${isInQueue(o)?`<button class="btn-sm btn-danger" onclick="askCancel('${o.id}')">Batal</button>`:''}
+      <button class="btn-sm btn-danger" onclick="cancelOrder('${o.id}')">Batal</button>
     </div>${statusFlow(o)}</div>`;
 }
 function advance(id){
@@ -1986,102 +1757,12 @@ function advance(id){
     return;
   }
   o.status=next; if(next==='completed'&&!o.completedAt) o.completedAt=new Date().toISOString();
-  save(); refreshDash(); toast(`${id} → ${FLOW_LBL[next]}`,'ok');
+  save(); renderSeller(); toast(`${id} → ${FLOW_LBL[next]}`,'ok');
   if(o.status==='shipped') toast('Notifikasi FCM terkirim ke pembeli','ok');
   if(o.status==='processing'&&o.fulfillment==='pickup') toast(`Makanan ${o.pickup.queue} masuk antrean produksi`,'ok');
 }
-function cancelOrder(id,reason,note){
-  const o=state.orders.find(x=>x.id===id); if(!o) return;
-  if(o.status==='cancelled') return toast('Pesanan ini sudah dibatalkan','warn');
-  if(!reason) return askCancel(id);                 // pembatalan selalu lewat dialog beralasan
-  o.status='cancelled'; o.cancelReason=reason; o.cancelNote=(note||'').trim()||null;
-  save(); refreshDash(); toast(`${id} dibatalkan — ${REASON_LBL[reason]}`,'err');
-}
-/* ---------- B.4 / B.5 — CS menandai "sudah diambil" + foto pengambil ---------- */
-let collectTarget=null, collectPhoto=null, cancelTarget=null, cancelReason=null;
-const PHOTO_MAX=480, PHOTO_Q=0.6;        /* bukti ambil: 480 px JPEG 0.6 ≈ 25–40 KB */
-function shrinkImage(img,max,q){
-  const c=document.createElement('canvas'), k=Math.min(1,max/Math.max(img.width,img.height||1));
-  c.width=Math.max(1,Math.round(img.width*k)); c.height=Math.max(1,Math.round(img.height*k));
-  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-  return c.toDataURL('image/jpeg',q);
-}
-function markCollected(id){
-  const o=state.orders.find(x=>x.id===id); if(!o) return;
-  if(o.status==='completed') return toast('Pesanan ini sudah selesai','info');
-  if(o.status==='cancelled') return toast('Sudah dibatalkan — tidak bisa ditandai diambil','warn');
-  if(!canProcess(o)) return toast('Belum lunas — pesanan tidak bisa dinyatakan diambil','err');
-  collectTarget=id; collectPhoto=null;
-  const p=o.pickup||{};
-  $('sheet-collect-body').innerHTML=`<h3>Tandai Sudah Diambil</h3>
-    <div class="hint" style="margin-bottom:10px">${o.id} · antre <b>${p.queue||'—'}</b> · ${o.buyer.name} · ${paxOf(o)} orang · slot ${slotLbl(p.slot)}</div>
-    <div class="field"><label>Nama yang mengambil</label><input id="cl-name" placeholder="kosongkan = ${o.buyer.name}"></div>
-    <div class="field"><label>Foto pengambil (bukti)</label><input id="cl-photo" type="file" accept="image/*" onchange="pickCollectPhoto(this)"></div>
-    <div id="cl-preview" class="hint">Foto dikecilkan ke ${PHOTO_MAX} px supaya hemat penyimpanan HP.</div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn-sm btn-grey" style="flex:1" onclick="closeSheet('sheet-collect')">Batal</button>
-      <button class="btn-sm btn-tosca" style="flex:1" onclick="saveCollected()">Simpan &amp; Selesai</button></div>`;
-  openSheet('sheet-collect');
-}
-function pickCollectPhoto(inp){
-  const f=inp&&inp.files&&inp.files[0]; if(!f) return;
-  const rd=new FileReader();
-  rd.onerror=()=>toast('Foto gagal dibaca','err');
-  rd.onload=()=>{
-    const img=new Image();
-    img.onerror=()=>toast('Format foto tidak didukung browser','err');
-    img.onload=()=>{
-      collectPhoto=shrinkImage(img,PHOTO_MAX,PHOTO_Q);
-      const k=Math.min(1,PHOTO_MAX/Math.max(img.width,img.height||1)), kb=Math.round(collectPhoto.length*0.75/1024);
-      $('cl-preview').innerHTML=`<div class="proof"><img src="${collectPhoto}" alt="pratinjau bukti pengambilan">
-        <div><b>${img.width}×${img.height} → ${Math.round(img.width*k)}×${Math.round(img.height*k)} px</b>
-        <div class="hint">${kb} KB setelah dikompres${f.name?' · '+f.name:''}</div></div></div>`;
-    };
-    img.src=rd.result;
-  };
-  rd.readAsDataURL(f);
-}
-function saveCollected(){
-  const o=state.orders.find(x=>x.id===collectTarget); if(!o){ closeSheet('sheet-collect'); return; }
-  const nm=($('cl-name').value||'').trim()||o.buyer.name;
-  o.status='completed'; o.completedAt=new Date().toISOString();
-  o.collected={name:nm,photo:collectPhoto||null,at:o.completedAt};
-  if(collectPhoto&&!saveOr()){                 /* kuota penuh: status tetap jalan, foto dilepas */
-    o.collected.photo=null; saveOr();
-    toast('Kuota penyimpanan penuh — foto bukti tidak tersimpan, status tetap Selesai','warn');
-  } else { save(); toast(`${o.id} → Selesai · diambil ${nm}`,'ok'); }
-  collectTarget=null; closeSheet('sheet-collect'); refreshDash();
-}
-/* ---------- B.1 — pembatalan harus beralasan ---------- */
-function askCancel(id){
-  const o=state.orders.find(x=>x.id===id); if(!o) return;
-  if(o.status==='cancelled') return toast('Pesanan ini sudah dibatalkan','info');
-  cancelTarget=id; cancelReason=null;
-  $('sheet-cancel-body').innerHTML=`<h3>Alasan Pembatalan</h3>
-    <div class="hint" style="margin-bottom:10px">${o.id} · ${o.buyer.name} · ${rp(o.total)}</div>
-    <div class="swrap" style="padding-bottom:8px">
-      <button type="button" class="swchip" id="rs-expired" onclick="pickReason('expired')">⌛ Kedaluarsa</button>
-      <button type="button" class="swchip" id="rs-notcollected" onclick="pickReason('notcollected')">🚪 Tidak diambil</button></div>
-    <div class="hint" style="margin-bottom:8px">Kedaluarsa = belum lunas lewat ${PAY_WINDOW_H} jam. Tidak diambil = pesanan sudah siap, pembeli tidak datang.</div>
-    <div class="field"><label>Catatan (opsional)</label><input id="cx-note" placeholder="cth: slot 11.00–13.00 lewat, tidak ada kabar"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn-sm btn-grey" style="flex:1" onclick="closeSheet('sheet-cancel')">Kembali</button>
-      <button class="btn-sm btn-danger" style="flex:1" onclick="confirmCancel()">Batalkan pesanan</button></div>`;
-  openSheet('sheet-cancel');
-}
-function pickReason(r){ cancelReason=r;
-  ['expired','notcollected'].forEach(k=>{ const b=$('rs-'+k); if(b) b.classList.toggle('on',k===r); });
-}
-function confirmCancel(){
-  if(!cancelReason) return toast('Pilih alasan pembatalan dulu','err');
-  const id=cancelTarget, note=($('cx-note')?$('cx-note').value:'');
-  closeSheet('sheet-cancel'); cancelTarget=null;
-  cancelOrder(id,cancelReason,note); cancelReason=null;
-}
-/* Setelah aksi apa pun: dasbor, widget, dan daftar detail ikut diperbarui */
-function refreshDash(){
-  if((document.querySelector('.view.on')||{}).id==='v-sdash'){ renderDashHead(); renderDashList(); }
-  renderSeller();
+function cancelOrder(id){
+  const o=state.orders.find(x=>x.id===id); o.status='cancelled'; save(); renderSeller(); toast('Pesanan dibatalkan','err');
 }
 function toggleMenu(id){ state.menuOff[id]=!state.menuOff[id]; save(); renderSellerList(); toast(state.menuOff[id]?'Paket disembunyikan dari katalog':'Paket ditampilkan','ok'); }
 
