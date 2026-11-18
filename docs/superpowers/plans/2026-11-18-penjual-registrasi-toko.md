@@ -2263,21 +2263,40 @@ Clear storage dulu. Jalankan berurutan dan catat hasilnya; satu pun kegagalan be
 7. Alur lama: order pickup (nomor antre & Jadwal Saya), delivery (ongkir per km), cutoff 16.00 lewat tombol Jam simulasi, bayar QRIS & COD, re-pay order `pending`, profil + penyamaran nomor pembeli, mode offline + flush queue.
 8. Reset Data → aplikasi kembali ke 4 toko bawaan tanpa error konsol.
 
-- [ ] **Step 6: Putuskan publikasi, baru push (JANGAN push tanpa jawaban pengguna)**
+- [x] **Step 6: Putuskan publikasi, baru push (JANGAN push tanpa jawaban pengguna)**
 
-Dua hal yang menunggu keputusan pemilik repo:
+Dua hal yang menunggu keputusan pemilik repo — **sudah dijawab 2026-11-18**:
 
-1. Apakah `docs/` (spec + rencana ini) ikut di-push ke repo publik, atau `docs/` masuk `.gitignore`.
-2. Apakah `assets/` foto bawaan tetap dipakai untuk toko hasil migrasi (README sudah mencatatnya CC).
+1. `docs/` (spec + rencana ini) **ikut di-push** ke repo publik `gatnadf-AI/gocatering`. Semua
+   nama, NIK, dan nomor di dokumen fiktif, jadi tidak ada data yang bocor.
+2. `assets/food/` (foto Wikimedia CC, atribusi di `assets/food/attribusi.json`) **tetap dipakai**
+   untuk toko hasil migrasi maupun registrasi baru; README sudah mencatat lisensinya.
 
-Setelah dijawab:
+Isi yang dikirim sudah diperiksa sebelum publish: 11 commit, `git ls-tree -r HEAD` = 32 berkas,
+`tools/` tetap ter-gitignore (baris 9 `.gitignore`) sehingga harness uji tidak ikut ke repo
+publik, dan tidak ada berkas `.env`/kunci.
 
 ```bash
 git log --oneline origin/main..HEAD          # periksa isi sebelum publish
 git push origin main                          # Pages memakai branch main, tanpa langkah build
 ```
 
-Lalu verifikasi live (Pages butuh ±30–60 detik): `https://gatnadf-ai.github.io/gocatering/` harus mengalih ke `gocatering-prototype-v5.html`, dan `https://gatnadf-ai.github.io/gocatering/gocatering-prototype-v5.html` harus boot dengan penyimpanan kosong tanpa error konsol.
+Verifikasi live (`https://gatnadf-ai.github.io/gocatering/`, build Pages selesai ±45 detik):
+
+- Root mengalih ke `gocatering-prototype-v5.html`; `<title>` = "goCatering v5 — Prototype
+  Interaktif (Registrasi Penjual & Toko + Kode Restoran)".
+- Boot dengan `localStorage` dikosongkan: tanpa satu pun pesan konsol, `schema=2`,
+  4 outlet bawaan, layar yang aktif `v-login`.
+- Registrasi penjual nyata lewat DOM: wizard 2 langkah (gelar wajib dipilih — nilai kosong
+  ditolak `validateIdentity`), layar akun terbit menghasilkan kode `R9999001` (R + 9999 + 001),
+  ID restoran 6 angka acak, dan password sementara satu kali tampil.
+- Login dengan password sementara → `v-s-reset` ("Password sementara wajib diganti"), dan
+  dashboard penjual hanya menampilkan tokonya sendiri (`R9999001`, + Tambah Toko).
+- Setelah registrasi: `shopCount=5` dan `queueLetter(idTokoBaru)='E'`; teks chip pembeli hanya
+  `kode: A4567001` (angka 6 digit hanya muncul di atribut `onclick`, bukan tampilan).
+- Sampah pribadi di penyimpanan: `plainNik/plainEmail/plainPhone/plainPwd` semuanya `false`,
+  20 penanda `e1:`, dan tidak ada kunci sisa wizard (`tmp*`/`new*`/`reg*`) — `stripTemp()` bekerja.
+- `resetData()` mengembalikan ke 4 outlet bawaan + 2 pemilik dan kembali ke `v-login`.
 
 - [x] **Step 7: Commit**
 
