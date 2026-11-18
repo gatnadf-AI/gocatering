@@ -337,10 +337,15 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .stepbar{display:flex;gap:6px;margin-bottom:8px}
 .stepbar span{flex:1;height:4px;border-radius:4px;background:#e0e6ea}
 .stepbar span.on{background:#00a08a}
-/* chip kode restoran (Task 8) — tampil di dasbor penjual dan katalog pembeli */
-.rcode-chip{display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;border:1px solid #c8e6c9;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:#2e7d32;cursor:pointer}
-.rcode-chip:hover{background:#c8e6c9}
-.rcode-chip .rid{font-size:10px;font-weight:500;color:#558b2f}
+/* ===== v5: kode restoran (sisi pembeli) ===== */
+.code-chip{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#e9f7f4;
+  color:#00796b;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #bfe5dd;vertical-align:middle}
+.code-chip:hover{background:#d7efe9}
+.shophead{display:flex;align-items:center;gap:6px;padding:10px 12px 2px}
+.resto-row{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.resto-init{width:52px;height:52px;border-radius:50%;background:#e8f5f2;color:#00796b;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+#resto-photo{width:52px;height:52px;border-radius:12px;object-fit:cover;flex:0 0 auto;display:none}
 </style>
 </head>
 <body>
@@ -521,6 +526,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
     <!-- BUYER: CATALOG -->
     <div class="view" id="v-catalog">
+      <div class="shophead"><div class="shopname" id="cat-name" style="font-size:15px">—</div><span id="cat-code"></span></div>
       <div class="totalbar"><div>TotalHarga: <span id="cart-total">Rp 0</span></div><div class="hint" id="cart-count">0 paket dipilih</div></div>
       <div class="grid" id="pkg-grid"></div>
       <div style="padding:0 12px 14px"><button class="btn btn-primary" onclick="openCheckout()">CHECKOUT</button></div>
@@ -709,6 +715,27 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div class="sheet" id="sheet-order-body"></div>
   </div>
 
+  <!-- v5: SHEET INFO RESTORAN (sisi pembeli — tidak pernah menampilkan ID toko) -->
+  <div class="overlay" id="sheet-resto" onclick="if(event.target===this)closeSheet('sheet-resto')">
+    <div class="sheet">
+      <div class="resto-row">
+        <div class="resto-init" id="resto-init">R</div>
+        <img id="resto-photo" alt="Foto restoran">
+        <div style="flex:1;min-width:0"><h3 style="margin:0 0 2px" id="resto-name">—</h3>
+          <div class="hint" id="resto-code"></div></div>
+      </div>
+      <div class="oline"><span>Pemilik</span><b id="resto-owner">—</b></div>
+      <div class="oline" style="align-items:flex-start"><span>Alamat</span><b id="resto-addr" style="text-align:right;max-width:62%">—</b></div>
+      <div class="hint" id="resto-wa" style="margin:10px 0 8px"></div>
+      <div style="display:flex;gap:8px">
+        <a class="btn btn-grey" id="resto-map" target="_blank" rel="noopener" style="flex:1;text-align:center;text-decoration:none">Buka Peta</a>
+        <a class="btn btn-wa" id="resto-chat" target="_blank" rel="noopener" style="flex:1;text-align:center;text-decoration:none">Chat WA</a>
+      </div>
+      <button class="btn btn-grey" style="margin-top:8px" onclick="closeSheet('sheet-resto')">Tutup</button>
+      <div class="hint center" style="margin-top:10px">Kode restoran identitas publik toko. ID 6 angka hanya dilihat penjual.</div>
+    </div>
+  </div>
+
   <!-- SHEET: TANDAI SUDAH DIAMBIL (B.4 + B.5) -->
   <div class="overlay" id="sheet-collect" onclick="if(event.target===this)closeSheet('sheet-collect')">
     <div class="sheet" id="sheet-collect-body"></div>
@@ -790,25 +817,30 @@ const SHOPS = [
    hanya cadangan untuk data yang masih memakai slug toko. */
 const RCODE = {'rm-sederhana':'A4567701','kekinian-food':'A4567703','dapur-nusantara':'S4567702','catering-sehat':'S4567704'};
 function rcodeOf(id){ const s=shopOf(id); return (s&&(s.code||s.rcode||RCODE[s.id]))||'—'; }
-/* chip kode restoran: kode yang dilihat pembeli + ID toko 6 angka (hanya untuk penjual) */
+/* chip kode restoran (sisi pembeli): hanya kode publik, ID 6 angka tidak pernah
+   tampil — id cuma muncul di dalam on* handler supaya popup bisa dipanggil. */
 function codeChip(id){
-  const s=shopOf(id); if(!s) return '<span class="hint">—</span>';
-  const code=rcodeOf(id);
-  return `<span class="rcode-chip" onclick="copyText('${code}');toast('Kode disalin: ${code}','ok')" title="Klik untuk menyalin">${code}<span class="rid">${id}</span></span>`;
+  const s=shopOf(id); if(!s||!s.code) return '';
+  return `<span class="code-chip" role="button" tabindex="0" title="Lihat info restoran" `
+       + `onclick="event.stopPropagation();openRestoSheet('${s.id}')" `
+       + `onkeydown="if(event.key==='Enter'){event.stopPropagation();openRestoSheet('${s.id}')}">kode: ${s.code}</span>`;
 }
-/* clipboard modern hanya tersedia di https/localhost — prototype ini juga dibuka
-   lewat file://, jadi siapkan jalur textarea + execCommand sebagai cadangan. */
-function copyText(t){
-  t=String(t==null?'':t);
-  const back=()=>{ try{
-      const ta=document.createElement('textarea'); ta.value=t;
-      ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:-20px;opacity:0';
-      document.body.appendChild(ta); ta.select();
-      const done=document.execCommand?document.execCommand('copy'):false;
-      ta.remove(); return done;
-    }catch(e){ return false } };
-  if(navigator.clipboard&&navigator.clipboard.writeText) return navigator.clipboard.writeText(t).catch(back);
-  return Promise.resolve(back());
+/* popup info restoran (spec §2 butir 12) — sengaja tidak pernah menampilkan ID */
+function openRestoSheet(id){
+  const s=shopOf(id); if(!s) return;
+  const o=state.owners[s.ownerKey]||{};
+  const photo=s.photo||'';
+  $('resto-photo').src=photo; $('resto-photo').style.display=photo?'block':'none';
+  const init=String((o.nama||s.name||'?').trim().charAt(0)||'?').toUpperCase();
+  $('resto-init').textContent=init; $('resto-init').style.display=photo?'none':'flex';
+  $('resto-name').textContent=s.name;
+  $('resto-code').textContent='kode: '+(s.code||'—');
+  $('resto-owner').textContent=((o.gelar?o.gelar+' ':'')+(o.nama||'Pemilik belum terisi'));
+  $('resto-addr').textContent=s.addr||'Alamat belum diisi';
+  const map=$('resto-map'); map.href=s.mapUrl||''; map.style.display=s.mapUrl?'inline-flex':'none';
+  $('resto-wa').textContent=s.csWa?('WA CS '+s.csWa):'WA customer service belum diisi';
+  const chat=$('resto-chat'); chat.href=s.csWa?waLink(s.csWa):''; chat.style.display=s.csWa?'inline-flex':'none';
+  openSheet('sheet-resto');
 }
 
 /* ================= DATA PEMILIK CONTOH (spec §9) =================
@@ -1686,7 +1718,7 @@ function renderShops(){
      registrasi langsung terlihat pembeli */
   $('shop-list').innerHTML=_shopList().map(s=>`<div class="card shopcard" role="button" tabindex="0" onclick="openShop('${s.id}')">
     <div class="shoplogo">${s.logo}</div>
-    <div style="flex:1"><div class="shopname">${s.name}</div><div class="shopmeta">${s.tagline}</div>
+    <div style="flex:1"><div class="shopname">${s.name}${codeChip(s.id)}</div><div class="shopmeta">${s.tagline}</div>
     <div class="shopmeta">⭐ ${s.rating} · ${s.sold} terjual · ${s.packages.length} paket</div></div>
     <div style="font-size:20px;color:#b0bec5">›</div></div>`).join('');
 }
@@ -1697,6 +1729,8 @@ function openShop(id){
 }
 function renderCatalog(){
   const ent=consumeAdded();
+  $('cat-name').textContent=currentShop?currentShop.name:'—';
+  $('cat-code').innerHTML=currentShop?codeChip(currentShop.id):'';
   $('pkg-grid').innerHTML=currentShop.packages.filter(p=>!state.menuOff[p.id]).map(p=>{
     const q=cartLine(p.id);
     return `
@@ -2284,7 +2318,7 @@ function openDetail(id){
   const o=state.orders.find(x=>x.id===id); if(!o)return;
   const it=orderItems(o);
   openSheet('sheet-order');
-  $('sheet-order-body').innerHTML=`<h3>${o.id}</h3><div class="hint" style="margin-bottom:12px">${shopOf(o.shopId).name} · ${it.length} jenis paket</div>
+  $('sheet-order-body').innerHTML=`<h3>${o.id}</h3><div class="hint" style="margin-bottom:12px">${shopOf(o.shopId).name}${codeChip(o.shopId)} · ${it.length} jenis paket</div>
    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${it.map(i=>`<img src="${i.img}" onerror="this.outerHTML='<div class=\\'imgfail\\' style=\\'width:80px;height:60px\\'>🍽️</div>'" style="width:80px;height:60px;object-fit:cover;border-radius:9px;flex:0 0 auto"></img>`).join('')}</div>
    <div style="margin-top:12px">
     ${it.map(i=>`<div class="oline"><span>${i.name} <span class="hint">${rp(i.price)}</span></span><b>× ${i.qty} · ${rp(i.line)}</b></div>`).join('')}

@@ -1932,7 +1932,7 @@ git commit -m "feat(v5): persistensi sellerShopId, tombol Tambah Toko, dan penja
 - Produces: `codeChip(shopId) → html`, `openRestoSheet(shopId)`, view sheet `sheet-resto` dengan `resto-init`,`resto-photo`,`resto-name`,`resto-code`,`resto-owner`,`resto-addr`,`resto-wa`,`resto-map`,`resto-chat`, header katalog `cat-name`,`cat-code`.
 - Aturan keras: **`shop.id` tidak boleh muncul di elemen sisi pembeli mana pun.**
 
-- [ ] **Step 1: Tulis uji yang gagal**
+- [x] **Step 1: Tulis uji yang gagal**
 
 ```js
 console.log('\n== TASK 9 — kode restoran di sisi pembeli ==');
@@ -2003,11 +2003,11 @@ function loginAs2(b, who) {
 function applyResetForTest(){ const o=currentOwner(); if(o){ o.mustReset=false; o.password='hujan28'; } }
 ```
 
-- [ ] **Step 2: Jalankan, pastikan gagal**
+- [x] **Step 2: Jalankan, pastikan gagal**
 
 Run: `node tools/test.js` → `codeChip is not defined` / `cat-name` kosong.
 
-- [ ] **Step 3: CSS (sebelum `</style>`)**
+- [x] **Step 3: CSS (sebelum `</style>`)**
 
 ```css
 /* ===== v5: kode restoran (sisi pembeli) ===== */
@@ -2020,7 +2020,7 @@ Run: `node tools/test.js` → `codeChip is not defined` / `cat-name` kosong.
 #resto-photo{width:52px;height:52px;border-radius:12px;object-fit:cover;flex:0 0 auto;display:none}
 ```
 
-- [ ] **Step 4: Chip + header katalog**
+- [x] **Step 4: Chip + header katalog**
 
 ```js
 function codeChip(id){
@@ -2052,7 +2052,7 @@ dan di awal `renderCatalog()` (setelah `const ent=consumeAdded();`, v4:1046):
 
 Di `openDetail` (v4:1625) ganti `${shopOf(o.shopId).name} · ${it.length} jenis paket` menjadi `${shopOf(o.shopId).name}${codeChip(o.shopId)} · ${it.length} jenis paket`.
 
-- [ ] **Step 5: Sheet info restoran**
+- [x] **Step 5: Sheet info restoran**
 
 Markup, sesudah `sheet-shops` (Task 8):
 
@@ -2099,20 +2099,63 @@ function openRestoSheet(id){
 }
 ```
 
-- [ ] **Step 6: Jalankan test sampai hijau**
+- [x] **Step 6: Jalankan test sampai hijau**
 
 Run: `node tools/test.js` → Task 1–9 hijau.
 
-- [ ] **Step 7: Cek browser**
+- [x] **Step 7: Cek browser**
 
 Clear storage → login pembeli → daftar toko: tiap kartu punya pil `kode: …`; klik pil → **yang terbuka adalah popup info**, bukan halaman toko. Popup menyebut "Tn Andi Ramadhan", alamat, tombol `Buka Peta` (href google.com/maps) dan `Chat WA` (href `https://wa.me/6282130000101`). `document.body.innerText` di layar toko tidak memuat `100234` (cek lewat konsol: `[...document.querySelectorAll('#shop-list,#pkg-grid,.appbar')].map(e=>e.innerText).join(' ').includes('100234')` → `false`). Masuk katalog, checkout 1 paket sampai selesai, buka detail pesanan → chip kode ada di bawah nomor order. Konsol bersih.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add gocatering-prototype-v5.html tools/test.js
 git commit -m "feat(v5): chip kode restoran, popup info pemilik/peta/WA CS untuk pembeli"
 ```
+
+**Catatan rekonsiliasi Task 9 (dibuat saat eksekusi):**
+
+1. **Nama `codeChip` bertabrakan dengan varian Task 8.** Task 8 sempat mengirim chip yang
+   menampilkan `kode + ID 6 angka` dan menyalin lewat `copyText`; aturan keras Task 9
+   melarang `shop.id` muncul di sisi pembeli. Keduanya tidak bisa hidup sebagai satu nama.
+   Yang dipilih: **satu chip publik** sesuai Task 9 (`kode: …` → popup). Varian Task 8,
+   `copyText`, dan CSS `.rcode-chip` dihapus karena setelah dicek **tidak ada pemanggil
+   lain** (fungsi itu hanya diuji, tidak dipakai dasbor). Penjual tetap melihat kode lewat
+   `.swchip` (`rcodeOf`) dan baris "Kode restoran" di detail pesanan, serta ID 6 angka lewat
+   subjudul dasbor (`id restoran …`) — tidak ada informasi yang hilang.
+2. Uji Task 8 `codeChip menampilkan kode + ID toko dan bisa diklik` ditulis ulang menjadi
+   `codeChip = chip kode publik (kontrak Task 9 …)`: assertions `100234`/`copyText` diganti
+   `openRestoSheet` + `hasnt` pada teks yang bukan atribut `on*`, dan nilai untuk toko tak
+   dikenal berubah dari `<span class="hint">—</span>` menjadi `''`.
+3. Verifikasi clipboard yang tertunda dari Task 8 menjadi tidak relevan (fungsinya dihapus);
+   tidak ada kode yang menyentuh clipboard lagi.
+4. `if(!s||!s.code) return ''` dipakai alih-alih `rcodeOf`: semua toko hasil migrasi
+   `buildShops`/`ensureSchema` sudah punya `s.code`, jadi peta `RCODE` lama (slug) tidak
+   diperlukan di sisi pembeli dan chip tidak akan menampilkan kode palsu `—`.
+5. Sheet `sheet-resto` disisipkan sesudah `sheet-order`, bukan sesudah `sheet-shops` seperti
+   teks rencana — `sheet-shops` tidak pernah ada di v5 karena Task 8 menaruh pemilih toko
+   inline di dasbor (`dash-shop`).
+6. Ditambahkan tombol **Tutup** di dalam popup (markup rencana tidak punya; semua sheet lain
+   punya jalan keluar eksplisit, dan `target=_blank` pada dua tombol tidak menutup popup).
+7. **Backdoor uji dihapus.** Rencana memakai `loginAs2(b,'huang')` + `applyResetForTest()`
+   yang menaruh fungsi khusus harness di berkas HTML. Karena uji "tanpa foto" hanya butuh
+   toko hasil registrasi (bukan sesi penjual), helper ditulis ulang menjadi
+   `fillReg(b); submitSellerForm()` tanpa login dan tanpa fungsi produksi baru.
+8. Harness (`tools/harness.js`, tidak ikut commit): `classList` kini bertumpu pada `className`
+   sehingga `sheet-resto.classList.contains('on')` bisa diaudit; sebelumnya stub-nya no-op
+   dan seluruh assertion "sheet terbuka" harus dihindari.
+9. Uji tambahan di luar rencana: chip punya `onkeydown`/Enter, `openRestoSheet('999999')`
+   tidak membuka popup, toko tanpa `addr`/`csWa`/`mapUrl` tetap tampil dengan pesan
+   "belum diisi" dan tombol terkait disembunyikan, dan pemisahan target kartu (`openShop`) vs chip
+   (`stopPropagation` + `openRestoSheet`).
+10. Cek browser (http://127.0.0.1:8848): klik nyata pada chip di kartu toko **membuka popup
+    dan tidak berpindah layar** (`view` tetap `v-shops`); isi popup Tn Andi Ramadhan, alamat
+    lengkap, `Buka Peta` → google.com/maps, `Chat WA` → `https://wa.me/6282130000101`;
+    Enter pada chip juga membuka popup; header katalog `RM Sederhana · kode: A4567001`;
+    `document.body.innerText` pada layar toko, katalog, dan detail pesanan **tidak memuat**
+    100234/100518/100742/100930; dasbor penjual (2 toko + `+ Tambah Toko`) tidak berubah;
+    konsol bersih. Suites: 70 lulus, 0 gagal.
 
 ---
 
