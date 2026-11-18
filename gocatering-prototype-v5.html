@@ -757,7 +757,41 @@ const SHOP_ADDR = {
 const FLOW_LBL = {new:'Baru',confirmed:'Dikonfirmasi',processing:'Diproses',shipped:'Dikirim',completed:'Selesai',cancelled:'Dibatalkan'};
 const W = CATERING_WA = '6281234567890';
 
-const KEY='gocatering_v4';
+const KEY='gocatering_v5';
+/* ================= KEAMANAN DATA (obfuscation, BUKAN enkripsi kepatuhan) =================
+   XOR + Base64 dengan kunci acak per perangkat. Tujuannya supaya NIK/email/password tidak
+   terbaca mata saat localStorage dibuka di DevTools — bukan untuk kepatuhan UU PDP.
+   DEV_KEY dipakai oleh dec() yang berjalan DI DALAM load(), jadi ia tidak boleh membaca
+   state.devKey: state belum terikat saat load() dieksekusi (TDZ — bug yang dulu mematikan
+   situs publik). Kunci disalin ke DEV_KEY begitu nilainya diketahui. */
+const CRYPT = { owners:['nama','nik','email','phone','password'], shops:['csWa'] };
+let DEV_KEY = 'gocatering-devkey-cadangan';
+function rndKey(){ const A='abcdefghjkmnpqrstuvwxyz23456789'; let s=''; for(let i=0;i<24;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
+function keyBytes(){ return Array.from(new TextEncoder().encode(DEV_KEY)); }
+function enc(v){
+  if(v===null||v===undefined||v==='') return '';
+  const s=String(v); if(s.indexOf('e1:')===0) return s;
+  const bytes=Array.from(new TextEncoder().encode(s)), k=keyBytes(); let bin='';
+  for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]^k[i%k.length]);
+  return 'e1:'+btoa(bin);
+}
+function dec(v){
+  if(v===null||v===undefined||v==='') return '';
+  const s=String(v); if(s.indexOf('e1:')!==0) return s;
+  try{
+    const bin=atob(s.slice(3)), k=keyBytes(), bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i)^k[i%k.length];
+    return new TextDecoder().decode(bytes);
+  }catch(e){ return s; }
+}
+function cryptRows(rows,fields,fn){
+  if(!rows) return;
+  (Array.isArray(rows)?rows:Object.values(rows)).forEach(r=>{
+    if(!r||typeof r!=='object') return;
+    fields.forEach(f=>{ if(typeof r[f]==='string'&&r[f]!=='') r[f]=fn(r[f]); });
+  });
+}
+
 /* simHour & CUTOFF dipakai seed() lewat todayISO(), jadi binding-nya wajib
    ada sebelum load() dijalankan. Kalau tidak, database pertama yang kosong
    membuat skrip mati di tengah: "Cannot access 'simHour' before initialization". */
@@ -858,9 +892,27 @@ function load(){
      Alasan ditebak dari status pembayaran supaya widget tidak kosong, data lama tetap utuh. */
   (s.orders||[]).forEach(o=>{ if(o.status==='cancelled'&&!o.cancelReason)
     o.cancelReason=(o.payStatus==='paid'||o.payStatus==='cod')?'notcollected':'expired'; });
+  /* kunci perangkat + dekripsi data penjual (data lama tanpa awalan tetap terbaca) */
+  if(!s.devKey) s.devKey=rndKey();
+  DEV_KEY=s.devKey;
+  cryptRows(s.owners,CRYPT.owners,dec); cryptRows(s.shops,CRYPT.shops,dec);
   return s;
 }
-function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
+function save(){
+  const copy=JSON.parse(JSON.stringify(state));
+  cryptRows(copy.owners,CRYPT.owners,enc); cryptRows(copy.shops,CRYPT.shops,enc);
+  try{ localStorage.setItem(KEY,JSON.stringify(copy)); return true; }
+  catch(e){
+    /* kuota penuh: ulangi tanpa foto (foto memang opsional, lihat spec §8) */
+    const slim=JSON.parse(JSON.stringify(state));
+    (slim.shops||[]).forEach(s=>{ if(String(s.photo||'').indexOf('data:')===0) s.photo=''; });
+    Object.values(slim.owners||{}).forEach(o=>{ if(String(o.photo||'').indexOf('data:')===0) o.photo=''; });
+    cryptRows(slim.owners,CRYPT.owners,enc); cryptRows(slim.shops,CRYPT.shops,enc);
+    try{ localStorage.setItem(KEY,JSON.stringify(slim)); toast('Penyimpanan penuh — foto tidak tersimpan','err'); }
+    catch(e2){ toast('Gagal menyimpan data','err'); }
+    return false;
+  }
+}
 /* save() versi jujur: localStorage punya kuota ±5 MB, foto bukti pengambilan
    bisa membuatnya penuh. Dipakai di alur yang menyimpan data besar. */
 function saveOr(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); return true; }catch(e){ return false; } }
