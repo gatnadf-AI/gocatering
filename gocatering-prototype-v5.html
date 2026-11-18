@@ -337,6 +337,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .stepbar{display:flex;gap:6px;margin-bottom:8px}
 .stepbar span{flex:1;height:4px;border-radius:4px;background:#e0e6ea}
 .stepbar span.on{background:#00a08a}
+/* chip kode restoran (Task 8) — tampil di dasbor penjual dan katalog pembeli */
+.rcode-chip{display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;border:1px solid #c8e6c9;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:#2e7d32;cursor:pointer}
+.rcode-chip:hover{background:#c8e6c9}
+.rcode-chip .rid{font-size:10px;font-weight:500;color:#558b2f}
 </style>
 </head>
 <body>
@@ -492,7 +496,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
           <div><img class="photoprev" id="rs-shop-photo-prev" alt="Pratinjau foto restoran"></div>
           <button class="btn-sm btn-grey" id="rs-shop-photo-btn" type="button" onclick="$('rs-shop-photo').click()">Pilih Foto</button>
           <div class="ferr" id="rs-shop-photo-err"></div></div>
-        <div class="formnav"><button class="btn btn-grey" style="flex:1" onclick="go('v-reg-seller-1')">&larr; Sebelum</button>
+        <div class="formnav"><button class="btn btn-grey" id="rs2-back" style="flex:1" onclick="go('v-reg-seller-1')">&larr; Sebelum</button>
           <button class="btn btn-tosca" style="flex:1.5" onclick="submitSellerForm()">Sesudah · DAFTARKAN</button></div>
         <div class="hint" style="margin-top:10px">Nomor customer service boleh berbeda dari nomor pemilik. Ini yang terlihat pembeli saat menyentuh kode restoran.</div>
       </div>
@@ -782,10 +786,30 @@ const SHOPS = [
 ];
 
 /* Kode restoran (aturan A.6: inisial pemilik + 4 digit NIK + running number).
-   Toko demo dipatok di peta ini supaya kodenya stabil; toko hasil registrasi A
-   membawa s.rcode sendiri. ID restoran 6 angka untuk seller = shopId yang ada. */
+   Sumber utama sekarang s.code (dibangun buildShops/nextShopCode). RCODE lama
+   hanya cadangan untuk data yang masih memakai slug toko. */
 const RCODE = {'rm-sederhana':'A4567701','kekinian-food':'A4567703','dapur-nusantara':'S4567702','catering-sehat':'S4567704'};
-function rcodeOf(id){ const s=shopOf(id); return (s&&(s.rcode||RCODE[s.id]))||'—'; }
+function rcodeOf(id){ const s=shopOf(id); return (s&&(s.code||s.rcode||RCODE[s.id]))||'—'; }
+/* chip kode restoran: kode yang dilihat pembeli + ID toko 6 angka (hanya untuk penjual) */
+function codeChip(id){
+  const s=shopOf(id); if(!s) return '<span class="hint">—</span>';
+  const code=rcodeOf(id);
+  return `<span class="rcode-chip" onclick="copyText('${code}');toast('Kode disalin: ${code}','ok')" title="Klik untuk menyalin">${code}<span class="rid">${id}</span></span>`;
+}
+/* clipboard modern hanya tersedia di https/localhost — prototype ini juga dibuka
+   lewat file://, jadi siapkan jalur textarea + execCommand sebagai cadangan. */
+function copyText(t){
+  t=String(t==null?'':t);
+  const back=()=>{ try{
+      const ta=document.createElement('textarea'); ta.value=t;
+      ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:-20px;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      const done=document.execCommand?document.execCommand('copy'):false;
+      ta.remove(); return done;
+    }catch(e){ return false } };
+  if(navigator.clipboard&&navigator.clipboard.writeText) return navigator.clipboard.writeText(t).catch(back);
+  return Promise.resolve(back());
+}
 
 /* ================= DATA PEMILIK CONTOH (spec §9) =================
    SHOPS + SHOP_ADDR tetap dipakai, tapi hanya sebagai bahan mentah migrasi.
@@ -1214,6 +1238,11 @@ function onEnter(view){
   if(!state.user) return;
   if(view==='v-profile') renderProfile();
   else if(view==='v-orders') renderOrders();
+  else if(view==='v-seller'){
+    /* dasbor penjual selalu dibuka pada toko terakhir yang dipilih (spec §7.3) */
+    if(state.sellerShop && myShopIds().indexOf(state.sellerShop)>=0) sellerShopId=state.sellerShop;
+    ensureSellerShop(); renderSeller();
+  }
 }
 function goBack(){ const p=history.pop(); go(p||'v-login',false); }
 function navTo(view){ history=[]; go(view,false); }
@@ -1270,11 +1299,13 @@ function doLogin(){
     if(!o) return toast(isBuyer?'Email ini akun pembeli — pilih role Pembeli':'Email atau password penjual salah','err');
     if(pass!==o.password) return toast('Email atau password penjual salah','err');
     state.user={email,name:o.nama,role:'seller',ownerKey:o.key,phone:o.phone};
-    state.sellerShop=o.shops[0]; sellerShopId=state.sellerShop; save();
+    /* toko aktif terakhir dipulihkan kalau masih miliknya (spec §7.3) */
+    state.sellerShop=(state.sellerShop&&o.shops.indexOf(state.sellerShop)>=0)?state.sellerShop:o.shops[0];
+    sellerShopId=state.sellerShop; save();
     /* sheet "Tambah Pesanan" di dashboard membaca currentShop (warisan v4) */
-    currentShop=shopOf(o.shops[0]);
+    currentShop=shopOf(state.sellerShop);
     if(o.mustReset){ $('np-hint').textContent='Password sementara wajib diganti sebelum masuk dashboard.'; go('v-s-reset'); return }
-    go('v-seller',false); ensureSellerShop(); renderSeller();
+    go('v-seller',false); ensureSellerShop(); tab='all'; renderSeller();
     toast('Selamat datang, '+o.nama,'ok'); return;
   }
   if(o) return toast('Email ini akun penjual — pilih role Penjual','err');
@@ -1369,6 +1400,7 @@ function nextIdentity(){
   if(!v.ok){ toast('Periksa lagi isian Data Diri Penjual','err'); $(v.first).focus(); return }
   v.values.photo=readPhoto('rs-photo');
   state.tmpSeller=v.values;
+  $('rs2-back').style.display='';                     /* registrasi penuh: langkah 1 boleh dibuka lagi */
   if(!fv('rs-cs')) $('rs-cs').value=v.values.phone;      /* default, boleh diganti (spec §2 butir 7) */
   go('v-reg-seller-2');
 }
@@ -1443,8 +1475,8 @@ function renderRegDone(){
   const c=state.regCreds||{};
   $('reg-done-body').innerHTML=`<div class="center" style="padding:16px 0 10px">
       <div style="font-size:44px">✅</div>
-      <h3 style="margin:10px 0 2px">Akun penjual Anda sudah terbit</h3>
-      <div class="hint">Simpan password di bawah ini — tidak ditampilkan dua kali.</div></div>
+      <h3 style="margin:10px 0 2px">${c.password?'Akun penjual Anda sudah terbit':'Toko baru sudah terbit'}</h3>
+      <div class="hint">${c.password?'Simpan password di bawah ini — tidak ditampilkan dua kali.':'Data diri tetap memakai akun Anda yang lama.'}</div></div>
     <div class="card" style="box-shadow:none;background:#f5f7f9">
       <div class="oline"><span>Email</span><b>${esc(c.email||'—')}</b></div>
       <div class="oline"><span>Kode restoran</span><b>${esc(c.code||'—')}</b></div>
@@ -1454,7 +1486,7 @@ function renderRegDone(){
            <div class="hint" style="margin-top:6px">Password ini hanya tampil sekali dan wajib diganti setelah login.</div>`
         : `<div class="hint" style="margin-top:6px">Toko bertambah. Password akun Anda tetap seperti biasa.</div>`}
     </div>
-    <button class="btn btn-tosca" style="margin-top:12px" onclick="gotoLoginAsSeller()">LOGIN SEKARANG</button>
+    <button class="btn btn-tosca" style="margin-top:12px" onclick="${c.password?'gotoLoginAsSeller()':'afterAddShop()'}">${c.password?'LOGIN SEKARANG':'KEMBALI KE DASHBOARD'}</button>
     <div class="hint center" style="margin-top:8px">ID restoran hanya untuk Anda; pembeli hanya melihat kode.</div>`;
 }
 function gotoLoginAsSeller(){
@@ -1488,8 +1520,39 @@ function skipResetLogout(){
   $('np-pass').value=''; $('np-pass2').value=''; setErr('np-pass',''); setErr('np-pass2','');
   toast('Sesi ditutup — login lagi untuk mengganti password','err'); logout();
 }
-/* stub: Task 8 yang mengisi jalur Tambah Toko */
-function submitAddShop(){ toast('Tambah toko belum tersedia','err'); }
+/* ---------- TAMBAH TOKO untuk pemilik yang sudah login (spec §7.5) ----------
+   guardShop dipasang di setiap aksi penjual yang menerima id toko/order:
+   tanpa itu, siapa pun yang tahu id bisa mengubah pesanan orang lain. */
+function guardShop(shopId){
+  const o=currentOwner();
+  if(!o){ toast('Login sebagai penjual dulu','err'); return false }
+  if(o.shops.indexOf(shopId)<0){ toast('Bukan restoran Anda','err'); return false }
+  return true;
+}
+/* wizard langkah 2 saja: data diri sudah ada di akun, yang baru hanya tokonya */
+function startAddShop(){
+  const o=currentOwner(); if(!o){ toast('Login sebagai penjual dulu','err'); go('v-login'); return }
+  state.tmpSeller=null; state.tmpShop=null;
+  ['rs-shop','rs-addr','rs-map'].forEach(id=>$(id).value='');
+  ['rs-shop','rs-addr','rs-map','rs-cs'].forEach(id=>setErr(id,''));
+  $('rs-cs').value=o.phone;
+  $('rs2-back').style.display='none';                 /* kembali ke langkah 1 cuma menjebak: NIK sudah terdaftar */
+  go('v-reg-seller-2');
+}
+function submitAddShop(){
+  const o=currentOwner(); if(!o){ toast('Login sebagai penjual dulu','err'); go('v-login'); return }
+  const v=validateShop();
+  if(!v.ok){ toast('Periksa lagi isian Data Toko','err'); $(v.first).focus(); return }
+  const shop=addShop(o.key,v.values);
+  state.tmpShop=null; state.sellerShop=shop.id; sellerShopId=shop.id; save();
+  state.regCreds={email:o.email,code:shop.code,id:shop.id,password:''};
+  renderRegDone(); go('v-reg-done');
+}
+function afterAddShop(){
+  state.regCreds=null; $('reg-done-body').innerHTML='';
+  go('v-seller',false); ensureSellerShop(); renderSeller(); renderChrome('v-seller');
+  toast('Toko baru aktif: '+shopOf(activeShopId()).name,'ok');
+}
 /* ---------- LOGIN GOOGLE (simulasi OAuth) ----------
    Google hanya membagikan nama, email, foto. No. WA & alamat rumah diminta sekali
    lalu disimpan ke database pembeli (state.users[email]). */
@@ -2367,13 +2430,21 @@ function renderSeller(){
 }
 function renderShopSwitch(){
   const ids=myShopIds(), box=$('dash-shop');
-  if(ids.length<2){ box.innerHTML=''; return; }          /* satu toko: tidak ada opsi */
-  box.innerHTML=`<div class="shopswitch"><span class="sl">TOKO</span><div class="swrap">`+ids.map(id=>{
-    const s=shopOf(id);
-    return `<button type="button" class="swchip${id===activeShopId()?' on':''}" onclick="setSellerShop('${id}')">${s.logo} ${s.name}<span class="rc">${restaurantId(id)}</span></button>`;
-  }).join('')+`</div></div>`;
+  if(ids.length<1){ box.innerHTML=''; return; }   /* satu toko pun tetap tampil: di sinilah tombol Tambah Toko hidup */
+  box.innerHTML=`<div class="shopswitch"><span class="sl">TOKO</span><div class="swrap">`
+    +ids.map(id=>{
+      const s=shopOf(id);
+      return `<button type="button" class="swchip${id===activeShopId()?' on':''}" onclick="setSellerShop('${id}')">${s.logo} ${s.name}<span class="rc">${rcodeOf(id)}</span></button>`;
+    }).join('')
+    +`<button type="button" class="swchip" style="background:#e8f5e9;border-color:#c8e6c9;color:#2e7d32" onclick="startAddShop()">+ Tambah Toko</button>`
+    +`</div></div>`;
 }
-function setSellerShop(id){ sellerShopId=id; tab='all'; renderSeller(); renderChrome('v-seller'); toast('Dashboard: '+shopOf(id).name,'ok'); }
+function setSellerShop(id){
+  if(!guardShop(id)) return;
+  sellerShopId=id; state.sellerShop=id; save();
+  tab='all'; renderSeller(); renderChrome('v-seller');
+  toast('Dashboard: '+shopOf(id).name,'ok');
+}
 function renderWidgets(){
   const id=activeShopId(), ids=id?[id]:[];
   $('dash-widgets').innerHTML=WIDGETS.map(w=>{
@@ -2447,7 +2518,8 @@ function setTab(t){ tab=t; document.querySelectorAll('#seller-tabs button').forE
 function renderSellerList(){
   const id=activeShopId();
   if(tab==='menu'){
-    $('seller-list').innerHTML=SHOPS.filter(s=>s.id===id).map(s=>`
+    /* state.shops, bukan konstanta SHOPS: id toko sudah 6 angka sejak Task 4 */
+    $('seller-list').innerHTML=[shopOf(id)].filter(Boolean).map(s=>`
      <div class="card" style="margin-top:12px"><b style="font-size:14px">${s.logo} ${s.name}</b>
      ${s.packages.map(p=>`<div class="mrow"><img src="${p.img}" onerror="this.src='assets/food/nasi-kotak.jpg'">
       <div class="mi"><div class="mn">${p.name}</div><div class="mp">${rp(p.price)} · ${p.desc}</div></div>
@@ -2480,7 +2552,9 @@ function sellerCard(o){
     </div>${statusFlow(o)}</div>`;
 }
 function advance(id){
-  const o=state.orders.find(x=>x.id===id); const i=FLOW.indexOf(o.status);
+  const o=state.orders.find(x=>x.id===id); if(!o) return;
+  if(!guardShop(o.shopId)) return;
+  const i=FLOW.indexOf(o.status);
   if(i>=FLOW.length-1) return;
   const next=FLOW[i+1];
   if(next==='processing'&&!canProcess(o)){
@@ -2494,6 +2568,7 @@ function advance(id){
 }
 function cancelOrder(id,reason,note){
   const o=state.orders.find(x=>x.id===id); if(!o) return;
+  if(!guardShop(o.shopId)) return;
   if(o.status==='cancelled') return toast('Pesanan ini sudah dibatalkan','warn');
   if(!reason) return askCancel(id);                 // pembatalan selalu lewat dialog beralasan
   o.status='cancelled'; o.cancelReason=reason; o.cancelNote=(note||'').trim()||null;
@@ -2510,6 +2585,7 @@ function shrinkImage(img,max,q){
 }
 function markCollected(id){
   const o=state.orders.find(x=>x.id===id); if(!o) return;
+  if(!guardShop(o.shopId)) return;
   if(o.status==='completed') return toast('Pesanan ini sudah selesai','info');
   if(o.status==='cancelled') return toast('Sudah dibatalkan — tidak bisa ditandai diambil','warn');
   if(!canProcess(o)) return toast('Belum lunas — pesanan tidak bisa dinyatakan diambil','err');
@@ -2585,7 +2661,10 @@ function refreshDash(){
   if((document.querySelector('.view.on')||{}).id==='v-sdash'){ renderDashHead(); renderDashList(); }
   renderSeller();
 }
-function toggleMenu(id){ state.menuOff[id]=!state.menuOff[id]; save(); renderSellerList(); toast(state.menuOff[id]?'Paket disembunyikan dari katalog':'Paket ditampilkan','ok'); }
+function toggleMenu(pid){
+  const sh=_shopList().find(s=>s.packages.some(p=>p.id===pid)); if(!sh) return;
+  if(!guardShop(sh.id)) return;
+  state.menuOff[pid]=!state.menuOff[pid]; save(); renderSellerList(); toast(state.menuOff[pid]?'Paket disembunyikan dari katalog':'Paket ditampilkan','ok'); }
 
 /* ================= OFFLINE / SYNC ================= */
 function setOffline(v){

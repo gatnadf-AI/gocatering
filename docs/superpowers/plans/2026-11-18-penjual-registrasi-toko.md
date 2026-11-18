@@ -1693,7 +1693,45 @@ git commit -m "feat(v5): ganti password wajib bagi penjual baru sebelum masuk da
 
 **Catatan:** v5 sudah punya `setSellerShop`, `renderShopSwitch`, `activeShopId`, `sellerOrders`, `dashBucket`, `rcodeOf`, `restaurantId`, `sweepExpired`, `cancelOrder(id,reason,note)`, `markCollected`, dll. Task ini tidak mengganti nama-nama itu, hanya menambahkan persistensi, tombol Tambah Toko, dan penjaga isolasi.
 
-- [ ] **Step 1: Tulis uji yang gagal**
+**Catatan rekonsiliasi Task 8:**
+
+1. `codeChip()` memanggil `copyText()` yang **tidak pernah didefinisikan** di task
+   mana pun (dcek: nol kemunculan di rencana). Helper dibuat di sini:
+   `navigator.clipboard.writeText` + fallback textarea/`execCommand`. Catatan
+   verifikasi: di tab otomatisasi janjinya resolve `false` karena dokumen tidak
+   punya user activation; isi clipboard sungguhan baru bisa dibuktikan dengan klik
+   nyata (Task 9).
+2. `rcodeOf()` masih `s.rcode||RCODE[s.id]`. Sejak Task 4 id toko numerik, jadi
+   RCODE slug tidak pernah cocok dan **semua kode tampil `—`** — termasuk baris
+   "Kode restoran" di detail order (v5:2241) yang sudah ada sejak Task 4. Diperbaiki
+   menjadi `s.code||s.rcode||RCODE[s.id]`.
+3. Regresi lain warisan Task 4: `renderSellerList()` tab `menu` masih memetakan
+   konstanta `SHOPS`, sehingga "Menu Saya" penjual kosong. Dipindah ke
+   `[shopOf(id)].filter(Boolean)` + uji regresi.
+4. `doLogin()`原先 memaksa `state.sellerShop=o.shops[0]` — bertentangan dengan
+   §7.3. Kini nilai tersimpan dipulihkan selama masih milik akun itu; pindah akun
+   tetap jatuh ke `shops[0]`.
+5. Uji rencana kurang kuat di dua tempat: (a) uji persistensi memakai toko *pertama*
+   Sari (`100742`) yang kebetulan sama dengan `shops[0]` → lolos tanpa fungsinya
+   benar, diganti ke `100930`; (b) uji guardShop memakai `GC-2411-00A2` yang
+   statusnya `completed` sehingga `advance()` memang tidak mengubah apa pun walau
+   tanpa penjaga, diganti `GC-2411-00A6` (status `new`, punya Sari) plus kontrol
+   positif bahwa Sari boleh.
+6. Rencana tidak membahas tombol "← Sebelum" langkah 2. Untuk jalur Tambah Toko
+   langkah 1 harus dilompati (NIK sudah terdaftar), jadi tombolnya diberi id
+   `#rs2-back`, disembunyikan `startAddShop()` dan dipulihkan `nextIdentity()`.
+7. `renderRegDone()` butuh CTA kedua: penjual yang sudah login tidak boleh disuruh
+   "LOGIN SEKARANG". Ditambah cabang `afterAddShop()` ("KEMBALI KE DASHBOARD") dan
+   judul/teks kepala yang mengikuti.
+8. Penjaga ditambah satu langkah dari rencana: `markCollected()` dan
+   `setSellerShop()` juga lewat `guardShop()`; `tab` direset ke `all` saat login
+   supaya penjual berikutnya tidak membuka tab terakhir penjual sebelumnya.
+9. Helper `reload(b)` dipakai uji Task 8 tapi belum ada → ditambahkan di
+   `tools/test.js`.
+10. Stub `submitAddShop()` penunda Task 6 sudah diganti yang sebenarnya.
+
+
+- [x] **Step 1: Tulis uji yang gagal**
 
 ```js
 console.log('\n== TASK 8 — persistensi, tambah toko, isolasi ==');
@@ -1747,11 +1785,11 @@ t('Tambah Toko memakai NIK pemilik yang sedang login dan menaikkan running', () 
 });
 ```
 
-- [ ] **Step 2: Jalankan, pastikan gagal**
+- [x] **Step 2: Jalankan, pastikan gagal**
 
 Run: `node tools/test.js` → `codeChip is not defined`.
 
-- [ ] **Step 3: Persistensi sellerShopId (modifikasi `setSellerShop` yang sudah ada di v5)**
+- [x] **Step 3: Persistensi sellerShopId (modifikasi `setSellerShop` yang sudah ada di v5)**
 
 ```js
 function setSellerShop(id){
@@ -1773,7 +1811,7 @@ dan di `onEnter` (v5:859) tambahkan pemulihan:
   }
 ```
 
-- [ ] **Step 4: Fungsi codeChip (sisipkan setelah `rcodeOf` di v5)**
+- [x] **Step 4: Fungsi codeChip (sisipkan setelah `rcodeOf` di v5)**
 
 ```js
 /* codeChip: chip HTML yang menampilkan kode restoran dan ID toko, bisa diklik untuk menyalin */
@@ -1792,7 +1830,7 @@ CSS (sebelum `</style>`):
 .rcode-chip .rid{font-size:10px;font-weight:500;color:#558b2f}
 ```
 
-- [ ] **Step 5: Tombol Tambah Toko di renderShopSwitch (modifikasi fungsi yang sudah ada di v5)**
+- [x] **Step 5: Tombol Tambah Toko di renderShopSwitch (modifikasi fungsi yang sudah ada di v5)**
 
 ```js
 function renderShopSwitch(){
@@ -1808,7 +1846,7 @@ function renderShopSwitch(){
 }
 ```
 
-- [ ] **Step 6: Fungsi guardShop, startAddShop, submitAddShop (sisipkan di blok PENJUAL)**
+- [x] **Step 6: Fungsi guardShop, startAddShop, submitAddShop (sisipkan di blok PENJUAL)**
 
 ```js
 function guardShop(shopId){
@@ -1835,7 +1873,7 @@ function submitAddShop(){
 }
 ```
 
-- [ ] **Step 7: Pakai guardShop di advance, cancelOrder, toggleMenu**
+- [x] **Step 7: Pakai guardShop di advance, cancelOrder, toggleMenu**
 
 di `advance` (v5 existing) tambahkan di awal:
 
@@ -1867,15 +1905,15 @@ function toggleMenu(pid){
 }
 ```
 
-- [ ] **Step 8: Jalankan test sampai hijau**
+- [x] **Step 8: Jalankan test sampai hijau**
 
 Run: `node tools/test.js` → Task 1–8 hijau.
 
-- [ ] **Step 9: Cek browser**
+- [x] **Step 9: Cek browser**
 
 `Isi penjual` (Andi) → LOGIN → dashboard: header menyebut `A4567001`/`100234`, tombol `+ Tambah Toko` tampil di pemilih toko → klik → langkah 2 tampil tanpa langkah 1 → isi → DAFTARKAN → muncul `A4567003` dan **tidak ada** password sementara. Klik kode restoran di kartu pesanan → disalin ke clipboard. Login sebagai Sari → daftar pesanan tidak memuat satu pun order Andi (cari teks "RM Sederhana": tidak ada). Konsol bersih.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add gocatering-prototype-v5.html tools/test.js
