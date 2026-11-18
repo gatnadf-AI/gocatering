@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>goCatering v4 — Prototype Interaktif (Pickup + Antrean / Delivery + Ongkir)</title>
+<title>goCatering v5 — Prototype Interaktif (Registrasi Penjual &amp; Toko + Kode Restoran)</title>
 <style>
 :root{
   --biru:#2196F3; --biru-t:#1565C0; --tosca:#00897B; --tosca-t:#00695C;
@@ -351,8 +351,18 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 <body>
 
 <div class="panel">
-  <h1>goCatering v4</h1>
+  <h1>goCatering v5</h1>
   <div>Prototype interaktif — alur pembeli &amp; penjual, pembayaran digital, WhatsApp, dan simulasi offline-first.</div>
+  <h2>Baru di v5</h2>
+  <ul>
+    <li><b>Registrasi penjual 2 langkah.</b> Data diri (gelar, nama, email Gmail, NIK, WA, foto opsional) lalu data toko (nama, alamat, link Google Maps, WA customer service, foto opsional).</li>
+    <li><b>Akun terbit otomatis.</b> Sistem membuat email login, <b>password sementara satu kali tampil</b>, dan mewajibkannya diganti setelah login pertama.</li>
+    <li><b>Kode restoran</b> = inisial nama pemilik + 4 digit akhir NIK + nomor urut per pemilik (contoh <code>H4567001</code>), tampil di samping nama toko untuk pembeli. <b>ID restoran 6 angka hanya terlihat penjual.</b></li>
+    <li><b>Sentuh kode</b> &rarr; popup berisi nama pemilik, alamat fisik, tombol <b>Buka Peta</b>, dan nomor WA customer service lengkap dengan <b>Chat WA</b>.</li>
+    <li><b>Satu pemilik, banyak restoran.</b> Tombol <b>Tambah Toko</b> di dashboard memakai NIK yang sama dan menaikkan nomor urut kode.</li>
+    <li><b>Isolasi antar-akun.</b> Dashboard, pesanan, dan menu hanya menampilkan toko milik akun yang login; memaksa id toko orang lain ditolak.</li>
+    <li><b>Data pribadi disandikan</b> (XOR + Base64, kunci acak per perangkat) sebelum masuk <code>localStorage</code>. Ini penyamaran nilai, <b>bukan</b> enkripsi untuk kepatuhan.</li>
+  </ul>
   <h2>Baru di v4</h2>
   <ul>
     <li><b>Ambil di toko / Diantar.</b> Pilih di checkout: pickup tanpa ongkir, atau delivery GoSend / GrabExpress.</li>
@@ -1129,10 +1139,20 @@ function seedAntrean(orders){
   return m;
 }
 function queueKey(shopId,date){ return shopId+'|'+date; }
+/* Huruf tiket antre. v4 membacanya dari slug toko; sejak Task 4 id jadi 6 angka sehingga
+   map slug tidak pernah cocok lagi dan semua tiket baru keluar sebagai "Q-". Sekarang huruf
+   mengikuti posisi outlet: 4 outlet bawaan tetap A/B/C/D seperti v4 (SHOPS[i] ↔ DEMO_SHOP[i]),
+   outlet hasil registrasi melanjutkan huruf berikutnya (E, F, …). Nomor tetap per
+   outlet per hari — hanya hurufnya yang ditentukan ulang. */
+function queueLetter(shopId){
+  const built=SHOPS.findIndex(s=>s.id===shopId);
+  if(built>=0) return String.fromCharCode(65+(built%26));
+  const at=(state.shops||[]).findIndex(s=>s.id===shopId);
+  return at>=0 ? String.fromCharCode(65+(at%26)) : 'Q';
+}
 function nextQueueNo(shopId,date){
   const n=(state.antrean[queueKey(shopId,date)]||0)+1;
-  const pref={'rm-sederhana':'A','dapur-nusantara':'B','catering-sehat':'C','kekinian-food':'D'}[shopId]||'Q';
-  return pref+'-'+String(n).padStart(3,'0');
+  return queueLetter(shopId)+'-'+String(n).padStart(3,'0');
 }
 function commitQueue(shopId,date){ state.antrean[queueKey(shopId,date)]=(state.antrean[queueKey(shopId,date)]||0)+1; }
 function load(){
@@ -1673,7 +1693,7 @@ function renderProfile(){
   $('pf-history').innerHTML = done.length
     ? done.map(o=>{
         const s=shopOf(o.shopId);
-        return `<div class="hrow"><div style="min-width:0"><div class="hl">${s?s.name:o.shopId}</div>
+        return `<div class="hrow"><div style="min-width:0"><div class="hl">${s?s.name:'Outlet tidak dikenal'}</div>
           <div class="hs">${o.id} · ${paxOf(o)} orang · ${o.fulfillment==='pickup'?'🏪 ambil di toko':'🛵 diantar'}</div>
           <div class="hs">Selesai ${o.completedAt?fmtDate(o.completedAt):'—'} · ${PAYMENTS[o.method].name}${o.payStatus==='cod'?' (COD di toko)':' (lunas)'}</div></div>
           <div style="text-align:right;flex:0 0 auto"><b style="color:var(--merah)">${rp(o.total)}</b></div></div>`;
@@ -2157,7 +2177,7 @@ function openPayment(ord){
   const qn=ord.fulfillment==='pickup'&&ord.pickup?`<br>antre <b>${ord.pickup.queue}</b> · slot ${slotLbl(ord.pickup.slot)}`:'';
   let inner='';
   if(ord.method==='qris'){
-    inner=`<div class="center pad"><div class="shopname">${p.name}</div><div class="hint">Bayar ke ${ord.shopId} · goPay Sandbox</div>
+    inner=`<div class="center pad"><div class="shopname">${p.name}</div><div class="hint">Bayar ke ${(shopOf(ord.shopId)||{}).name||'penjual'} · goPay Sandbox</div>
       <div class="qrbox" id="qr"></div>
       <div class="hint">Statis · ${ord.id}<br>Nominal <b>${rp(ord.total)}</b>${ship}${qn}</div>
       <div class="count">Berakhir dalam <b id="cd">04:59</b></div></div>`;

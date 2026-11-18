@@ -1,4 +1,4 @@
-# goCatering — Prototype Aplikasi Mobile (Memakai Qoder AI Alibaba
+# goCatering — Prototype Aplikasi Mobile (Memakai Qoder AI Alibaba)
 
 Prototipe interaktif (single-file HTML) untuk aplikasi pemesanan katering **goCatering**:
 pembeli memilih paket, menentukan ambil di outlet atau diantar, membayar, lalu penjual
@@ -11,23 +11,30 @@ Semua alur berjalan tanpa server — cocok untuk demo, user testing, atau presen
 Tidak perlu install atau build. Cukup:
 
 1. Download / clone repo ini (folder `assets/food/` harus ikut, isinya foto menu).
-2. Buka **`gocatering-prototype-v4.html`** di browser (Chrome/Edge/Firefox).
-   Di desktop tampilan sudah dibingkai seperti layar HP 380 × 800.
+2. Buka **`gocatering-prototype-v5.html`** di browser (Chrome/Edge/Firefox) — atau `index.html`,
+   yang otomatis mengalihkan ke v5. Di desktop tampilan sudah dibingkai seperti layar HP 380 × 800.
 
 Alternatif: aktifkan **Settings → Pages → GitHub Actions / Deploy from branch** pada repo ini,
-lalu buka `https://gatnadf-AI.github.io/gocatering/gocatering-prototype-v4.html`.
+lalu buka `https://gatnadf-AI.github.io/gocatering/gocatering-prototype-v5.html`.
+
+Node dipakai untuk harness uji, bukan untuk menjalankan aplikasinya. Harness (`tools/`) adalah
+scratch lokal dan **tidak ikut di-push**, jadi perintah di bawah hanya berlaku di mesin tempat
+prototype ini dikembangkan:
+
+    node tools/test.js     # seluruh assertion (regresi v4 + fitur v5)
+    node tools/serve.js    # serve di http://127.0.0.1:8848 untuk uji lewat browser
 
 ## Versi
 
 | Berkas | Isi |
 | --- | --- |
-| `gocatering-prototype-v5.html` | **Basis pekerjaan berikutnya** — salinan persis v4, tempat fitur registrasi penjual & toko dibangun |
-| `gocatering-prototype-v4.html` | **Versi utama yang dipublikasi** — checkout 4 halaman, pembayaran, login Google, profil + UU PDP, dashboard pesanan per toko |
+| `gocatering-prototype-v5.html` | **Versi utama yang dipublikasi** — registrasi penjual & toko: wizard 2 langkah, akun + password sementara, kode restoran, multi-toko per pemilik, isolasi antar-akun, popup info restoran untuk pembeli |
+| `gocatering-prototype-v4.html` | Checkout 4 halaman, pembayaran, login Google, profil + UU PDP, dashboard pesanan per toko — dipakai v5 sebagai basis, isinya tidak diubah |
 | `gocatering-prototype-v3.html` | Bottom sheet "+ Tambah Pesanan" dengan carousel paket |
 | `gocatering-prototype-v2.html` | Dummy data, foto makanan, pembayaran digital |
 | `gocatering-prototype.html` | Versi dasar (v1) |
 
-## Fitur di v4
+## Fitur di v4 — tetap ada di v5
 
 **Checkout 4 halaman** dengan tombol *Sebelum / Sesudah* dan stepper di setiap langkah:
 
@@ -38,7 +45,8 @@ lalu buka `https://gatnadf-AI.github.io/gocatering/gocatering-prototype-v4.html`
 
 Aturan bisnis yang diterapkan:
 
-- **Nomor antre** per toko per hari (prefiks A/B/C/D) untuk pesanan ambil di outlet.
+- **Nomor antre** per toko per hari (prefiks A/B/C/D untuk empat outlet bawaan, outlet hasil
+  registrasi melanjutkan huruf berikutnya) untuk pesanan ambil di outlet.
 - **Slot ambil 11.00 – 18.00 WIB** saja.
 - **Jumlah orang otomatis** = total paket dari semua jenis paket.
 - **Batas jam 16.00 WIB** — order hari ini yang lewat jam tersebut digeser diproses besok,
@@ -79,11 +87,14 @@ Akun dan data pembeli:
 
 ## Akun demo
 
-| Peran | Email | Password |
-| --- | --- | --- |
-| Pembeli | `budi@mail.com` | `1234` |
-| Penjual (RM Sederhana) | `rm.sederhana@gocatering.id` | `seller123` |
-| Penjual (Dapur Nusantara) | `dapur.nusantara@gocatering.id` | `seller123` |
+| Peran | Email | Password | Catatan |
+| --- | --- | --- | --- |
+| Pembeli | `budi@mail.com` | `1234` | Checkout 4 halaman + riwayat |
+| Penjual 1 | `rm.sederhana@gocatering.id` | `seller123` | Andi Ramadhan, NIK `…4567`, 2 restoran: RM Sederhana `A4567001`, Kekinian Food `A4567002` |
+| Penjual 2 | `dapur.nusantara@gocatering.id` | `seller123` | Sari Kumalasari, NIK `…8812`, 2 restoran: Dapur Nusantara `S8812001`, Catering Sehat `S8812002` |
+
+Akun penjual hasil registrasi memakai password sementara yang terbit sekali di layar
+"Akun Penjual Terbit" dan wajib diganti saat login pertama.
 
 Tombol **Masuk dengan Google** menampilkan 3 akun bawaan (`sari.wijaya@`, `andiraen@`,
 `maya.kusuma@gmail.com`). Semua nama, nomor, dan alamat di aplikasi ini fiktif.
@@ -91,18 +102,29 @@ Tombol **Masuk dengan Google** menampilkan 3 akun bawaan (`sari.wijaya@`, `andir
 ## Struktur
 
 ```
-gocatering-prototype-v4.html   aplikasi utama (HTML + CSS + JS, satu berkas)
+gocatering-prototype-v5.html   aplikasi utama (HTML + CSS + JS, satu berkas)
+gocatering-prototype-v4.html   basis v5, disimpan apa adanya sebagai pembanding
 assets/food/                   foto menu + attribusi.json (sumber & lisensi tiap foto)
 LICENSE                        MIT untuk kode prototype
 ```
 
 ## Catatan teknis
 
-- Data tersimpan di `localStorage` peramban dengan key `gocatering_v4` — tidak ada jaringan,
-  tidak ada database sungguhan. Reset lewat DevTools: `localStorage.removeItem('gocatering_v4')`.
+- Data tersimpan di `localStorage` peramban dengan key `gocatering_v5` — tidak ada jaringan,
+  tidak ada database sungguhan. Reset lewat DevTools: `localStorage.removeItem('gocatering_v5')`.
+  Saat pertama kali dibuka, v5 mengambil isi `gocatering_v4` (kalau ada) lalu menaikkannya ke
+  skema 2; kunci v4 tidak ditulis ulang.
 - Pembayaran (QRIS/VA/e-wallet/COD) dan login Google **disimulasikan**, tidak memakai
   Midtrans atau OAuth asli.
 - Jam WIB bisa digeser lewat panel catatan di aplikasi untuk menguji aturan 16.00.
+- Data penjual (nama, NIK, email, WA, password) disandikan XOR + Base64 dengan kunci acak per
+  perangkat (`state.devKey`) sebelum masuk `localStorage`. Tujuannya supaya tidak terbaca mata di
+  DevTools — **bukan** enkripsi untuk kepatuhan UU PDP. Foto disimpan apa adanya (data URL JPEG
+  640 px) supaya kuota 5 MB tidak cepat habis; saat kuota penuh, `save()` mengulang tanpa foto.
+- Tidak ada server: NIK tidak diverifikasi ke Dukcapil, link peta tidak di-geocode, dan nomor WA
+  hanya tautan `wa.me`.
+- Membuka `gocatering-prototype-v4.html` setelah v5 masih aman: v4 memakai kunci penyimpanan
+  sendiri (`gocatering_v4`) dan tidak diubah oleh migrasi v5.
 - Prototipe ini untuk demo alur, bukan kerangka aplikasi produksi.
 
 ## Lisensi & atribusi

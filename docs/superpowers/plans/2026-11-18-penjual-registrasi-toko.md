@@ -2170,7 +2170,7 @@ git commit -m "feat(v5): chip kode restoran, popup info pemilik/peta/WA CS untuk
 - Consumes: seluruh Task 1–9.
 - Produces: v5 sebagai tautan default situs; dokumentasi sesuai kenyataan.
 
-- [ ] **Step 1: Label versi di dalam aplikasi**
+- [x] **Step 1: Label versi di dalam aplikasi**
 
 ```html
 <title>goCatering v5 — Prototype Interaktif (Registrasi Penjual & Toko + Kode Restoran)</title>
@@ -2191,14 +2191,14 @@ git commit -m "feat(v5): chip kode restoran, popup info pemilik/peta/WA CS untuk
   </ul>
 ```
 
-- [ ] **Step 2: Pengalihan `index.html` ke v5**
+- [x] **Step 2: Pengalihan `index.html` ke v5**
 
 Ganti tiga rujukan `gocatering-prototype-v4.html` menjadi `gocatering-prototype-v5.html` (baris `meta http-equiv="refresh"`, `location.replace(...)`, dan teks tautan cadangan).
 
 Run: `grep -n "prototype-v[45]" index.html`
 Expected: tiga baris, semuanya `v5`.
 
-- [ ] **Step 3: README**
+- [x] **Step 3: README**
 
 Perbaiki `README.md` agar cocok dengan kenyataan (empat suntingan, tanpa menambah bagian baru):
 
@@ -2241,7 +2241,7 @@ Akun penjual hasil registrasi memakai password sementara yang terbit sekali di l
   sendiri (`gocatering_v4`) dan tidak diubah oleh migrasi v5.
 ```
 
-- [ ] **Step 4: Uji statis**
+- [x] **Step 4: Uji statis**
 
 ```bash
 node tools/test.js
@@ -2250,7 +2250,7 @@ node -e "const{extract}=require('./tools/harness');require('fs').writeFileSync('
 
 Expected: semua uji hijau lalu `SINTAKS OK`.
 
-- [ ] **Step 5: Regresi menyeluruh di browser (spesifikasi §10, langkah 1–8)**
+- [x] **Step 5: Regresi menyeluruh di browser (spesifikasi §10, langkah 1–8)**
 
 Clear storage dulu. Jalankan berurutan dan catat hasilnya; satu pun kegagalan berarti task terkait belum selesai:
 
@@ -2279,12 +2279,61 @@ git push origin main                          # Pages memakai branch main, tanpa
 
 Lalu verifikasi live (Pages butuh ±30–60 detik): `https://gatnadf-ai.github.io/gocatering/` harus mengalih ke `gocatering-prototype-v5.html`, dan `https://gatnadf-ai.github.io/gocatering/gocatering-prototype-v5.html` harus boot dengan penyimpanan kosong tanpa error konsol.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
-git add gocatering-prototype-v5.html index.html README.md
+git add gocatering-prototype-v5.html index.html README.md docs/superpowers/plans/2026-11-18-penjual-registrasi-toko.md
 git commit -m "docs(v5): label versi, README, dan pengalihan index ke prototype v5"
 ```
+
+**Catatan rekonsiliasi Task 10 (dibuat saat eksekusi):**
+
+1. **Regresi menyeluruh menemukan tiga cacat nyata**, semuanya diperbaiki di berkas HTML dan
+   sekarang dijaga uji. Tidak ada satu pun yang biarkan lolos karena "hanya demo":
+   - *Layar pembayaran QRIS* menampilkan `shopId` mentah ("Bayar ke 100234"), melanggar aturan
+     keras Task 9. Diganti nama outlet: `Bayar ke ${(shopOf(ord.shopId)||{}).name||'penjual'}`.
+     VA dan e-wallet ikut dicek dan sudah bersih.
+   - *Riwayat di Profil* memakai ID 6 angka sebagai label bila toko pesanan tidak lagi ada.
+     Diganti teks `Outlet tidak dikenal`. Untuk toko yang dikenal, nama outlet tetap dipakai.
+   - *Huruf nomor antre rusak sejak Task 4.* v4 menyusun `A-001` dari **slug** toko
+     (`rm-sederhana` → A). Setelah id jadi 6 angka, peta slug tidak pernah cocok lagi sehingga
+     semua tiket baru keluar sebagai `Q-…` dan bertabrakan dengan seed A/B/C/D. Sekarang
+     `queueLetter(shopId)` menentukan huruf dari **posisi outlet** — 4 outlet bawaan tetap
+     A/B/C/D, outlet hasil registrasi melanjutkan E, F, … — sementara `state.antrean[key]`
+     (penghitung per outlet per hari) tidak disentuh.
+2. **7 uji baru** ditambahkan ke `tools/test.js` (blok `TASK 10`) untuk ketiganya, termasuk satu
+   uji bahwa `nomor` tetap melanjutkan penghitung lama (`antrean['100234|2099-01-01']=7` →
+   `A-008`) supaya perbaikan huruf tidak diam-diam mengubah aturan antre. Suite: **77 passed,
+   0 failed**. Uji HTML disaring dengan membuang atribut `on…="…"`, karena markup event berisi
+   nama fungsi/ID toko yang bukan tampilan pengguna.
+3. **Verifikasi manual §10 langkah 1–8 lewat browser** (halaman di-*reload* lebih dulu; pernah
+   tertipu skrip lama karena cache): wizard registrasi 2 langkah + layar "Akun Penjual Terbit",
+   login paksa ganti password, tambah toko kedua, popup info restoran dari chip kode, isolasi
+   antar-akun (permintaan akses toko lain → toast "Bukan restoran Anda"), duplikasi email &
+   NIK ditolak, bayar QRIS + COD, re-pay order `pending` (`deferPayment` → `payExisting` →
+   `verifyPayment` → lunas/terkonfirmasi), penyamaran UU PDP di Profil (nomor 4 digit terakhir
+   dan email), mode offline lalu `flushQueue` menguras antrean, dan `resetData()` kembali ke
+   4 outlet bawaan — semuanya tanpa error konsol.
+4. **Dua dugaan yang terbantahkan, jadi tidak ditulis ke README.** Rencana menyebut kemungkinan
+   data coretan wizard dan password sementara tertinggal di `localStorage`. Setelah diukur
+   langsung (20 penanda `e1:`, dan cek plaintext untuk nama/NIK/email/WA/password): semuanya
+   tersandi atau memang tidak pernah disimpan — `stripTemp()` membuang `tmpSeller`, `tmpShop`,
+   `newUser`, `regCreds` sebelum setiap `save()`, dan password sementara tidak pernah ditulis.
+   Yang memang polos di penyimpanan hanya nama & alamat outlet, dan itu memang disengaja. Karena
+   klaim "kebiasaan buruk" itu tidak benar, bullet-nya sengaja **tidak** ditambahkan.
+5. **Deviasi dari teks rencana saat menulis uji manual** (dibaca dari berkas, bukan diasumsikan):
+   id view wizard adalah `v-reg-seller-1` / `v-reg-seller-2`, bukan `v-s-register`; navigasinya
+   lewat `nextIdentity()` dan `submitSellerForm()`, bukan `coGoReg`; kolom WA CS bernama
+   `rs-cs`, bukan `rs-cswa`. Sebagian sinkronisasi README (tabel versi, akun demo, catatan
+   teknis) sudah dikerjakan pada task sebelumnya, jadi Task 10 hanya menambahkan aturan huruf
+   tiket yang berubah di butir "Nomor antre".
+6. `index.html`: seluruh 5 rujukan (link kanonik, meta refresh, `location.replace`, `href`,
+   teks tautan) kini menunjuk `gocatering-prototype-v5.html`; `grep -c prototype-v4 index.html`
+   menghasilkan 0.
+7. **Step 6 sengaja belum dikerjakan dan commit ini tidak push.** Menunggu dua jawaban pemilik
+   repo: apakah `docs/` (spec + rencana ini) ikut ke repo publik atau masuk `.gitignore`, dan
+   apakah `assets/food/` (foto CC, atribusi di `assets/food/attribusi.json`) tetap dipakai untuk
+   toko hasil migrasi. Catatan: `tools/` tetap di-gitignore, jadi suite uji tidak ikut ter-publish.
 
 ---
 
