@@ -501,6 +501,17 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <!-- PENJUAL: AKUN TERBIT (dipakai Task 6) -->
     <div class="view" id="v-reg-done"><div class="pad"><div id="reg-done-body"></div></div></div>
 
+    <!-- PENJUAL: GANTI PASSWORD — gerbang wajib, tanpa tombol back (spec §5.4) -->
+    <div class="view" id="v-s-reset">
+      <div class="pad">
+        <div class="hint" style="margin-bottom:10px" id="np-hint">Demi keamanan, password sementara harus diganti sebelum memakai dashboard.</div>
+        <div class="field"><label>Password baru</label><input id="np-pass" type="password" placeholder="min. 6 karakter"><div class="ferr" id="np-pass-err"></div></div>
+        <div class="field"><label>Ulangi password baru</label><input id="np-pass2" type="password" placeholder="sama seperti di atas"><div class="ferr" id="np-pass2-err"></div></div>
+        <button class="btn btn-tosca" onclick="applyReset()">GANTI PASSWORD</button>
+        <button class="btn btn-grey" style="margin-top:8px" onclick="skipResetLogout()">Keluar dulu</button>
+      </div>
+    </div>
+
     <!-- BUYER: SHOPS -->
     <div class="view" id="v-shops"><div class="pad" style="padding-bottom:4px"><div class="hint">Pilih toko catering. Setiap toko punya paket &amp; penjual sendiri.</div></div><div id="shop-list" style="padding-bottom:14px"></div></div>
 
@@ -1215,6 +1226,7 @@ function renderChrome(view){
   const titles={'v-login':['Newgocatering',''],'v-register':['Daftar','Isi biodata pengguna'],
     'v-reg-seller-1':['Daftar Penjual','1 · Data Diri'],'v-reg-seller-2':['Daftar Penjual','2 · Data Toko'],
     'v-reg-done':['Akun Penjual Terbit','Simpan password sementara'],
+    'v-s-reset':['Ganti Password','Wajib untuk penjual baru'],
     'v-shops':['Pilih Toko','Pembeli: '+(state.user?.name||'')],
     'v-catalog':[currentShop?currentShop.name:'goCatering',currentShop?currentShop.tagline:''],'v-checkout':['CheckOut','1 · Isi Detail Paket'],
     'v-co-ff':['CheckOut','2 · Metode Pengambilan'],'v-co-profil':['CheckOut','3 · Profil Pemesan'],'v-co-pay':['CheckOut','4 · Metode Pembayaran'],
@@ -1261,6 +1273,7 @@ function doLogin(){
     state.sellerShop=o.shops[0]; sellerShopId=state.sellerShop; save();
     /* sheet "Tambah Pesanan" di dashboard membaca currentShop (warisan v4) */
     currentShop=shopOf(o.shops[0]);
+    if(o.mustReset){ $('np-hint').textContent='Password sementara wajib diganti sebelum masuk dashboard.'; go('v-s-reset'); return }
     go('v-seller',false); ensureSellerShop(); renderSeller();
     toast('Selamat datang, '+o.nama,'ok'); return;
   }
@@ -1449,7 +1462,31 @@ function gotoLoginAsSeller(){
   $('li-email').value=(state.regCreds&&state.regCreds.email)||'';
   $('li-pass').value='';
   state.regCreds=null;
+  /* layar sekali-pakai dibersihkan: password-nya tidak boleh bisa dimunculkan
+     lagi lewat tombol back / riwayat navigasi */
+  $('reg-done-body').innerHTML='';
   go('v-login',false); toast('Email terisi — tempel password sementara Anda');
+}
+/* ---------- GERBANG WAJIB: GANTI PASSWORD (spec §2 butir 8, §5.4) ----------
+   Layar ini sengaja tidak dipasang di daftar tombol back: riwayat masih berisi
+   v-reg-done, dan layar itu adalah layar sekali-pakai. */
+function applyReset(){
+  const o=currentOwner(); if(!o){ toast('Login sebagai penjual dulu','err'); go('v-login'); return }
+  const a=$('np-pass').value||'', b2=$('np-pass2').value||'';
+  let bad='';
+  if(a.length<6) bad='Password minimal 6 karakter';
+  else if(a===o.password) bad='Tidak boleh sama dengan password sementara';
+  setErr('np-pass',bad); if(bad){ toast(bad,'err'); $('np-pass').focus(); return }
+  if(a!==b2){ setErr('np-pass2','Konfirmasi password tidak sama'); toast('Konfirmasi password tidak sama','err'); $('np-pass2').focus(); return }
+  setErr('np-pass2','');
+  o.password=a; o.mustReset=false; save();
+  $('np-pass').value=''; $('np-pass2').value='';
+  toast('Password baru tersimpan','ok');
+  go('v-seller',false); ensureSellerShop(); renderSeller();
+}
+function skipResetLogout(){
+  $('np-pass').value=''; $('np-pass2').value=''; setErr('np-pass',''); setErr('np-pass2','');
+  toast('Sesi ditutup — login lagi untuk mengganti password','err'); logout();
 }
 /* stub: Task 8 yang mengisi jalur Tambah Toko */
 function submitAddShop(){ toast('Tambah toko belum tersedia','err'); }

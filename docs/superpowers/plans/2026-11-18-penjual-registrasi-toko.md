@@ -1553,9 +1553,30 @@ git commit -m "feat(v5): submit registrasi, layar akun terbit, dan login berbasi
 
 **Interfaces:**
 - Consumes: `currentOwner()` (Task 4), `fv`/`setErr`/`toast`/`go` (v4), `mustReset` (Task 6).
-- Produces: view `v-s-reset` (`np-pass`,`np-pass2`,`np-hint` + `-err`), `applyReset()`, `skipResetLogout()`.
+- Produces: view `v-s-reset` (`np-pass`,`np-pass2`,`np-hint` + `-err`), `applyReset()`, `skipResetLogout()`
 
-- [ ] **Step 1: Tulis uji yang gagal**
+**Catatan rekonsiliasi Task 7:**
+
+1. Cabang `if(o.mustReset){ … }` di `doLogin()` pindah dari Task 6 ke Task 7
+   (lihat catatan Task 6 butir 2). Flag `mustReset` sudah ditulis di Task 6, di
+   sini baru dibaca.
+2. Step 5 rencana minta `v-s-reset` ikut dipasang di daftar tombol back — **tidak
+   dilakukan**. Riwayat saat gerbang terbuka masih berisi `v-reg-done`, jadi tombol
+   back membuka lagi layar yang menampilkan password sekali-pakai. Penggantinya:
+   tombol `Keluar dulu` (sudah ada di markup) dan `gotoLoginAsSeller()` mengosongkan
+   `#reg-done-body` sebelum pindah layar. Uji: "gerbang ganti password tidak punya
+   tombol back" + "layar akun terbit dikosongkan saat ditinggal ke login".
+3. Harness tidak punya DOM sungguhan (`document.querySelectorAll` mengembalikan `[]`),
+   jadi uji tidak bisa membaca `.view.on`. Penanda layar yang dipakai: judul/sub dari
+   `renderChrome` (`ab-title`, `ab-sub`) dan `ab-back.style.display`.
+4. `applyReset()` membandingkan dengan `o.password` (password sementara) dan
+   menyimpan lewat `save()` → kolom `password` ikut tersandikan; uji memastikan
+   `hujan28` tidak tertulis polos.
+5. `skipResetLogout()` memanggil `logout()` yang sejak Task 6 menyimpan sesi kosong,
+   jadi "keluar dulu" juga hilang dari penyimpanan — diuji.
+
+
+- [x] **Step 1: Tulis uji yang gagal**
 
 ```js
 console.log('\n== TASK 7 — ganti password paksa ==');
@@ -1595,11 +1616,11 @@ t('menutup layar ganti password mengakhiri sesi', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan, pastikan gagal**
+- [x] **Step 2: Jalankan, pastikan gagal**
 
 Run: `node tools/test.js` → `applyReset is not defined`.
 
-- [ ] **Step 3: Markup (sesudah view `v-reg-done`)**
+- [x] **Step 3: Markup (sesudah view `v-reg-done`)**
 
 ```html
     <!-- PENJUAL: GANTI PASSWORD -->
@@ -1614,7 +1635,7 @@ Run: `node tools/test.js` → `applyReset is not defined`.
     </div>
 ```
 
-- [ ] **Step 4: Fungsi**
+- [x] **Step 4: Fungsi**
 
 ```js
 function applyReset(){
@@ -1639,19 +1660,19 @@ function skipResetLogout(){
 
 (`logout()` milik v4, v4:1007 — ia membersihkan `state.user` dan membawa ke `v-login`.)
 
-- [ ] **Step 5: Bersihkan stub Task 6**
+- [x] **Step 5: Bersihkan stub Task 6**
 
 Pastikan tidak ada lagi `function submitAddShop(){ toast('Tambah toko tersedia setelah Task 8','err'); }` bila Task 8 sudah dikerjakan; bila Task 8 belum, biarkan.
 
-- [ ] **Step 6: Jalankan test sampai hijau**
+- [x] **Step 6: Jalankan test sampai hijau**
 
 Run: `node tools/test.js` → Task 1–7 hijau.
 
-- [ ] **Step 7: Cek browser**
+- [x] **Step 7: Cek browser**
 
 Registrasi baru (Task 6 Step 7) → setelah LOGIN penjual, layar yang muncul adalah **Ganti Password**, bukan dashboard. Coba password 3 karakter → error di bawah field. Ganti dengan `hujan28` → dashboard tampil. Logout, login lagi dengan `hujan28` → langsung dashboard.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add gocatering-prototype-v5.html tools/test.js
