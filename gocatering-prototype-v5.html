@@ -720,10 +720,23 @@ const SHOPS = [
 const RCODE = {'rm-sederhana':'A4567701','kekinian-food':'A4567703','dapur-nusantara':'S4567702','catering-sehat':'S4567704'};
 function rcodeOf(id){ const s=shopOf(id); return (s&&(s.rcode||RCODE[s.id]))||'—'; }
 
-const SELLERS = {
- seller1:{email:'rm.sederhana@gocatering.id', password:'seller123', name:'Andi (RM Sederhana)', shops:['rm-sederhana','kekinian-food']},
- seller2:{email:'dapur.nusantara@gocatering.id', password:'seller123', name:'Sari (Dapur Nusantara)', shops:['dapur-nusantara','catering-sehat']}
-};
+/* ================= DATA PEMILIK CONTOH (spec §9) =================
+   SHOPS + SHOP_ADDR tetap dipakai, tapi hanya sebagai bahan mentah migrasi.
+   DEMO_SHOP seposisikan dengan SHOPS: baris ke-i = id 6 angka & pemilik toko ke-i. */
+const DEMO_OWNER=[
+  {key:'ow-seller1',gelar:'Tn',nama:'Andi Ramadhan',nik:'3578010203044567',
+   email:'rm.sederhana@gocatering.id',phone:'081234567801',photo:'',
+   password:'seller123',mustReset:false,createdAt:'2026-11-01T02:00:00.000Z'},
+  {key:'ow-seller2',gelar:'Ny',nama:'Sari Kumalasari',nik:'3578020506078812',
+   email:'dapur.nusantara@gocatering.id',phone:'081234567802',photo:'',
+   password:'seller123',mustReset:false,createdAt:'2026-11-01T02:00:00.000Z'}
+];
+const DEMO_SHOP=[
+  ['100234','ow-seller1','082130000101'],   /* RM Sederhana    */
+  ['100742','ow-seller2','082130000201'],   /* Dapur Nusantara */
+  ['100930','ow-seller2','082130000202'],   /* Catering Sehat  */
+  ['100518','ow-seller1','082130000102']    /* Kekinian Food   */
+];
 
 const PAYMENTS = {
  qris:{name:'QRIS', ic:'📱', desc:'Scan dari semua bank & e-wallet', fee:700, feeLbl:'Biaya layanan Rp 700'},
@@ -757,7 +770,7 @@ const SHOP_ADDR = {
 const FLOW_LBL = {new:'Baru',confirmed:'Dikonfirmasi',processing:'Diproses',shipped:'Dikirim',completed:'Selesai',cancelled:'Dibatalkan'};
 const W = CATERING_WA = '6281234567890';
 
-const KEY='gocatering_v5';
+const KEY='gocatering_v5', KEY_OLD='gocatering_v4', SCHEMA=2;
 /* ================= KEAMANAN DATA (obfuscation, BUKAN enkripsi kepatuhan) =================
    XOR + Base64 dengan kunci acak per perangkat. Tujuannya supaya NIK/email/password tidak
    terbaca mata saat localStorage dibuka di DevTools — bukan untuk kepatuhan UU PDP.
@@ -848,6 +861,74 @@ function toIntl(n){
 }
 function waLink(n){ return 'https://wa.me/'+toIntl(n); }
 
+/* ================= MIGRASI MODEL DATA v4 -> v5 (spec §3, §9) =================
+   buildShops menyusun ulang 4 toko contoh dari SHOPS + SHOP_ADDR + DEMO_SHOP,
+   memberi id 6 angka, ownerKey, csWa, alamat, peta, dan kode restoran. */
+function buildShops(){
+  const out=[];
+  SHOPS.forEach((raw,i)=>{
+    const {phone,seller,...s}=raw;                      /* field lama dibuang, csWa menggantikan phone */
+    const [id,ownerKey,csWa]=DEMO_SHOP[i];
+    const ow=DEMO_OWNER.find(o=>o.key===ownerKey)||{};
+    const addr=SHOP_ADDR[s.id]||'';
+    const shop=Object.assign({},s,{id,ownerKey,csWa,addr,
+      mapUrl:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr),
+      photo:(s.packages[0]||{}).img||'',builtin:true});
+    shop.code=nextShopCode({name:ow.nama||shop.name,nik:ow.nik||'0000',ownerKey,shops:out});
+    out.push(shop);
+  });
+  return out;
+}
+function indexOwners(owners,shops){
+  shops.forEach(sh=>{
+    if(owners[sh.ownerKey]) return;
+    const d=DEMO_OWNER.find(o=>o.key===sh.ownerKey);
+    owners[sh.ownerKey]=d
+      ? {key:d.key,gelar:d.gelar,nama:d.nama,nik:d.nik,email:d.email,phone:d.phone,photo:d.photo,
+         password:d.password,mustReset:d.mustReset,createdAt:d.createdAt,shops:[sh.id]}
+      : {key:sh.ownerKey,gelar:'Tn',nama:'Pemilik '+(sh.code||sh.id),nik:'',email:'',phone:'',
+         photo:'',password:'',mustReset:false,createdAt:new Date().toISOString(),shops:[sh.id]};
+  });
+  Object.values(owners).forEach(o=>{ if(!Array.isArray(o.shops)) o.shops=[] });
+  shops.forEach(sh=>{ const o=owners[sh.ownerKey]; if(o&&o.shops.indexOf(sh.id)<0) o.shops.push(sh.id) });
+  return owners;
+}
+/* toko lama yang belum punya kode / alamat / peta dilengkapi, tanpa membangun ulang
+   toko buatan pengguna (registrasi baru) */
+function ensureSchema(s){
+  s.owners=s.owners||{};
+  s.shops=(Array.isArray(s.shops)&&s.shops.length)?s.shops:buildShops();
+  const taken=s.shops.map(x=>x.id);
+  s.shops.forEach(sh=>{
+    if(!/^\d{6}$/.test(String(sh.id))) sh.id=newShopId(taken);
+    if(!sh.ownerKey) sh.ownerKey=ownerKeyOf(sh.nik||sh.id);
+    if(!sh.csWa) sh.csWa='';
+    if(sh.addr==null) sh.addr='';
+    if(!sh.mapUrl) sh.mapUrl='';
+    if(sh.photo==null) sh.photo='';
+    if(sh.builtin==null) sh.builtin=false;
+    if(!sh.code) sh.code=nextShopCode({name:(s.owners[sh.ownerKey]||{}).nama||sh.name,nik:(s.owners[sh.ownerKey]||{}).nik||sh.id,ownerKey:sh.ownerKey,shops:s.shops});
+  });
+  indexOwners(s.owners,s.shops);
+  if(!s.devKey) s.devKey=rndKey();
+  DEV_KEY=s.devKey;
+  cryptRows(s.owners,CRYPT.owners,dec); cryptRows(s.shops,CRYPT.shops,dec);
+  s.seqId=s.seqId||100000;
+  if(!s.sellerShop||!s.shops.some(x=>x.id===s.sellerShop)) s.sellerShop=s.shops[0].id;
+  s.schema=SCHEMA;
+  return s;
+}
+/* pesanan & antrean lama menunjuk slug toko; toko sekarang memakai id 6 angka */
+function remapShopIds(s){
+  const map={}; DEMO_SHOP.forEach((row,i)=>{ map[SHOPS[i].id]=row[0] });
+  const fix=id=>map[id]||id;
+  (s.orders||[]).forEach(o=>{ if(map[o.shopId]) o.shopId=map[o.shopId] });
+  if(s.antrean) s.antrean=Object.keys(s.antrean).reduce((m,k)=>{
+    const i=k.indexOf('|'); m[fix(k.slice(0,i))+k.slice(i)]=s.antrean[k]; return m;
+  },{});
+  return s;
+}
+
 /* simHour & CUTOFF dipakai seed() lewat todayISO(), jadi binding-nya wajib
    ada sebelum load() dijalankan. Kalau tidak, database pertama yang kosong
    membuat skrip mati di tengah: "Cannot access 'simHour' before initialization". */
@@ -931,13 +1012,18 @@ function nextQueueNo(shopId,date){
 }
 function commitQueue(shopId,date){ state.antrean[queueKey(shopId,date)]=(state.antrean[queueKey(shopId,date)]||0)+1; }
 function load(){
-  let s=null;
-  try{const raw=localStorage.getItem(KEY); if(raw){ s=JSON.parse(raw); if(!s.antrean) s.antrean=seedAntrean(s.orders||[]); }}catch(e){}
+  let s=null, imported=false;
+  try{ const raw=localStorage.getItem(KEY); if(raw){ s=JSON.parse(raw); } }catch(e){}
+  if(!s){
+    /* impor sekali dari gocatering_v4: pesanan yang dibuat selama demo tidak hilang */
+    try{ const old=localStorage.getItem(KEY_OLD); if(old){ s=JSON.parse(old); imported=true; } }catch(e){}
+  }
   if(!s){
     const orders=seed();
     s={users:{'budi@mail.com':{password:'1234',name:'Budi Santoso',phone:'081234567899',role:'buyer'}},
-      orders, queue:[], menuOff:{}, antrean:seedAntrean(orders)};
+       orders, queue:[], menuOff:{}, antrean:seedAntrean(orders)};
   }
+  if(!s.antrean) s.antrean=seedAntrean(s.orders||[]);
   /* migrasi ringan v4.1: akun Google bawaan (non-destruktif, data lama tetap utuh) */
   s.users=s.users||{};
   if(!s.users['maya.kusuma@gmail.com'])
@@ -948,11 +1034,12 @@ function load(){
      Alasan ditebak dari status pembayaran supaya widget tidak kosong, data lama tetap utuh. */
   (s.orders||[]).forEach(o=>{ if(o.status==='cancelled'&&!o.cancelReason)
     o.cancelReason=(o.payStatus==='paid'||o.payStatus==='cod')?'notcollected':'expired'; });
-  /* kunci perangkat + dekripsi data penjual (data lama tanpa awalan tetap terbaca) */
-  if(!s.devKey) s.devKey=rndKey();
-  DEV_KEY=s.devKey;
-  cryptRows(s.owners,CRYPT.owners,dec); cryptRows(s.shops,CRYPT.shops,dec);
-  return s;
+  /* slug toko lama -> id 6 angka untuk order & antrean (idempoten, aman dipanggil selalu) */
+  remapShopIds(s);
+  /* skema toko, kunci perangkat, dan dekripsi data penjual ditangani ensureSchema()
+     pada waktu yang benar (DEV_KEY diketahui sebelum dec()). imported dipakai di test. */
+  s._imported=imported;
+  return ensureSchema(s);
 }
 function save(){
   const copy=JSON.parse(JSON.stringify(state));
@@ -982,9 +1069,11 @@ function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('id-ID
 /* esc(): teks input pengguna (nama pengambil, catatan pembatalan) masuk ke innerHTML */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function niceDate(iso){ if(!iso) return 'besok'; const d=new Date(iso+'T00:00:00'); return isNaN(d)?'besok':d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
-function shopOf(id){ return SHOPS.find(s=>s.id===id); }
-function pkgOf(id){ return SHOPS.flatMap(s=>s.packages).find(p=>p.id===id); }
-function allPkgs(){ return SHOPS.flatMap(s=>s.packages.map(p=>({...p,shopId:s.id,shopName:s.name}))); }
+function _shopList(){ try{ return state.shops; }catch(e){ return SHOPS; } }
+function shopOf(id){ const a=_shopList(); return a.find(s=>s.id===id)||(id&&SHOPS.find(s=>s.id===id)); }
+function shopAddr(id){ const s=shopOf(id); return (s&&s.addr)||'ambil di toko'; }
+function pkgOf(id){ return _shopList().flatMap(s=>s.packages).find(p=>p.id===id) || SHOPS.flatMap(s=>s.packages).find(p=>p.id===id); }
+function allPkgs(){ return _shopList().flatMap(s=>s.packages.map(p=>({...p,shopId:s.id,shopName:s.name}))); }
 
 /* ================= v3: CART HELPERS ================= */
 function cartRows(){ return cart.map(c=>({...pkgOf(c.id),qty:c.qty,line:c.qty*pkgOf(c.id).price})).filter(r=>!state.menuOff[r.id]); }
@@ -1082,15 +1171,28 @@ function closeSheet(id){ $(id).classList.remove('on'); }
 /* ================= AUTH ================= */
 let role='buyer';
 function pickRole(r){ role=r; $('role-buyer').classList.toggle('on',r==='buyer'); $('role-seller').classList.toggle('on',r==='seller'); }
-function currentSeller(){ if(state.user?.role!=='seller')return null; return Object.entries(SELLERS).find(([k,v])=>v.email===state.user.email)?.[0]; }
-function shopNames(s){ return SELLERS[s].shops.map(id=>shopOf(id).name).join(' • '); }
+function findOwner(field,value){
+  const v=String(value||'').trim().toLowerCase(); if(!v) return null;
+  return Object.values(state.owners).find(o=>String(o[field]||'').trim().toLowerCase()===v)||null;
+}
+function currentOwner(){
+  if(!state.user||state.user.role!=='seller') return null;
+  return state.owners[state.user.ownerKey]||null;
+}
+/* shim: tetap mengembalikan objek pemilik agar pemakai lama tidak perlu ditulis ulang */
+function currentSeller(){ const o=currentOwner(); return o?{name:o.nama,key:o.key}:null; }
+function shopNames(){ const o=currentOwner(); if(!o) return ''; return o.shops.map(id=>(shopOf(id)||{}).name||id).join(' • '); }
+function activeShop(){ return shopOf(activeShopId()); }
+function sellerOrdersFor(id){ return state.orders.filter(o=>o.shopId===id); }
+function ensureSellerShop(){ const o=currentOwner(); if(!o) return; if(o.shops.indexOf(state.sellerShop)<0){ state.sellerShop=o.shops[0]||null; sellerShopId=state.sellerShop; } }
 function doLogin(){
   const email=$('li-email').value.trim().toLowerCase(), pass=$('li-pass').value;
   if(!email||!pass) return toast('Isi email dan password dulu','err');
-  const s=Object.values(SELLERS).find(x=>x.email===email);
-  if(s){ if(pass!==s.password) return toast('Password penjual salah','err');
-    state.user={email,name:s.name,role:'seller',phone:'0812xxxxxxx'}; save(); currentShop=shopOf(s.shops[0]);
-    go('v-seller',false); renderSeller(); toast('Selamat datang, '+s.name,'ok'); return; }
+  const ow=findOwner('email',email);
+  if(ow){ if(pass!==ow.password) return toast('Password penjual salah','err');
+    state.user={email:ow.email,name:ow.nama,role:'seller',ownerKey:ow.key,phone:ow.phone};
+    state.sellerShop=ow.shops[0]; sellerShopId=state.sellerShop; save(); currentShop=shopOf(ow.shops[0]);
+    go('v-seller',false); renderSeller(); toast('Selamat datang, '+ow.nama,'ok'); return; }
   if(!state.users[email]){ state.users[email]={password:pass||'1234',name:email.split('@')[0],phone:'',role:'buyer'}; save(); toast('Akun pembeli dibuat otomatis','ok'); }
   if(state.users[email].password!==pass) return toast('Password salah','err');
   state.user={email,name:state.users[email].name,phone:state.users[email].phone||'',addr:state.users[email].addr||'',role:'buyer'}; save();
@@ -1203,8 +1305,8 @@ function renderProfile(){
 function logout(){ state.user=null; currentShop=null; cart=[]; history=[]; profileRevealed=false; pendingGoogle=null; document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-login').classList.add('on'); renderChrome('v-login'); toast('Keluar dari aplikasi'); }
 function fillDemo(w){
   if(w==='buyer'){ pickRole('buyer'); $('li-email').value='budi@mail.com'; $('li-pass').value='1234'; }
-  if(w==='seller1'){ pickRole('seller'); $('li-email').value=SELLERS.seller1.email; $('li-pass').value=SELLERS.seller1.password; }
-  if(w==='seller2'){ pickRole('seller'); $('li-email').value=SELLERS.seller2.email; $('li-pass').value=SELLERS.seller2.password; }
+  if(w==='seller1'){ pickRole('seller'); $('li-email').value=DEMO_OWNER[0].email; $('li-pass').value=DEMO_OWNER[0].password; }
+  if(w==='seller2'){ pickRole('seller'); $('li-email').value=DEMO_OWNER[1].email; $('li-pass').value=DEMO_OWNER[1].password; }
   go('v-login',false); toast('Form terisi — tinggal klik LOGIN');
 }
 document.addEventListener('DOMContentLoaded',()=>{
@@ -1634,7 +1736,7 @@ function submitOrder(){
     fulfillment:pickup?'pickup':'delivery',
     pickup:pickup?{date,slot:pickupSlot,queue,processDate:eff,late}:null,
     delivery:pickup?null:{service:deliveryService,km:distanceKm,fee:ship,processDate:eff,late},
-    buyer:{name:nm,phone:ph,addr:pickup?(SHOP_ADDR[currentShop.id]||'ambil di toko'):ad,
+    buyer:{name:nm,phone:ph,addr:pickup?(shopAddr(currentShop.id)):ad,
       date,pax:units,note,pickup,processDate:eff,late},
     createdAt:new Date().toISOString()};
   if(payMethod==='cod'){ commitOrder(ord); finishOrder(ord); return; }
@@ -1857,7 +1959,7 @@ function waOrder(id){
   const o=state.orders.find(x=>x.id===id); const s=shopOf(o.shopId);
   const it=orderItems(o), isPick=o.fulfillment==='pickup', dv=o.delivery||{};
   const ff=isPick
-    ? ['Diambil di toko: '+s.name+' ('+(SHOP_ADDR[s.id]||'-')+')',
+    ? ['Diambil di toko: '+s.name+' ('+(s.addr||'-')+')',
        'Jadwal ambil: '+niceDate((o.pickup||{}).date||o.buyer.date)+' · slot '+slotLbl((o.pickup||{}).slot),
        'Nomor antre: '+((o.pickup||{}).queue||'-')]
     : ['Diantar: '+(DELIVERY[dv.service]||{}).name+' · '+(dv.km!=null?dv.km+' km':'-'),
@@ -1873,7 +1975,7 @@ function waOrder(id){
     .concat(late)
     .concat(['Total: '+rp(o.total)+' ('+PAYMENTS[o.method].name+' · '+pay+')',
              'Catatan: '+(o.buyer.note||'-'),'No. WA: '+o.buyer.phone]);
-  window.open('https://wa.me/'+s.phone+'?text='+encodeURIComponent(lines.join('\n')),'_blank');
+  window.open(waLink(s.csWa)+'?text='+encodeURIComponent(lines.join('\n')),'_blank');
   toast('Membuka WhatsApp dengan ringkasan order');
 }
 function orderSuccess(o){
@@ -1882,7 +1984,7 @@ function orderSuccess(o){
    ? `<div class="qbox" style="margin:0 0 10px">
         <div><div class="ql">Nomor antre Anda</div><div class="qn">${o.pickup.queue}</div></div>
         <div class="qh">${s.name}<br>${niceDate(o.pickup.date)}<br>slot ${slotLbl(o.pickup.slot)}</div></div>
-      <div class="hint center" style="margin:0 0 12px">Tunjukkan nomor ini saat ambil di ${SHOP_ADDR[s.id]||s.name}.</div>`
+      <div class="hint center" style="margin:0 0 12px">Tunjukkan nomor ini saat ambil di ${s.addr||s.name}.</div>`
    : `<div class="card" style="margin:0 0 12px;background:#e3f2fd;box-shadow:none">
         <div style="font-size:13px"><b>${DELIVERY[o.delivery.service].ic} Diantar ${DELIVERY[o.delivery.service].name}</b></div>
         <div class="hint" style="margin-top:4px">${o.delivery.km} km · estimasi ${DELIVERY[o.delivery.service].eta} · ongkir ${rp(o.delivery.fee)}</div>
@@ -1958,7 +2060,7 @@ const WIDGETS=[
   {k:'notcollected',cls:'w-n',lbl:'Batal · Tidak Diambil',sub:'ditandai CS',money:'nilai hangus'},
   {k:'done',cls:'w-d',lbl:'Pesanan Selesai',sub:'sudah diterima',money:'omzet'}
 ];
-function myShopIds(){ const s=currentSeller(); return s?SELLERS[s].shops:[]; }
+function myShopIds(){ const o=currentOwner(); return o?o.shops.slice():[]; }
 function activeShopId(){ const ids=myShopIds(); return ids.includes(sellerShopId)?sellerShopId:(ids[0]||null); }
 /* Semua hitungan & daftar di dasbor mengikuti toko yang sedang dipilih (B.1) */
 function sellerOrders(){ const id=activeShopId(); return state.orders.filter(o=>o.shopId===id); }
