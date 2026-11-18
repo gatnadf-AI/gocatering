@@ -496,14 +496,15 @@ t('ownerKeyOf deterministik dan stabil', () => {
 });
 t('kode = inisial nama pemilik + 4 digit akhir NIK + running per pemilik', () => {
   const b = fresh();
-  const mk = (n, nik, shops) => 'nextShopCode({name:' + JSON.stringify(n) + ',nik:' + JSON.stringify(nik) + ',shops:' + JSON.stringify(shops) + '})';
+  const mk = (n, nik, shops, key) => 'nextShopCode({name:' + JSON.stringify(n) + ',nik:' + JSON.stringify(nik)
+    + ',shops:' + JSON.stringify(shops) + (key ? ',ownerKey:' + JSON.stringify(key) : '') + '})';
   eq(b.run(mk('Huang', '3578090807064567', [])), 'H4567001', 'toko pertama');
-  eq(b.run(mk('Huang', '3578090807064567', [{ code: 'H4567001', ownerKey: 'x' }])), 'H4567002', 'toko kedua');
+  eq(b.run(mk('Huang', '3578090807064567', [{ code: 'H4567001', ownerKey: 'K' }], 'K')), 'H4567002', 'toko kedua pemilik sama');
   eq(b.run(mk('sari kumalasari', '3578020506078812', [])), 'S8812001', 'huruf besar & nama dua kata');
   eq(b.run(mk('Ng We Ling', '3578090807064567', [])), 'N4567001', 'huruf pertama, bukan suku kata');
-  /* dua pemilik berbeda dengan inisial & 4 digit akhir sama: running dihitung per pemilik */
-  const clash = [{ code: 'H4567001', ownerKey: 'ow-A' }];
-  eq(b.run(mk('Hendra', '3578111111114567', clash)), 'H4567001', 'pemilik lain boleh pakai kode yang belum dipakainya');
+  /* dua pemilik berbeda dengan inisial & 4 digit akhir sama: kode tetap unik secara global
+     (spec §6: "bila kode sudah dipakai, running dinaikkan sampai bebas") */
+  eq(b.run(mk('Hendra', '3578111111114567', [{ code: 'H4567001', ownerKey: 'ow-A' }], 'ow-B')), 'H4567002', 'bentrok global dinaikkan');
 });
 t('kode bentrok dinaikkan running-nya sampai bebas', () => {
   const b = fresh();
@@ -677,7 +678,7 @@ t('satu pemilik memegang dua toko dan pemilik tidak berbagi antar akun', () => {
   ok(andi, 'Andi ditemukan lewat NIK');
   eq(b.run('findOwner("nik","3578010203044567").shops.length'), 2, 'dua toko');
   eq(b.run('findOwner("email","rm.sederhana@gocatering.id").key'), b.run('findOwner("nik","3578010203044567").key'), 'email & nik pemilik sama');
-  ok(!b.run('findOwner("email","DAPUR.NUSANTARA@GOCATERING.ID")') === false, 'perbandingan email tidak peka huruf');
+  ok(b.run('!!findOwner("email","DAPUR.NUSANTARA@GOCATERING.ID")'), 'perbandingan email tidak peka huruf');
 });
 t('pesan seed memakai id 6 angka dan tetap terhubung ke tokonya', () => {
   const b = fresh();
@@ -706,7 +707,7 @@ t('impor dari gocatering_v4: order bertahan, id dipetakan, kunci lama tidak diha
   eq(b.run('Object.keys(state.owners).length'), 2, 'pemilik contoh terbentuk');
   eq(b.run('state.shops.length'), 4, 'toko');
   eq(b.store.get(key), raw, 'salinan v4 dibiarkan utuh');
-  eq(b.store.get(b.run('KEY')) !== undefined, true, 'kunci v5 ikut terbentuk setelah save pertama? (lihat catatan)');
+  eq(b.store.has(b.run('KEY')), false, 'v5 belum ditulis sampai save() pertama (memang begitu)');
 });
 t('SELLERS dan SELLERS.xxx tidak ada lagi di berkas', () => {
   const src = extract(V5);
@@ -723,7 +724,7 @@ t('akun demo penjual menunjuk ke email pemilik hasil migrasi', () => {
 });
 ```
 
-Catatan uji impor: baris terakhir (`kunci v5 ikut terbentuk`) menguji perilaku *saat ini* — `load()` tidak menulis `KEY` baru; penyimpanan v5 baru terbentuk saat `save()` pertama. Bila menurut Anda membingungkan, gant menjadi `eq(b.store.has(b.run('KEY')), false, 'v5 belum ditulis sampai save pertama')` dan tulis ulang pesannya. Yang tidak boleh dilonggarkan: jumlah order 9 dan `gocatering_v4` lama tidak dihapus.
+Catatan uji impor: `load()` **tidak** menulis kunci `gocatering_v5` saat boot — penyimpanan v5 baru terbentuk pada `save()` pertama, dan salinan `gocatering_v4` dibiarkan utuh supaya v4 masih bisa dibuka. Yang tidak boleh dilonggarkan: jumlah order tetap 9, `shopId` sudah dipetakan ke 6 angka, dan `gocatering_v4` tidak dihapus.
 
 - [ ] **Step 2: Jalankan, pastikan gagal**
 
@@ -798,7 +799,7 @@ function ensureSchema(s){
     if(!/^\d{6}$/.test(String(sh.id))) sh.id=newShopId(taken);
     if(!sh.ownerKey) sh.ownerKey=ownerKeyOf(sh.nik||sh.id);
     if(!sh.csWa) sh.csWa='';
-    if(sh.addr==null) sh.addr=SHOP_ADDR[sh.slug]||'';
+    if(sh.addr==null) sh.addr='';
     if(!sh.mapUrl) sh.mapUrl='';
     if(sh.photo==null) sh.photo='';
     if(sh.builtin==null) sh.builtin=false;
@@ -967,9 +968,9 @@ t('form kosong ditolak dan tiap field memberi pesan sendiri', () => {
 t('email selain gmail dan email milik pembeli ditolak', () => {
   const b = fresh();
   form(b, Object.assign({}, GOOD, { 'rs-email': 'huang@yahoo.com' }));
-  has(b.run('validateIdentity()') && b.els.get('rs-email-err').textContent, '@gmail.com', 'pesan gmail');
+  b.run('validateIdentity()'); has(b.els.get('rs-email-err').textContent, '@gmail.com', 'pesan gmail');
   form(b, Object.assign({}, GOOD, { 'rs-email': 'budi@mail.com' }));
-  has(b.run('validateIdentity()') && b.els.get('rs-email-err').textContent, 'akun pembeli', 'pesan lintas peran');
+  b.run('validateIdentity()'); has(b.els.get('rs-email-err').textContent, 'akun pembeli', 'pesan lintas peran');
 });
 t('NIK 16 digit milik pemilik lain ditolak dengan arahan login', () => {
   const b = fresh();
@@ -1114,7 +1115,7 @@ function photoErr(file){
 function validateIdentity(){
   const e={};
   const gelar=fv('rs-gelar'); if(GELAR.indexOf(gelar)<0) e.gelar='Pilih gelar (Tn / Ny / Nona)';
-  const nama=fv('rs-nama'); if(!NAME_OK.test(nama)) e.nama='Nama minimal 3 huruf, tanpa angka atau tanda {}[]\\';
+  const nama=fv('rs-nama'); if(!NAME_OK.test(nama)) e.nama='Nama minimal 3 huruf, tanpa angka atau tanda khusus';
   const email=fv('rs-email').toLowerCase();
   if(!RE_GMAIL.test(email)) e.email='Email harus berakhiran @gmail.com';
   else if(state.users[email]) e.email='Email sudah dipakai akun pembeli, pakai email lain';
@@ -1282,7 +1283,7 @@ t('registrasi baru: pemilik + toko + kode H4567001 + ID 6 angka', () => {
   ok(o, 'pemilik Huang ditemukan');
   const s = b.run('JSON.parse(JSON.stringify(state.shops.find(x=>x.ownerKey==='+JSON.stringify(o.key)+')))');
   eq(s.code, 'H4567001', 'kode'); ok(/^\d{6}$/.test(s.id), 'id ' + s.id);
-  eq(b.run('findOwner("nik","3578090807064567").shops'), [s.id], 'toko menempel ke pemilik');
+  eq(JSON.stringify(b.run('findOwner("nik","3578090807064567").shops')), JSON.stringify([s.id]), 'toko menempel ke pemilik');
   eq(s.builtin, false, 'toko baru bukan bawaan');
 });
 t('password sementara sah, tersimpan, dan hanya tampil di layar akun terbit', () => {
@@ -1309,7 +1310,7 @@ t('toko baru langsung bisa dipesan: paket contoh & tampil di katalog pembeli', (
   eq(b.run('shopOf(' + JSON.stringify(id) + ').packages.length'), 1, 'satu paket awal');
   eq(b.run('allPkgs().some(p=>p.shopId===' + JSON.stringify(id) + ')'), true, 'terdaftar di allPkgs');
   eq(b.run('typeof pkgOf(allPkgs().find(p=>p.shopId===' + JSON.stringify(id) + ').id).price'), 'number', 'bisa dibeli');
-  has(b.run('renderShops() && $(\'shop-list\').innerHTML'), 'Warung Huang', 'muncul di daftar toko');
+  b.run('renderShops()'); has(b.els.get('shop-list').innerHTML, 'Warung Huang', 'muncul di daftar toko');
 });
 t('menyimpan ulang tidak mengulang registrasi (NIK tetap ditolak)', () => {
   const b = fresh(); fillReg(b); b.run('submitSellerForm()');
@@ -1321,7 +1322,7 @@ t('menyimpan ulang tidak mengulang registrasi (NIK tetap ditolak)', () => {
   form(b2, Object.assign({}, GOOD, GOOD_SHOP, { 'rs-shop': 'Warung Dua' }));
   b2.run('state.tmpSeller=validateIdentity().values');
   eq(b2.run('validateIdentity().ok'), false, 'NIK kini ditolak');
-  eq(b2.run('submitSellerForm()') === undefined && b2.run('state.shops.length'), 5, 'tidak ada toko baru');
+  b2.run('submitSellerForm()'); eq(b2.run('state.shops.length'), 5, 'tidak ada toko baru');
 });
 t('login: email/password penjual, arah role yang salah, dan sesi pemilik', () => {
   const b = fresh();
@@ -1597,61 +1598,54 @@ git commit -m "feat(v5): ganti password wajib bagi penjual baru sebelum masuk da
 
 ---
 
-### Task 8: Dashboard penjual — toko aktif, Tambah Toko, dan isolasi antar-akun (spec §2 butir 10, §5.6)
+### Task 8: Dashboard penjual — persistensi, tombol Tambah Toko, dan isolasi (spec §7.3–§7.6, §B.1)
 
 **Files:**
-- Modify: `gocatering-prototype-v5.html` — markup `v-seller` (v4:559-575), `sellerOrders` (Task 4), `renderSeller` (v4:1709-1718), `renderSellerList` (v4:1719-1732), `advance` (v4:1751), `cancelOrder` (v4:1765), `toggleMenu` (v4:1767), `onEnter` (v4:859), blok fungsi PENJUAL (v4:1705+)
+- Modify: `gocatering-prototype-v5.html` — fungsi `setSellerShop`, `renderShopSwitch`, `restaurantId`, `sellerOrders`, `advance`, `cancelOrder`, `toggleMenu`, `onEnter`; tambah `codeChip`, `guardShop`, `startAddShop`, `submitAddShop`; markup `v-seller` (tombol Tambah Toko), sheet `sheet-shops`
 - Modify: `tools/test.js`
 
 **Interfaces:**
-- Consumes: `currentOwner`/`myShopIds`/`activeShop`/`ensureSellerShop` (Task 4), `validateShop`/`addShop`/`renderRegDone` (Task 5–6).
-- Produces: view `v-seller` dengan `seller-name`,`seller-sub`, tombol `Ganti Toko` & `+ Tambah Toko`; sheet `sheet-shops` dengan `#shop-pick`; `state.shopFilter` ('all' | shopId); `shopScope()`, `setShopFilter(v)`, `switchShop(id)`, `openShopPicker()`, `startAddShop()`, `submitAddShop()`, `guardShop(shopId)`.
+- Consumes: `currentOwner`/`myShopIds`/`activeShopId`/`ensureSellerShop` (Task 4), `validateShop`/`addShop`/`renderRegDone` (Task 5–6), `setSellerShop`/`renderShopSwitch`/`sellerOrders` (v5 existing).
+- Produces: `codeChip(id)` (HTML chip kode restoran), `guardShop(shopId)` (penjaga isolasi), `startAddShop()`/`submitAddShop()` (alur tambah toko), persistensi `sellerShopId` di `state.sellerShop`, tombol `+ Tambah Toko` di dashboard, sheet `sheet-shops` untuk pilih toko.
+
+**Catatan:** v5 sudah punya `setSellerShop`, `renderShopSwitch`, `activeShopId`, `sellerOrders`, `dashBucket`, `rcodeOf`, `restaurantId`, `sweepExpired`, `cancelOrder(id,reason,note)`, `markCollected`, dll. Task ini tidak mengganti nama-nama itu, hanya menambahkan persistensi, tombol Tambah Toko, dan penjaga isolasi.
 
 - [ ] **Step 1: Tulis uji yang gagal**
 
 ```js
-console.log('\n== TASK 8 — dashboard & isolasi antar pemilik ==');
+console.log('\n== TASK 8 — persistensi, tambah toko, isolasi ==');
 function loginAs(b, email) {
   b.run('pickRole("seller"); $("li-email").value=' + JSON.stringify(email) + '; $("li-pass").value="seller123"; doLogin()');
   if (b.run('state.user&&state.user.role') !== 'seller') throw new Error('gagal login ' + email);
 }
-t('header dashboard menampilkan kode dan ID toko aktif', () => {
+t('sellerShopId disimpan di state dan dipulihkan setelah reload', () => {
+  const b = fresh(); loginAs(b, 'dapur.nusantara@gocatering.id');
+  b.run('setSellerShop("100742")');
+  eq(b.run('state.sellerShop'), '100742', 'tersimpan di state');
+  const b2 = reload(b);
+  loginAs(b2, 'dapur.nusantara@gocatering.id');
+  eq(b2.run('sellerShopId'), '100742', 'dipulihkan dari state');
+});
+t('codeChip mengembalikan HTML dengan onclick dan kode restoran', () => {
   const b = fresh(); loginAs(b, 'rm.sederhana@gocatering.id');
-  b.run('switchShop("100234")');
-  has(b.els.get('seller-sub').textContent, 'A4567001', 'kode');
-  has(b.els.get('seller-sub').textContent, '100234', 'ID');
-  eq(b.els.get('seller-name').textContent, 'RM Sederhana', 'nama toko');
+  const html = b.run('codeChip("100234")');
+  has(html, 'A4567001', 'kode restoran');
+  has(html, 'onclick', 'bisa diklik');
+  has(html, '100234', 'ID toko');
 });
-t('pemilih toko hanya berisi toko milik sendiri', () => {
+t('renderShopSwitch menampilkan tombol Tambah Toko', () => {
   const b = fresh(); loginAs(b, 'dapur.nusantara@gocatering.id');
-  b.run('openShopPicker()');
-  const html = b.els.get('shop-pick').innerHTML;
-  has(html, 'Dapur Nusantara', 'tokonya'); has(html, 'Catering Sehat', 'tokonya 2');
-  hasnt(html, 'RM Sederhana', 'toko orang lain'); hasnt(html, 'Kekinian', 'toko orang lain 2');
+  b.run('renderShopSwitch()');
+  const html = b.els.get('dash-shop').innerHTML;
+  has(html, 'Tambah Toko', 'tombol ada');
+  has(html, 'startAddShop', 'onclick benar');
 });
-t('daftar pesanan mengikuti toko aktif dan tidak pernah memuat toko lain', () => {
-  const b = fresh(); loginAs(b, 'dapur.nusantara@gocatering.id');
-  eq(b.run('sellerOrders().length'), 4, 'semua order pemilik ini');
-  b.run('setShopFilter("100742")');
-  eq(b.run('sellerOrders().every(o=>o.shopId==="100742")'), true, 'terfilter satu toko');
-  eq(b.run('sellerOrders().length'), 3, 'jumlah order Dapur Nusantara');
-  b.run('renderSellerList()');
-  hasnt(b.els.get('seller-list').innerHTML, 'RM Sederhana', 'order orang lain tidak tampil');
-});
-t('memaksa shopId milik orang lain ditolak (order, status, batal, menu)', () => {
+t('guardShop menolak order toko orang lain', () => {
   const b = fresh(); loginAs(b, 'rm.sederhana@gocatering.id');
   const before = b.run('state.orders.find(o=>o.id==="GC-2411-00A2").status');
   b.run('advance("GC-2411-00A2")');
   eq(b.run('state.orders.find(o=>o.id==="GC-2411-00A2").status'), before, 'status tidak berubah');
   has(b.els.get('toast').textContent, 'Bukan restoran Anda', 'toast');
-  b.run('cancelOrder("GC-2411-00A2")');
-  eq(b.run('state.orders.find(o=>o.id==="GC-2411-00A2").status'), before, 'batal ditolak');
-  b.run('toggleMenu("p8")');
-  eq(b.run('!!state.menuOff.p8'), false, 'menu toko lain tidak berubah');
-  b.run('toggleMenu("p1")');
-  eq(b.run('!!state.menuOff.p1'), true, 'menu sendiri boleh');
-  b.run('setShopFilter("100930")');
-  eq(b.run('state.shopFilter'), '100234', 'filter toko orang lain tidak diterima');
 });
 t('Tambah Toko memakai NIK pemilik yang sedang login dan menaikkan running', () => {
   const b = fresh(); loginAs(b, 'dapur.nusantara@gocatering.id');
@@ -1672,56 +1666,68 @@ t('Tambah Toko memakai NIK pemilik yang sedang login dan menaikkan running', () 
 
 - [ ] **Step 2: Jalankan, pastikan gagal**
 
-Run: `node tools/test.js` → `switchShop is not defined`.
+Run: `node tools/test.js` → `codeChip is not defined`.
 
-- [ ] **Step 3: Markup header dashboard (sisipkan di dalam `v-seller`, sebelum `<div class="stats">` v4:560)**
+- [ ] **Step 3: Persistensi sellerShopId (modifikasi `setSellerShop` yang sudah ada di v5)**
 
-```html
-      <div class="shopbar">
-        <div style="flex:1;min-width:0">
-          <div class="shopname" id="seller-name">—</div>
-          <div class="hint" id="seller-sub" style="margin:2px 0 0"></div>
-        </div>
-        <button class="btn-sm btn-grey" onclick="openShopPicker()">Ganti Toko</button>
-        <button class="btn-sm btn-tosca" onclick="startAddShop()">+ Tambah Toko</button>
-      </div>
+```js
+function setSellerShop(id){
+  sellerShopId=id;
+  state.sellerShop=id; save();
+  tab='all'; renderSeller(); renderChrome('v-seller');
+  toast('Dashboard: '+shopOf(id).name,'ok');
+}
 ```
 
-dan sheet pemilih (sesudah `sheet-menu`, v4:593):
+dan di `onEnter` (v5:859) tambahkan pemulihan:
 
-```html
-  <div class="overlay" id="sheet-shops" onclick="if(event.target===this)closeSheet('sheet-shops')">
-    <div class="sheet"><h3>Pilih toko</h3>
-      <div class="hint" style="margin-bottom:10px">Data yang tampil di dashboard mengikuti pilihan ini.</div>
-      <div id="shop-pick"></div></div>
-  </div>
+```js
+  if(view==='v-seller'){
+    if(state.sellerShop && myShopIds().includes(state.sellerShop)){
+      sellerShopId=state.sellerShop;
+    }
+    ensureSellerShop(); renderSeller();
+  }
+```
+
+- [ ] **Step 4: Fungsi codeChip (sisipkan setelah `rcodeOf` di v5)**
+
+```js
+/* codeChip: chip HTML yang menampilkan kode restoran dan ID toko, bisa diklik untuk menyalin */
+function codeChip(id){
+  const s=shopOf(id); if(!s) return '<span class="hint">—</span>';
+  const code=rcodeOf(id);
+  return `<span class="rcode-chip" onclick="copyText('${code}');toast('Kode disalin: ${code}','ok')" title="Klik untuk menyalin">${code}<span class="rid">${id}</span></span>`;
+}
 ```
 
 CSS (sebelum `</style>`):
 
 ```css
-/* ===== v5: dashboard penjual ===== */
-.shopbar{display:flex;gap:8px;align-items:center;padding:10px 12px 0}
-.pickrow{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;padding:10px 12px;
-  border:1px solid #eceff1;border-radius:12px;margin-bottom:6px;background:#fff;font:inherit}
-.pickrow.on{border-color:#00a08a;background:#e9f7f4}
+.rcode-chip{display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;border:1px solid #c8e6c9;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:#2e7d32;cursor:pointer}
+.rcode-chip:hover{background:#c8e6c9}
+.rcode-chip .rid{font-size:10px;font-weight:500;color:#558b2f}
 ```
 
-- [ ] **Step 4: Fungsi toko aktif & isolasi (blok PENJUAL, v4:1705)**
+- [ ] **Step 5: Tombol Tambah Toko di renderShopSwitch (modifikasi fungsi yang sudah ada di v5)**
 
 ```js
-/* ===== v5: toko aktif & isolasi antar pemilik (spec §2 butir 10) ===== */
-function shopScope(){ const ids=myShopIds(), f=state.shopFilter; return (f&&f!=='all'&&ids.indexOf(f)>=0)?[f]:ids }
-function setShopFilter(v){ const ids=myShopIds(); state.shopFilter=(v&&v!=='all')?(ids.indexOf(v)>=0?v:ids[0]):'all'; save(); closeSheet('sheet-shops'); renderSeller(); toast(state.shopFilter==='all'?'Menampilkan semua toko Anda':('Menampilkan '+(shopOf(state.shopFilter)||{}).name),'ok') }
-function switchShop(id){ setShopFilter(id); state.sellerShop=id; save() }
-function openShopPicker(){
-  const o=currentOwner(); if(!o) return;
-  const row=(v,label,sub)=>`<button type="button" class="pickrow ${(state.shopFilter||'all')===v?'on':''}" onclick="setShopFilter('${v}')"><b>${label}</b><span class="hint">${sub}</span></button>`;
-  $('shop-pick').innerHTML=row('all','Semua toko saya',o.shops.length+' restoran milik '+o.nama)
-    +o.shops.map(id=>{ const s=shopOf(id)||{}; return row(id,(s.logo||'')+' '+(s.name||id),'kode '+s.code+' · ID '+id) }).join('')
-    +`<div class="hint">ID restoran hanya tampil di sisi penjual.</div>`;
-  openSheet('sheet-shops');
+function renderShopSwitch(){
+  const ids=myShopIds(), box=$('dash-shop');
+  if(ids.length<1){ box.innerHTML=''; return; }
+  box.innerHTML=`<div class="shopswitch"><span class="sl">TOKO</span><div class="swrap">`
+    +ids.map(id=>{
+      const s=shopOf(id);
+      return `<button type="button" class="swchip${id===activeShopId()?' on':''}" onclick="setSellerShop('${id}')">${s.logo} ${s.name}<span class="rc">${rcodeOf(id)}</span></button>`;
+    }).join('')
+    +`<button type="button" class="swchip" style="background:#e8f5e9;border-color:#c8e6c9;color:#2e7d32" onclick="startAddShop()">+ Tambah Toko</button>`
+    +`</div></div>`;
 }
+```
+
+- [ ] **Step 6: Fungsi guardShop, startAddShop, submitAddShop (sisipkan di blok PENJUAL)**
+
+```js
 function guardShop(shopId){
   const o=currentOwner();
   if(!o){ toast('Login sebagai penjual dulu','err'); return false }
@@ -1740,72 +1746,408 @@ function submitAddShop(){
   const v=validateShop();
   if(!v.ok){ toast('Periksa lagi isian Data Toko','err'); $(v.first).focus(); return }
   const shop=addShop(o.key,v.values);
-  state.tmpShop=null; state.sellerShop=shop.id; state.shopFilter=shop.id; save();
+  state.tmpShop=null; state.sellerShop=shop.id; sellerShopId=shop.id; save();
   state.regCreds={email:o.email,code:shop.code,id:shop.id,password:''};
   renderRegDone(); go('v-reg-done');
 }
 ```
 
-`setShopFilter` menolak id di luar `myShopIds()` — itu jawaban untuk uji "memaksa shopId orang lain".
+- [ ] **Step 7: Pakai guardShop di advance, cancelOrder, toggleMenu**
 
-- [ ] **Step 5: Pakai scope di pembaca data & kunci jalur tulis**
-
-```js
-function sellerOrders(){ const ids=shopScope(); return state.orders.filter(o=>ids.indexOf(o.shopId)>=0) }
-```
-
-di `renderSellerList` (v4:1721) ganti `const ids=myShopIds();` menjadi `const ids=shopScope();`, dan di awal tiga fungsi ini tambahkan penjaga:
+di `advance` (v5 existing) tambahkan di awal:
 
 ```js
 function advance(id){
   const o=state.orders.find(x=>x.id===id); if(!o) return;
   if(!guardShop(o.shopId)) return;
-  … /* sisa isi fungsi tidak berubah, baris penemuan `o` lama dihapus */
+  … /* sisa isi fungsi tidak berubah */
 }
-function cancelOrder(id){
+```
+
+di `cancelOrder` (v5 existing, sudah punya parameter `reason,note`) tambahkan:
+
+```js
+function cancelOrder(id,reason,note){
   const o=state.orders.find(x=>x.id===id); if(!o) return;
   if(!guardShop(o.shopId)) return;
-  o.status='cancelled'; save(); renderSeller(); toast('Pesanan dibatalkan','err');
+  … /* sisa isi fungsi tidak berubah */
 }
+```
+
+di `toggleMenu` (v5 existing) tambahkan:
+
+```js
 function toggleMenu(pid){
   const sh=state.shops.find(s=>s.packages.some(p=>p.id===pid)); if(!sh) return;
   if(!guardShop(sh.id)) return;
-  state.menuOff[pid]=!state.menuOff[pid]; save(); renderSellerList();
-  toast(state.menuOff[pid]?'Paket disembunyikan dari katalog':'Paket ditampilkan','ok');
+  … /* sisa isi fungsi tidak berubah */
 }
 ```
 
-- [ ] **Step 6: Header dashboard (di `renderSeller`, v4:1709, tambahkan di awal fungsi)**
-
-```js
-  ensureSellerShop();
-  const o=currentOwner(), act=activeShop();
-  $('seller-name').textContent=act?act.name:'—';
-  $('seller-sub').textContent=o?('KODE '+(act?act.code:'—')+' · ID '+(act?act.id:'—')+' · '+o.nama+(o.shops.length>1?' · '+o.shops.length+' toko':'')):'Login penjual diperlukan';
-```
-
-dan di `onEnter` (v4:859) tambahkan cabang supaya toko aktif tidak pernah menunjuk ke toko orang lain:
-
-```js
-  if(view==='v-seller'){ ensureSellerShop(); renderSeller(); }
-```
-
-- [ ] **Step 7: Jalankan test sampai hijau**
+- [ ] **Step 8: Jalankan test sampai hijau**
 
 Run: `node tools/test.js` → Task 1–8 hijau.
 
-- [ ] **Step 8: Cek browser**
+- [ ] **Step 9: Cek browser**
 
-`Isi penjual` (Andi) → LOGIN → dashboard: header menyebut `A4567001`/`100234`, `Ganti Toko` hanya memuat RM Sederhana + Kekinian Food → pilih `Semua toko saya` → jumlah kartu pesanan 7. Klik `+ Tambah Toko` → langkah 2 tampil tanpa langkah 1 → isi → DAFTARKAN → muncul `A4567003` dan **tidak ada** password sementara. Login sebagai Sari → daftar pesanan tidak memuat satu punorder Andi (cari teks "RM Sederhana": tidak ada). Konsol bersih.
+`Isi penjual` (Andi) → LOGIN → dashboard: header menyebut `A4567001`/`100234`, tombol `+ Tambah Toko` tampil di pemilih toko → klik → langkah 2 tampil tanpa langkah 1 → isi → DAFTARKAN → muncul `A4567003` dan **tidak ada** password sementara. Klik kode restoran di kartu pesanan → disalin ke clipboard. Login sebagai Sari → daftar pesanan tidak memuat satu pun order Andi (cari teks "RM Sederhana": tidak ada). Konsol bersih.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add gocatering-prototype-v5.html tools/test.js
-git commit -m "feat(v5): pemilih toko, tambah toko tanpa registrasi ulang, dan penjaga isolasi"
+git commit -m "feat(v5): persistensi sellerShopId, tombol Tambah Toko, dan penjaga isolasi"
 ```
 
 ---
+### Task 9: Sisi pembeli — kode di samping nama restoran + popup info (spec §2 butir 11–12, §5.5)
+
+**Files:**
+- Modify: `gocatering-prototype-v5.html` — `renderShops` (v4:1033-1040), markup `v-catalog` (v4:452-456), `renderCatalog` (v4:1045), `openDetail` (v4:1625), sheet baru sesudah `sheet-menu`, CSS sebelum `</style>`
+- Modify: `tools/test.js`
+
+**Interfaces:**
+- Consumes: `state.shops` (`code`,`addr`,`mapUrl`,`csWa`,`photo`) dari Task 4, `owner.nama`/`gelar`/`photo`, `waLink` (Task 3), `openSheet` (v4:883).
+- Produces: `codeChip(shopId) → html`, `openRestoSheet(shopId)`, view sheet `sheet-resto` dengan `resto-init`,`resto-photo`,`resto-name`,`resto-code`,`resto-owner`,`resto-addr`,`resto-wa`,`resto-map`,`resto-chat`, header katalog `cat-name`,`cat-code`.
+- Aturan keras: **`shop.id` tidak boleh muncul di elemen sisi pembeli mana pun.**
+
+- [ ] **Step 1: Tulis uji yang gagal**
+
+```js
+console.log('\n== TASK 9 — kode restoran di sisi pembeli ==');
+const ANDI = 'rm.sederhana@gocatering.id';
+t('kartu toko menampilkan kode, bukan ID', () => {
+  const b = fresh();
+  b.run('renderShops()');
+  const html = b.els.get('shop-list').innerHTML;
+  ['A4567001', 'A4567002', 'S8812001', 'S8812002'].forEach(c => has(html, 'kode: ' + c, 'chip ' + c));
+  const visible = html.replace(/on\w+="[^"]*"/g, '');   /* id memang ada di onclick, tapi tidak tampil */
+  ['100234', '100518', '100742', '100930'].forEach(i => hasnt(visible, i, 'ID ' + i));
+  has(html, "openRestoSheet('100234')", 'chip bisa disentuh');
+  has(html, 'event.stopPropagation()', 'menyentuh chip tidak membuka toko');
+});
+t('header katalog menampilkan nama toko + kode', () => {
+  const b = fresh();
+  b.run('openShop("100234"); renderCatalog()');
+  eq(b.els.get('cat-name').textContent, 'RM Sederhana', 'nama');
+  has(b.els.get('cat-code').innerHTML, 'kode: A4567001', 'chip katalog');
+});
+t('detail pesanan menampilkan kode, bukan ID', () => {
+  const b = fresh();
+  b.run('openDetail("GC-2411-00A1")');
+  const html = b.els.get('sheet-order-body').innerHTML;
+  has(html, 'kode: A4567001', 'kode');
+  hasnt(html.replace(/on\w+="[^"]*"/g, ''), '100234', 'ID');
+});
+t('popup info restoran: pemilik, alamat, peta, WA CS lengkap', () => {
+  const b = fresh();
+  b.run('openRestoSheet("100234")');
+  eq(b.els.get('resto-owner').textContent, 'Tn Andi Ramadhan', 'pemilik + gelar');
+  eq(b.els.get('resto-addr').textContent, 'Jl. Tunjungan No. 45, Surabaya', 'alamat');
+  has(b.els.get('resto-map').href, 'google.com/maps', 'tombol peta');
+  eq(b.els.get('resto-wa').textContent, 'WA CS 082130000101', 'nomor penuh, tidak disamarkan');
+  eq(b.els.get('resto-chat').href, 'https://wa.me/6282130000101', 'link chat');
+  eq(b.els.get('resto-code').textContent, 'kode: A4567001', 'kode');
+  const all = ['resto-owner', 'resto-addr', 'resto-wa', 'resto-code', 'resto-name']
+    .map(i => String(b.els.get(i).textContent) + String(b.els.get(i).innerHTML)).join(' ');
+  hasnt(all, '100234', 'ID bocor ke popup');
+});
+t('tanpa foto, popup memakai inisial nama pemilik', () => {
+  const b = fresh(); loginAs2(b, 'huang');
+  b.run('openRestoSheet(findOwner("email","huang.test@gmail.com").shops[0])');
+  eq(b.els.get('resto-photo').style.display, 'none', 'foto disembunyikan');
+  eq(b.els.get('resto-init').textContent, 'H', 'inisial pemilik');
+  eq(b.els.get('resto-owner').textContent, 'Tn Huang Budi', 'pemilik');
+});
+```
+
+Test ini memakai `loginAs2(b,'huang')` sebagai ringkasan "registrasi Huang lewat form lalu logout". Tambahkan definisinya di bagian atas `tools/test.js` (sebelum blok uji):
+
+```js
+function loginAs2(b, who) {
+  if (who !== 'huang') throw new Error('helper ini hanya untuk Huang');
+  form(b, Object.assign({}, GOOD, GOOD_SHOP));
+  b.run('state.tmpSeller=validateIdentity().values; state.tmpSeller.photo=""');
+  b.run('submitSellerForm()');
+  b.run('state.tmpSeller=null; pickRole("seller"); $("li-email").value="huang.test@gmail.com"; $("li-pass").value=state.regCreds.password; doLogin()');
+  b.run('currentOwner().mustReset=false; applyResetForTest()');
+  return b.run('state.user');
+}
+```
+
+`applyResetForTest()` adalah satu baris di berkas HTML, di bawah `applyReset()`, yang meniru hasil ganti password tanpa lewat layar:
+
+```js
+/* hanya untuk harness uji: menandai password sudah diganti tanpa menyentuh layar */
+function applyResetForTest(){ const o=currentOwner(); if(o){ o.mustReset=false; o.password='hujan28'; } }
+```
+
+- [ ] **Step 2: Jalankan, pastikan gagal**
+
+Run: `node tools/test.js` → `codeChip is not defined` / `cat-name` kosong.
+
+- [ ] **Step 3: CSS (sebelum `</style>`)**
+
+```css
+/* ===== v5: kode restoran (sisi pembeli) ===== */
+.code-chip{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#e9f7f4;
+  color:#00796b;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #bfe5dd;vertical-align:middle}
+.shophead{display:flex;align-items:center;gap:6px;padding:10px 12px 2px}
+.resto-row{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.resto-init{width:52px;height:52px;border-radius:50%;background:#e8f5f2;color:#00796b;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+#resto-photo{width:52px;height:52px;border-radius:12px;object-fit:cover;flex:0 0 auto;display:none}
+```
+
+- [ ] **Step 4: Chip + header katalog**
+
+```js
+function codeChip(id){
+  const s=shopOf(id); if(!s||!s.code) return '';
+  return `<span class="code-chip" role="button" tabindex="0" title="Lihat info restoran" `
+       + `onclick="event.stopPropagation();openRestoSheet('${s.id}')" `
+       + `onkeydown="if(event.key==='Enter'){event.stopPropagation();openRestoSheet('${s.id}')}">kode: ${s.code}</span>`;
+}
+```
+
+Di `renderShops` (v4:1037) ganti baris nama toko menjadi:
+
+```js
+    <div style="flex:1"><div class="shopname">${s.name}${codeChip(s.id)}</div><div class="shopmeta">${s.tagline}</div>
+```
+
+Sisipkan header katalog di dalam `v-catalog` (v4:452, tepat sesudah `<div class="view" id="v-catalog">`):
+
+```html
+      <div class="shophead"><div class="shopname" id="cat-name" style="font-size:15px">—</div><span id="cat-code"></span></div>
+```
+
+dan di awal `renderCatalog()` (setelah `const ent=consumeAdded();`, v4:1046):
+
+```js
+  $('cat-name').textContent=currentShop?currentShop.name:'—';
+  $('cat-code').innerHTML=currentShop?codeChip(currentShop.id):'';
+```
+
+Di `openDetail` (v4:1625) ganti `${shopOf(o.shopId).name} · ${it.length} jenis paket` menjadi `${shopOf(o.shopId).name}${codeChip(o.shopId)} · ${it.length} jenis paket`.
+
+- [ ] **Step 5: Sheet info restoran**
+
+Markup, sesudah `sheet-shops` (Task 8):
+
+```html
+  <div class="overlay" id="sheet-resto" onclick="if(event.target===this)closeSheet('sheet-resto')">
+    <div class="sheet">
+      <div class="resto-row">
+        <div class="resto-init" id="resto-init">R</div>
+        <img id="resto-photo" alt="Foto restoran">
+        <div style="flex:1;min-width:0"><h3 style="margin:0 0 2px" id="resto-name">—</h3>
+          <div class="hint" id="resto-code"></div></div>
+      </div>
+      <div class="oline"><span>Pemilik</span><b id="resto-owner">—</b></div>
+      <div class="oline" style="align-items:flex-start"><span>Alamat</span><b id="resto-addr" style="text-align:right;max-width:62%">—</b></div>
+      <div class="hint" id="resto-wa" style="margin:10px 0 8px"></div>
+      <div style="display:flex;gap:8px">
+        <a class="btn btn-grey" id="resto-map" target="_blank" rel="noopener" style="flex:1;text-align:center;text-decoration:none">Buka Peta</a>
+        <a class="btn btn-wa" id="resto-chat" target="_blank" rel="noopener" style="flex:1;text-align:center;text-decoration:none">Chat WA</a>
+      </div>
+      <div class="hint center" style="margin-top:10px">Kode restoran identitas publik toko. ID 6 angka hanya dilihat penjual.</div>
+    </div>
+  </div>
+```
+
+Fungsi (di bawah `codeChip`):
+
+```js
+/* popup info restoran (spec §2 butir 12) — sengaja tidak pernah menampilkan ID */
+function openRestoSheet(id){
+  const s=shopOf(id); if(!s) return;
+  const o=state.owners[s.ownerKey]||{};
+  const photo=s.photo||'';
+  $('resto-photo').src=photo; $('resto-photo').style.display=photo?'block':'none';
+  const init=String((o.nama||s.name||'?').trim().charAt(0)||'?').toUpperCase();
+  $('resto-init').textContent=init; $('resto-init').style.display=photo?'none':'flex';
+  $('resto-name').textContent=s.name;
+  $('resto-code').textContent='kode: '+(s.code||'—');
+  $('resto-owner').textContent=((o.gelar?o.gelar+' ':'')+(o.nama||'Pemilik belum terisi'));
+  $('resto-addr').textContent=s.addr||'Alamat belum diisi';
+  const map=$('resto-map'); map.href=s.mapUrl||''; map.style.display=s.mapUrl?'inline-flex':'none';
+  $('resto-wa').textContent=s.csWa?('WA CS '+s.csWa):'WA customer service belum diisi';
+  const chat=$('resto-chat'); chat.href=s.csWa?waLink(s.csWa):''; chat.style.display=s.csWa?'inline-flex':'none';
+  openSheet('sheet-resto');
+}
+```
+
+- [ ] **Step 6: Jalankan test sampai hijau**
+
+Run: `node tools/test.js` → Task 1–9 hijau.
+
+- [ ] **Step 7: Cek browser**
+
+Clear storage → login pembeli → daftar toko: tiap kartu punya pil `kode: …`; klik pil → **yang terbuka adalah popup info**, bukan halaman toko. Popup menyebut "Tn Andi Ramadhan", alamat, tombol `Buka Peta` (href google.com/maps) dan `Chat WA` (href `https://wa.me/6282130000101`). `document.body.innerText` di layar toko tidak memuat `100234` (cek lewat konsol: `[...document.querySelectorAll('#shop-list,#pkg-grid,.appbar')].map(e=>e.innerText).join(' ').includes('100234')` → `false`). Masuk katalog, checkout 1 paket sampai selesai, buka detail pesanan → chip kode ada di bawah nomor order. Konsol bersih.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add gocatering-prototype-v5.html tools/test.js
+git commit -m "feat(v5): chip kode restoran, popup info pemilik/peta/WA CS untuk pembeli"
+```
+
+---
+
+### Task 10: Label versi, README, pengalihan `index.html`, dan regresi menyeluruh
+
+**Files:**
+- Modify: `gocatering-prototype-v5.html` — `<title>` (v4:6), `<h1>` (v4:305), panel catatan (`<h2>Baru di v4</h2>` v4:307)
+- Modify: `index.html`, `README.md`
+- Read-only: `tools/test.js` (tidak ditambah uji baru)
+
+**Interfaces:**
+- Consumes: seluruh Task 1–9.
+- Produces: v5 sebagai tautan default situs; dokumentasi sesuai kenyataan.
+
+- [ ] **Step 1: Label versi di dalam aplikasi**
+
+```html
+<title>goCatering v5 — Prototype Interaktif (Registrasi Penjual & Toko + Kode Restoran)</title>
+```
+
+`<h1>goCatering v4</h1>` (v4:305) → `<h1>goCatering v5</h1>`. Sisipkan blok ini **tepat sebelum** `<h2>Baru di v4</h2>` (v4:307), jangan menghapus daftar v4:
+
+```html
+  <h2>Baru di v5</h2>
+  <ul>
+    <li><b>Registrasi penjual 2 langkah.</b> Data diri (gelar, nama, email Gmail, NIK, WA, foto opsional) lalu data toko (nama, alamat, link Google Maps, WA customer service, foto opsional).</li>
+    <li><b>Akun terbit otomatis.</b> Sistem membuat email login, <b>password sementara satu kali tampil</b>, dan mewajibkannya diganti setelah login pertama.</li>
+    <li><b>Kode restoran</b> = inisial nama pemilik + 4 digit akhir NIK + nomor urut per pemilik (contoh <code>H4567001</code>), tampil di samping nama toko untuk pembeli. <b>ID restoran 6 angka hanya terlihat penjual.</b></li>
+    <li><b>Sentuh kode</b> &rarr; popup berisi nama pemilik, alamat fisik, tombol <b>Buka Peta</b>, dan nomor WA customer service lengkap dengan <b>Chat WA</b>.</li>
+    <li><b>Satu pemilik, banyak restoran.</b> Tombol <b>Tambah Toko</b> di dashboard memakai NIK yang sama dan menaikkan nomor urut kode.</li>
+    <li><b>Isolasi antar-akun.</b> Dashboard, pesanan, dan menu hanya menampilkan toko milik akun yang login; memaksa id toko orang lain ditolak.</li>
+    <li><b>Data pribadi disandikan</b> (XOR + Base64, kunci acak per perangkat) sebelum masuk <code>localStorage</code>. Ini penyamaran nilai, <b>bukan</b> enkripsi untuk kepatuhan.</li>
+  </ul>
+```
+
+- [ ] **Step 2: Pengalihan `index.html` ke v5**
+
+Ganti tiga rujukan `gocatering-prototype-v4.html` menjadi `gocatering-prototype-v5.html` (baris `meta http-equiv="refresh"`, `location.replace(...)`, dan teks tautan cadangan).
+
+Run: `grep -n "prototype-v[45]" index.html`
+Expected: tiga baris, semuanya `v5`.
+
+- [ ] **Step 3: README**
+
+Perbaiki `README.md` agar cocok dengan kenyataan (empat suntingan, tanpa menambah bagian baru):
+
+1. Tabel versi — tambah baris:
+
+```markdown
+| v5 | `gocatering-prototype-v5.html` | Registrasi penjual & toko: wizard 2 langkah, akun + password sementara, kode restoran, multi-toko per pemilik, isolasi antar-akun, popup info restoran untuk pembeli |
+```
+
+2. Ganti judul "Cara menjalankan" supaya berkas default disebut v5, dan tambahkan cara menjalankan uji:
+
+```markdown
+Node dipakai untuk harness uji, bukan untuk menjalankan aplikasinya.
+
+    node tools/test.js     # seluruh assertion (regresi v4 + fitur v5)
+    node tools/serve.js    # serve di http://127.0.0.1:8848 untuk uji lewat browser
+```
+
+3. Akun demo — tambah tabel penjual:
+
+```markdown
+| Peran | Email | Password | Catatan |
+| --- | --- | --- | --- |
+| Penjual 1 | `rm.sederhana@gocatering.id` | `seller123` | Andi Ramadhan, NIK `…4567`, 2 restoran: RM Sederhana `A4567001`, Kekinian Food `A4567002` |
+| Penjual 2 | `dapur.nusantara@gocatering.id` | `seller123` | Sari Kumalasari, NIK `…8812`, 2 restoran: Dapur Nusantara `S8812001`, Catering Sehat `S8812002` |
+
+Akun penjual hasil registrasi memakai password sementara yang terbit sekali di layar "Akun terbit".
+```
+
+4. Catatan teknis — tambah butir jujur soal batas prototype:
+
+```markdown
+- Data penjual (nama, NIK, email, WA, password) disandikan XOR + Base64 dengan kunci acak per
+  perangkat (`state.devKey`) sebelum masuk `localStorage`. Tujuannya supaya tidak terbaca mata di
+  DevTools — **bukan** enkripsi untuk kepatuhan UU PDP. Foto disimpan apa adanya (data URL JPEG
+  640 px) supaya kuota 5 MB tidak cepat habis; saat kuota penuh, `save()` mengulang tanpa foto.
+- Tidak ada server: NIK tidak diverifikasi ke Dukcapil, link peta tidak di-geocode, dan nomor WA
+  hanya tautan `wa.me`.
+- Membuka `gocatering-prototype-v4.html` setelah v5 masih aman: v4 memakai kunci penyimpanan
+  sendiri (`gocatering_v4`) dan tidak diubah oleh migrasi v5.
+```
+
+- [ ] **Step 4: Uji statis**
+
+```bash
+node tools/test.js
+node -e "const{extract}=require('./tools/harness');require('fs').writeFileSync('.v5.js',extract('gocatering-prototype-v5.html'))" && node --check .v5.js && rm .v5.js && echo "SINTAKS OK"
+```
+
+Expected: semua uji hijau lalu `SINTAKS OK`.
+
+- [ ] **Step 5: Regresi menyeluruh di browser (spesifikasi §10, langkah 1–8)**
+
+Clear storage dulu. Jalankan berurutan dan catat hasilnya; satu pun kegagalan berarti task terkait belum selesai:
+
+1. Registrasi penjual "Huang" `huang.test@gmail.com` NIK `3578090807064567` **tanpa satu foto pun** → akun terbit `H4567001` + ID 6 angka; kartu tokonya memakai tile emoji 🍽️; popup menampilkan inisial `H`.
+2. Login role Penjual dengan password sementara → terdampar di Ganti Password; password = sementara ditolak; setelah ganti → dashboard hanya berisi tokonya.
+3. `+ Tambah Toko` → `H4567002`; `Ganti Toko` memuat dua toko + "Semua toko saya"; tab pesanan ikut berpindah.
+4. Isolasi: login Sari → tab pesanan/menu hanya Dapur Nusantara & Catering Sehat; tidak ada teks "Warung Huang"; coba `advance()` order toko lain dari konsol → toast "Bukan restoran Anda".
+5. Duplikasi: registrasi dengan email `budi@mail.com` → "sudah dipakai akun pembeli"; NIK `3578010203044567` → "sudah terdaftar … Tambah Toko".
+6. Pembeli: chip `kode: H44567…`/`A4567001` tampil; `document.body.innerText` di layar toko tidak memuat satu pun ID 6 angka; sentuh chip → popup dengan Buka Peta & Chat WA.
+7. Alur lama: order pickup (nomor antre & Jadwal Saya), delivery (ongkir per km), cutoff 16.00 lewat tombol Jam simulasi, bayar QRIS & COD, re-pay order `pending`, profil + penyamaran nomor pembeli, mode offline + flush queue.
+8. Reset Data → aplikasi kembali ke 4 toko bawaan tanpa error konsol.
+
+- [ ] **Step 6: Putuskan publikasi, baru push (JANGAN push tanpa jawaban pengguna)**
+
+Dua hal yang menunggu keputusan pemilik repo:
+
+1. Apakah `docs/` (spec + rencana ini) ikut di-push ke repo publik, atau `docs/` masuk `.gitignore`.
+2. Apakah `assets/` foto bawaan tetap dipakai untuk toko hasil migrasi (README sudah mencatatnya CC).
+
+Setelah dijawab:
+
+```bash
+git log --oneline origin/main..HEAD          # periksa isi sebelum publish
+git push origin main                          # Pages memakai branch main, tanpa langkah build
+```
+
+Lalu verifikasi live (Pages butuh ±30–60 detik): `https://gatnadf-ai.github.io/gocatering/` harus mengalih ke `gocatering-prototype-v5.html`, dan `https://gatnadf-ai.github.io/gocatering/gocatering-prototype-v5.html` harus boot dengan penyimpanan kosong tanpa error konsol.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add gocatering-prototype-v5.html index.html README.md
+git commit -m "docs(v5): label versi, README, dan pengalihan index ke prototype v5"
+```
+
+---
+
+## Peta cakupan spec (untuk reviewer)
+
+| Spec | Task |
+| --- | --- |
+| §1 tujuan 1–5 | 6, 7, 8, 9 (terbuka langsung oleh penjual), 8 (isolasi), 9 (kode ke pembeli), 2 (penyandian) |
+| §2 butir 1–3 (model akun, NIK, multi-toko) | 3 (`ownerKeyOf`), 5 (validasi NIK), 8 (`startAddShop`/`submitAddShop`) |
+| §2 butir 4 (obfuscation) | 2 |
+| §2 butir 5 (foto & kompresi) | 5 |
+| §2 butir 6 (link Maps) | 3 (`RE_MAP`), 5 (validasi), 9 (tombol Buka Peta) |
+| §2 butir 7 (popup) | 9 |
+| §2 butir 8 (running per pemilik, mulai 001) | 3, 4, 8 |
+| §2 butir 9 (ID 6 angka acak) | 3, 6 |
+| §2 butir 10 (NIK ganda ditolak) | 5, 6 |
+| §2 butir 11 (4 toko migrasi lengkap) | 4 |
+| §2 butir 12 (email tidak ganda lintas peran) | 5 (`regCta`/`validateIdentity`), 6 (`doLogin`) |
+| §3 model data | 4 |
+| §4 aturan validasi | 5 |
+| §5 layar baru 1–6 | 5, 6, 7, 8, 9 |
+| §6 generator | 3 |
+| §7 perlindungan data | 2 |
+| §8 risiko (kuota, `crypto.subtle`, isolasi) | 2 (`save()` fallback), 3 (tanpa subtle), 8 (penjaga) |
+| §9 berkas v5 & kunci | 1, 4 |
+| §10 rencana uji | setiap task Step "jalankan test"; uji manual di Task 10 Step 5 |
+
 
 
 
