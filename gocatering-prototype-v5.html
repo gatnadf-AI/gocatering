@@ -792,6 +792,62 @@ function cryptRows(rows,fields,fn){
   });
 }
 
+/* ================= GENERATOR IDENTITAS (spec §6) ================= */
+const RE_EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const RE_GMAIL=/^[a-z0-9](?:[a-z0-9._%+-]*[a-z0-9])?@gmail\.com$/i;
+const RE_NIK=/^\d{16}$/;
+const RE_PHONE=/^(?:0\d{8,13}|\+?62\d{8,13})$/;
+const RE_MAP=/^https:\/\/(?:www\.google\.com\/maps|maps\.google\.com|maps\.app\.goo\.gl|goo\.gl\/)/;
+const NAME_OK=/^[A-Za-z .'-]{3,}$/;
+const GELAR=['Tn','Ny','Nona'];
+
+function fnv32(str){
+  let h=0x811c9dc5;
+  for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; }
+  return ('00000000'+(h>>>0).toString(16)).slice(-8);
+}
+function ownerKeyOf(nik){ return 'ow-'+fnv32(String(nik).replace(/\D/g,'')); }
+function letterOf(nama){
+  const s=String(nama||'').replace(/[^A-Za-z]/g,'');
+  return (s[0]||'R').toUpperCase();
+}
+/* kode = inisial nama PEMILIK + 4 digit akhir NIK + running per pemilik (mulai 001) */
+function nextShopCode(o){
+  const ownerKey=o.ownerKey||ownerKeyOf(o.nik||'');
+  const head=letterOf(o.name)+String(o.nik||'0000').replace(/\D/g,'').slice(-4);
+  const used=new Set((o.shops||[]).filter(s=>s.ownerOwnerKey===ownerKey).map(s=>s.code));
+  let run=used.size+1, code=head+String(run).padStart(3,'0');
+  while((o.shops||[]).some(s=>s.code===code)) { run++; code=head+String(run).padStart(3,'0'); }
+  return code;
+}
+function newShopId(taken,opt){
+  opt=opt||{}; const tries=opt.tries==null?40:opt.tries, rand=opt.rand||Math.random;
+  const used=new Set((taken||[]).map(String));
+  for(let i=0;i<tries;i++){
+    const id=String(100000+Math.floor(rand()*900000));
+    if(/^\d{6}$/.test(id)&&!used.has(id)) return id;
+  }
+  let n=Math.max(100000,Number(state&&state.seqId||100000)+1);
+  while(used.has(String(n))) n++;
+  if(state) state.seqId=n;
+  return String(n);
+}
+function tempPassword(opt){
+  opt=opt||{}; const r=opt.rand||Math.random;
+  const L='abcdefghjkmnpqrstuvwxyz', D='23456789', c=[];
+  for(let i=0;i<6;i++) c.push(L[Math.floor(r()*L.length)]);
+  for(let i=0;i<2;i++) c.push(D[Math.floor(r()*D.length)]);
+  for(let i=c.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)), t=c[i]; c[i]=c[j]; c[j]=t; }
+  return c.join('');
+}
+function toIntl(n){
+  n=String(n||'').replace(/[^0-9+]/g,'');
+  if(n.charAt(0)==='0') return '62'+n.slice(1);
+  if(n.indexOf('+62')===0) return n.slice(1);
+  return n;
+}
+function waLink(n){ return 'https://wa.me/'+toIntl(n); }
+
 /* simHour & CUTOFF dipakai seed() lewat todayISO(), jadi binding-nya wajib
    ada sebelum load() dijalankan. Kalau tidak, database pertama yang kosong
    membuat skrip mati di tengah: "Cannot access 'simHour' before initialization". */
