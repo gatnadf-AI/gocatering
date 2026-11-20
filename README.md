@@ -135,3 +135,4 @@ Foto makanan di `assets/food/` **tidak** termasuk lisensi MIT: gambar-gambar itu
 Wikimedia Commons dengan lisensi CC dan nama penciptanya tercatat pada
 [`assets/food/attribusi.json`](assets/food/attribusi.json). Gunakan berkas tersebut sebagai
 sumber atribusi bila foto ikut dipublikasi.
+Hubungi email androvich97@gmail.com untuk detail aplikasi
