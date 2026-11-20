@@ -639,7 +639,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <button type="button" class="btn-sm btn-grey" id="pf-reveal" onclick="toggleProfileData()">👁 Lihat</button>
       </div>
       <div class="hint" id="pf-src" style="margin-top:8px"></div>
-      <div class="pdnote">🔒 Sesuai <b>UU PDP No. 27/2022</b>, nomor WA &amp; email disamarkan di layar ini (4 digit akhir WA dan nama email ditutupi). Nilai asli tersimpan di database pembeli dan tetap dipakai untuk order, kurir, serta chat WA.</div></div>
+      <div style="margin-top:10px;text-align:right"><button class="btn-link" onclick="openSheet('sheet-pdp')" style="font-size:13px">ⓘ Perlindungan Data (UU PDP)</button></div></div>
       <div class="card">
         <div class="oline"><span>Total pesanan</span><b id="pf-orders">0</b></div>
         <div class="oline"><span>Total dibayar digital</span><b id="pf-paid">Rp 0</b></div>
@@ -741,6 +741,23 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       </div>
       <button class="btn btn-grey" style="margin-top:8px" onclick="closeSheet('sheet-resto')">Tutup</button>
       <div class="hint center" style="margin-top:10px">Kode restoran identitas publik toko. ID 6 angka hanya dilihat penjual.</div>
+    </div>
+  </div>
+
+  <!-- SHEET: UU PDP -->
+  <div class="overlay" id="sheet-pdp" onclick="if(event.target===this)closeSheet('sheet-pdp')">
+    <div class="sheet">
+      <h3>ⓘ Perlindungan Data Pribadi</h3>
+      <div style="font-size:13px;line-height:1.6;color:#333">
+        <p style="margin:0 0 10px">Sesuai <b>UU PDP No. 27/2022</b>, goCatering menerapkan prinsip minimasi data:</p>
+        <ul style="margin:0 0 10px;padding-left:20px">
+          <li>Nomor WhatsApp & email disamarkan di layar profil (4 digit akhir WA, nama email ditutupi)</li>
+          <li>Nilai asli tersimpan aman di database dan tetap dipakai untuk order, kurir, serta chat WA</li>
+          <li>Data tidak dibagikan ke pihak ketiga tanpa persetujuan</li>
+        </ul>
+        <p style="margin:0;font-size:12px;color:#666">Untuk penjual: NIK, email, dan password disimpan terenkripsi (XOR + Base64) di perangkat. Foto disimpan tanpa enkripsi untuk performa.</p>
+      </div>
+      <button class="btn btn-grey" style="margin-top:12px" onclick="closeSheet('sheet-pdp')">Tutup</button>
     </div>
   </div>
 
@@ -1572,7 +1589,6 @@ function renderRegDone(){
     <div class="hint center" style="margin-top:8px">ID restoran hanya untuk Anda; pembeli hanya melihat kode.</div>`;
 }
 function gotoLoginAsSeller(){
-  pickRole('seller');
   $('li-email').value=(state.regCreds&&state.regCreds.email)||'';
   $('li-pass').value='';
   state.regCreds=null;
