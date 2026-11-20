@@ -34,7 +34,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .screenwrap{width:100%;height:100%;background:var(--bg);border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column}
 .statusbar{height:26px;background:var(--tosca-t);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;flex:0 0 auto}
 .appbar{background:var(--biru);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600;flex:0 0 auto;box-shadow:0 2px 6px rgba(0,0,0,.18);position:relative;z-index:5}
-.appbar .act{margin-left:auto;cursor:pointer;font-size:18px;opacity:.95;background:none;border:none;color:#fff;position:relative}
+.appbar .act{cursor:pointer;font-size:18px;opacity:.95;background:none;border:none;color:#fff;position:relative}
+/* judul memakan sisa ruang sehingga tombol aksi selalu rata kanan (← di kiri) */
+.appbar>div:not(.act){flex:1 1 auto;min-width:0}
 .appbar .act .badge{position:absolute;top:-6px;right:-8px;background:#e53935;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 @keyframes slideIn{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
 .appbar.tosca{background:var(--tosca)}
@@ -368,10 +370,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   .stage{display:block}
   .phone{width:min(100%,680px);height:calc(100vh - 24px);height:min(calc(100dvh - 24px),940px);
          margin:12px auto;box-shadow:0 18px 50px rgba(0,0,0,.5)}
-  #notebtn{display:flex;position:absolute;left:14px;bottom:calc(132px + env(safe-area-inset-bottom,0px));
-           z-index:70;width:40px;height:40px;border-radius:20px;border:none;background:rgba(17,24,39,.85);
-           color:#fff;font-size:18px;line-height:1;align-items:center;justify-content:center;cursor:pointer;
-           box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  #notebtn{display:inline-block;min-width:22px;font-size:17px}
   #notebg{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:78;opacity:0;
           pointer-events:none;transition:opacity .22s ease}
   #notebg.on{opacity:1;pointer-events:auto}
@@ -406,7 +405,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   .sheet{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
   .sheetfoot{padding-bottom:calc(11px + env(safe-area-inset-bottom,0px));
              margin-bottom:calc(-16px - env(safe-area-inset-bottom,0px))}
-  #notebtn{bottom:calc(132px + env(safe-area-inset-bottom,0px))}
 }
 </style>
 </head>
@@ -491,6 +489,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div><span id="ab-title">Newgocatering</span><span class="sub" id="ab-sub"></span></div>
     <button class="act" id="ab-bell" style="display:none" onclick="showNewOrders()">🔔<span class="badge" id="bell-badge" style="display:none">0</span></button>
     <button class="act" id="ab-menu" style="display:none" onclick="openSheet('sheet-menu')">⋮</button>
+    <!-- v5.1: pemanggil catatan pengembang (HP / tablet); tersembunyi di desktop -->
+    <button class="act" id="notebtn" onclick="toggleNotes()" aria-label="Catatan pengembang" title="Catatan pengembang">&#8505;</button>
   </div>
   <div class="sync" id="syncbar" style="display:none">
     <span id="sync-text"></span><button class="btn-sm btn-tosca" id="sync-btn" onclick="flushQueue()">Sync sekarang</button>
@@ -825,8 +825,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <!-- FLOATING SCROLL TO TOP (absolute: tetap di dalam layar, bukan di jendela browser) -->
   <button id="scroll-top" style="display:none;position:absolute;bottom:calc(90px + env(safe-area-inset-bottom,0px));right:20px;width:44px;height:44px;border-radius:22px;background:var(--biru);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);z-index:100" onclick="scrollToTop()">↑</button>
 
-  <!-- v5.1: pemanggil catatan pengembang (HP / tablet) -->
-  <button id="notebtn" onclick="toggleNotes()" aria-label="Catatan pengembang" title="Catatan pengembang">&#8505;</button>
+  <!-- v5.1: latar laci catatan pengembang (tombolnya ada di appbar) -->
   <div id="notebg" onclick="toggleNotes(false)"></div>
 
   <!-- SHEETS -->
