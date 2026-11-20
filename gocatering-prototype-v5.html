@@ -437,8 +437,61 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   </div>
   <div class="body" id="body">
 
+    <!-- SPLASH SCREEN -->
+    <div class="view on" id="v-splash">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" style="max-width:100%;height:auto">
+          <defs>
+            <style>
+              @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+              @keyframes blink { 0%,100%{fill-opacity:1} 50%{fill-opacity:0.3} }
+              .icon-pulse { animation: pulse 1.5s ease-in-out infinite; }
+              .person-blink { animation: blink 1.2s ease-in-out infinite; }
+              .person-blink-delay1 { animation: blink 1.2s ease-in-out infinite 0.3s; }
+              .person-blink-delay2 { animation: blink 1.2s ease-in-out infinite 0.6s; }
+              .person-blink-delay3 { animation: blink 1.2s ease-in-out infinite 0.9s; }
+            </style>
+          </defs>
+          <rect width="800" height="500" fill="#ffffff"/>
+          <circle cx="400" cy="250" r="90" fill="#00897b" opacity="0.1"/>
+          <circle cx="400" cy="250" r="70" fill="#00897b" opacity="0.2"/>
+          <text x="400" y="245" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#00897b" text-anchor="middle">GO</text>
+          <text x="400" y="275" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#00897b" text-anchor="middle">CATERING</text>
+          <circle cx="400" cy="100" r="45" fill="#e3f2fd" stroke="#1976d2" stroke-width="3"/>
+          <text x="400" y="110" font-size="35" text-anchor="middle" class="icon-pulse">👨‍🍳</text>
+          <text x="400" y="70" font-family="Arial" font-size="13" font-weight="bold" fill="#1976d2" text-anchor="middle">Restoran</text>
+          <circle cx="650" cy="250" r="45" fill="#fff3e0" stroke="#f57c00" stroke-width="3"/>
+          <text x="650" y="260" font-size="35" text-anchor="middle" class="icon-pulse">🛵</text>
+          <text x="650" y="220" font-family="Arial" font-size="13" font-weight="bold" fill="#f57c00" text-anchor="middle">Delivery</text>
+          <circle cx="400" cy="400" r="45" fill="#e8f5e9" stroke="#388e3c" stroke-width="3"/>
+          <text x="400" y="410" font-size="35" text-anchor="middle" class="icon-pulse">🏪</text>
+          <text x="400" y="460" font-family="Arial" font-size="13" font-weight="bold" fill="#388e3c" text-anchor="middle">Pickup</text>
+          <circle cx="150" cy="250" r="45" fill="#fce4ec" stroke="#d81b60" stroke-width="3"/>
+          <text x="150" y="260" font-size="35" text-anchor="middle" class="icon-pulse">🛒</text>
+          <text x="150" y="220" font-family="Arial" font-size="13" font-weight="bold" fill="#d81b60" text-anchor="middle">Pembeli</text>
+          <line x1="400" y1="160" x2="400" y2="180" stroke="#90caf9" stroke-width="2"/>
+          <line x1="400" y1="320" x2="400" y2="355" stroke="#a5d6a7" stroke-width="2"/>
+          <line x1="330" y1="250" x2="195" y2="250" stroke="#f48fb1" stroke-width="2"/>
+          <line x1="470" y1="250" x2="605" y2="250" stroke="#ffcc80" stroke-width="2"/>
+          <circle cx="280" cy="130" r="12" fill="#1976d2" class="person-blink"/>
+          <rect x="272" y="145" width="16" height="30" fill="#1976d2" rx="4" class="person-blink"/>
+          <line x1="288" y1="150" x2="320" y2="120" stroke="#1976d2" stroke-width="2" class="person-blink"/>
+          <circle cx="520" cy="130" r="12" fill="#f57c00" class="person-blink-delay1"/>
+          <rect x="512" y="145" width="16" height="30" fill="#f57c00" rx="4" class="person-blink-delay1"/>
+          <line x1="512" y1="150" x2="480" y2="120" stroke="#f57c00" stroke-width="2" class="person-blink-delay1"/>
+          <circle cx="280" cy="370" r="12" fill="#388e3c" class="person-blink-delay2"/>
+          <rect x="272" y="385" width="16" height="30" fill="#388e3c" rx="4" class="person-blink-delay2"/>
+          <line x1="288" y1="390" x2="320" y2="380" stroke="#388e3c" stroke-width="2" class="person-blink-delay2"/>
+          <circle cx="520" cy="370" r="12" fill="#d81b60" class="person-blink-delay3"/>
+          <rect x="512" y="385" width="16" height="30" fill="#d81b60" rx="4" class="person-blink-delay3"/>
+          <line x1="512" y1="390" x2="480" y2="380" stroke="#d81b60" stroke-width="2" class="person-blink-delay3"/>
+        </svg>
+        <div class="hint" style="margin-top:20px;font-size:14px">Pesan catering besok, satu paket pilihan, jumlah bebas</div>
+      </div>
+    </div>
+
     <!-- LOGIN -->
-    <div class="view on" id="v-login">
+    <div class="view" id="v-login">
       <div class="pad">
         <div class="center" style="padding:22px 0 10px">
           <div class="logo">GO</div><div class="logo-s">CATERING</div>
@@ -1756,6 +1809,12 @@ function fillDemo(w){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   $('clock').textContent=nowLbl();
+  /* splash screen: otomatis ke login setelah 3 detik */
+  setTimeout(()=>{
+    if(document.querySelector('.view.on').id==='v-splash'){
+      go('v-login');
+    }
+  },3000);
   setInterval(()=>{
     $('clock').textContent=nowLbl();
     const v=document.querySelector('.view.on');
