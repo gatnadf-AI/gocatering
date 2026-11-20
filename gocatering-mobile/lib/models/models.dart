@@ -148,7 +148,7 @@ class Package {
       'name': name,
       'price': price,
       'img': img,
-      'desc': desc,
+      'descr': desc,
     };
   }
 
@@ -159,7 +159,7 @@ class Package {
       name: map['name'],
       price: map['price'],
       img: map['img'],
-      desc: map['desc'],
+      desc: map['descr'],
     );
   }
 }

@@ -49,3 +49,8 @@ app.*.map.json
 *.keystore
 *.jks
 google-services.json
+
+# Kerangka platform dibangkitkan saat build (lihat .github/workflows/build-apk.yml).
+# Sengaja tidak disimpan di git supaya repo tetap berisi sumbernya saja.
+/android/
+/ios/

@@ -1,0 +1,148 @@
+name: Build Android APK
+
+# Bangun gocatering-mobile menjadi APK di server GitHub, bukan di PC lokal.
+# Hasilnya diunggah sebagai artifact DAN (pada tag v*) sebagai GitHub Release
+# yang menempelkan berkas LICENSE — kode maupun aplikasinya tidak boleh
+# diunduh/dipakai tanpa izin tertulis (lihat LICENSE).
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Terbitkan juga sebagai GitHub Release'
+        type: boolean
+        default: false
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_DIR: gocatering-mobile
+  ORG: id.gocatering
+  PROJECT: gocatering_mobile
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Repo ini berlisensi terbatas. Build berhenti kalau LICENSE hilang atau
+      # isinya diubah, supaya APK tidak pernah tersebar tanpa klausulnya.
+      - name: Gerbang lisensi
+        run: |
+          set -e
+          for f in LICENSE "$APP_DIR/LICENSE"; do
+            if [ ! -s "$f" ]; then
+              echo "::error::$f tidak ada — build dihentikan"
+              exit 1
+            fi
+          done
+          if ! grep -qi "written permission" "$APP_DIR/LICENSE"; then
+            echo "::error::LICENSE aplikasi kehilangan klausul izin tertulis"
+            exit 1
+          fi
+          echo "LICENSE OK pada berkas root dan $APP_DIR"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Versi perkakas
+        run: |
+          flutter --version
+          java -version 2>&1 | head -3
+
+      # Repo hanya menyimpan sumbernya (lib/, test/, pubspec.yaml). Kerangka
+      # android/ dibangkitkan di CI sehingga tidak ada berkas build yang ikut
+      # ke dalam git. Dibuat di folder terpisah lalu disalin, supaya lib/ dan
+      # README tidak tertimpa oleh templat.
+      - name: Bangkitkan kerangka android
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -e
+          scaffold="$(mktemp -d)/scaffold"
+          flutter create --org "$ORG" --project-name "$PROJECT" \
+            --platforms=android --template app "$scaffold"
+          cp -r "$scaffold/android" "$APP_DIR/android"
+          [ -f "$APP_DIR/.metadata" ] || cp "$scaffold/.metadata" "$APP_DIR/.metadata"
+          test -f "$APP_DIR/android/build.gradle.kts" -o -f "$APP_DIR/android/build.gradle"
+          echo "kerangka android/ siap"
+
+      - name: Sambungkan signing rilis (aktif hanya bila key.properties ada)
+        working-directory: ${{ env.APP_DIR }}
+        run: bash scripts/enable-release-signing.sh
+
+      - name: Dependensi
+        working-directory: ${{ env.APP_DIR }}
+        run: flutter pub get
+
+      - name: Analisis statis
+        working-directory: ${{ env.APP_DIR }}
+        # `dart analyze` gagal untuk warning & error, tapi membiarkan info.
+        run: dart analyze
+
+      - name: Unit test
+        working-directory: ${{ env.APP_DIR }}
+        run: flutter test
+
+      - name: Build APK debug (langsung bisa dipasang di HP)
+        working-directory: ${{ env.APP_DIR }}
+        run: flutter build apk --debug
+
+      - name: Build APK + AAB rilis (butuh secret keystore)
+        if: env.KEYSTORE_B64 != ''
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -e
+          echo "$KEYSTORE_B64" | base64 -d > android/app/release.jks
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.RELEASE_STORE_PASSWORD }}
+          keyPassword=${{ secrets.RELEASE_KEY_PASSWORD }}
+          keyAlias=${{ secrets.RELEASE_KEY_ALIAS }}
+          storeFile=release.jks
+          EOF
+          flutter build apk --release
+          flutter build appbundle --release
+
+      - name: Kumpulkan hasil + checksum
+        run: bash "$APP_DIR/scripts/collect-artifacts.sh" "$GITHUB_SHA"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gocatering-apk-debug
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: env.KEYSTORE_B64 != ''
+        with:
+          name: gocatering-release
+          path: |
+            dist/*-release.apk
+            dist/*.aab
+          if-no-files-found: error
+
+      # Release = cara termudah mengirim APK ke Anda tanpa mengirim source.
+      # Berkas LICENSE ikut ditempel supaya ketentuannya sampai bersamaan
+      # dengan aplikasinya.
+      - name: Terbitkan GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash "$APP_DIR/scripts/publish-release.sh"

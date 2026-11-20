@@ -22,9 +22,36 @@ class DatabaseHelper {
     
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  /// v1 -> v2: kolom `desc` (kata kunci SQL) diganti `descr`, dan path gambar
+  /// (photo/logo/img) sekarang berisi path relatif ke folder gambar HP.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.transaction((txn) async {
+        await txn.execute('''
+          CREATE TABLE packages_new (
+            id TEXT PRIMARY KEY,
+            shopId TEXT,
+            name TEXT,
+            price INTEGER,
+            img TEXT,
+            descr TEXT,
+            FOREIGN KEY (shopId) REFERENCES shops(id)
+          )
+        ''');
+        await txn.execute('''
+          INSERT INTO packages_new (id, shopId, name, price, img, descr)
+          SELECT id, shopId, name, price, img, "desc" FROM packages
+        ''');
+        await txn.execute('DROP TABLE packages');
+        await txn.execute('ALTER TABLE packages_new RENAME TO packages');
+      });
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -65,6 +92,7 @@ class DatabaseHelper {
     ''');
 
     // Tabel packages (paket menu)
+    // Catatan: `descr` (bukan `desc`) karena DESC adalah kata kunci SQL.
     await db.execute('''
       CREATE TABLE packages (
         id TEXT PRIMARY KEY,
@@ -72,7 +100,7 @@ class DatabaseHelper {
         name TEXT,
         price INTEGER,
         img TEXT,
-        desc TEXT,
+        descr TEXT,
         FOREIGN KEY (shopId) REFERENCES shops(id)
       )
     ''');
@@ -179,6 +207,13 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
+  /// Simpan path relatif foto profil (kolom photo di tabel owners).
+  Future<int> setOwnerPhoto(String key, String photoPath) async {
+    Database db = await database;
+    return await db.update('owners', {'photo': photoPath},
+        where: 'key = ?', whereArgs: [key]);
+  }
+
   Future<int> updateOwner(Map<String, dynamic> owner) async {
     Database db = await database;
     return await db.update(
@@ -220,6 +255,20 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
+  /// Ganti path logo toko (kolom logo).
+  Future<int> setShopLogo(String id, String logoPath) async {
+    Database db = await database;
+    return await db.update('shops', {'logo': logoPath},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Ganti path foto tampilan toko (kolom photo).
+  Future<int> setShopPhoto(String id, String photoPath) async {
+    Database db = await database;
+    return await db.update('shops', {'photo': photoPath},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<int> updateShop(Map<String, dynamic> shop) async {
     Database db = await database;
     return await db.update(
@@ -249,6 +298,39 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getAllPackages() async {
     Database db = await database;
     return await db.query('packages');
+  }
+
+  Future<Map<String, dynamic>?> getPackageById(String id) async {
+    Database db = await database;
+    final r = await db.query('packages', where: 'id = ?', whereArgs: [id]);
+    return r.isNotEmpty ? r.first : null;
+  }
+
+  /// Simpan path relatif foto paket (kolom img).
+  Future<int> setPackageImg(String id, String imgPath) async {
+    Database db = await database;
+    return await db.update('packages', {'img': imgPath},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Update isi paket. Column deskripsi bernama `descr`.
+  Future<int> upsertPackage({
+    required String id,
+    required String shopId,
+    required String name,
+    required int price,
+    String? img,
+    String? descr,
+  }) async {
+    Database db = await database;
+    return await db.insert('packages', {
+      'id': id,
+      'shopId': shopId,
+      'name': name,
+      'price': price,
+      'img': img,
+      'descr': descr,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   // ============ ORDER OPERATIONS ============
