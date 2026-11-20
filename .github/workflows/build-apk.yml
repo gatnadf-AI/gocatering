@@ -15,6 +15,9 @@ on:
   push:
     tags:
       - 'v*'
+      # Tag diag-* dipakai ulang-alik perbaikan build: workflow jalan tapi
+      # tidak menerbitkan Release (lihat syarat langkah paling bawah).
+      - 'diag-*'
 
 permissions:
   contents: write
@@ -93,8 +96,9 @@ jobs:
         run: flutter pub get
 
       # `dart analyze` exit 1 = info, 2 = warning, 3 = error; warning & error
-      # membatalkan build. Keluarannya ditulis ke step summary karena berkas log
-      # job hanya bisa dibuka oleh anggota repo, sedangkan summary ikut publik.
+      # membatalkan build. Berkas log job hanya bisa dibuka anggota repo, jadi
+      # tiap temuan juga dikeluarkan sebagai anotasi — anotasi ikut ter-render
+      # pada halaman run yang publik.
       - name: Analisis statis
         working-directory: ${{ env.APP_DIR }}
         run: |
@@ -102,13 +106,13 @@ jobs:
           dart analyze > analyze.txt 2>&1
           code=$?
           cat analyze.txt
-          {
-            echo "## Hasil \`dart analyze\` (kode keluar: $code)"
-            echo ""
-            echo '```'
-            head -200 analyze.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          sed 's/ • /|/g' analyze.txt | awk -F'|' 'NF>=4 {
+            for (i=1; i<=4; i++) { gsub(/^ +| +$/, "", $i) }
+            split($3, a, ":");
+            kind = ($1=="error") ? "error" : (($1=="warning") ? "warning" : "notice");
+            printf("::%s file=%s,line=%s::[dart analyze] %s (%s)\n", kind, a[1], a[2], $2, $4);
+          }' | head -60
+          echo "::notice title=dart analyze (exit $code)::$(grep -c ' • ' analyze.txt) temuan; lihat anotasi per berkas."
           exit $code
 
       - name: Unit test
