@@ -482,13 +482,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="field"><label>Email Gmail</label><input id="rs-email" type="email" placeholder="nama@gmail.com"><div class="ferr" id="rs-email-err"></div></div>
         <div class="field"><label>No. KTP (NIK)</label><input id="rs-nik" inputmode="numeric" maxlength="16" placeholder="16 digit angka"><div class="ferr" id="rs-nik-err"></div></div>
         <div class="field"><label>No. WhatsApp pemilik</label><input id="rs-phone" placeholder="0812xxxxxxxx"><div class="ferr" id="rs-phone-err"></div></div>
-        <div class="field"><label>Foto penjual <span class="hint">(opsional)</span></label>
-          <input class="filein" id="rs-photo" type="file" accept="image/*" onchange="pickPhoto('rs-photo','rs-photo-prev','rs-photo-btn')">
-          <div><img class="photoprev" id="rs-photo-prev" alt="Pratinjau foto penjual"></div>
-          <button class="btn-sm btn-grey" id="rs-photo-btn" type="button" onclick="$('rs-photo').click()">Pilih Foto</button>
-          <div class="ferr" id="rs-photo-err"></div></div>
         <div class="formnav"><button class="btn btn-grey" style="flex:1" onclick="go('v-login')">Batal</button>
-          <button class="btn btn-tosca" style="flex:1.5" onclick="nextIdentity()">Sesudah &rarr;</button></div>
+          <button class="btn btn-tosca" style="flex:1.5" onclick="nextIdentity()">Selanjutnya &rarr;</button></div>
         <div class="hint" style="margin-top:10px">NIK menjadi penanda pemilik dan tidak dikirim ke mana pun — prototype ini hanya menyimpannya di perangkat ini. Punya lebih dari satu restoran? <b>Login dulu, lalu pilih Tambah Toko.</b></div>
       </div>
     </div>
@@ -502,13 +497,18 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="field"><label>Alamat fisik restoran</label><textarea id="rs-addr" rows="2" placeholder="Jalan, nomor, kelurahan, kota"></textarea><div class="ferr" id="rs-addr-err"></div></div>
         <div class="field"><label>Alamat di Google Maps</label><input id="rs-map" type="url" placeholder="https://maps.app.goo.gl/…"><div class="ferr" id="rs-map-err"></div></div>
         <div class="field"><label>No. WhatsApp customer service</label><input id="rs-cs" placeholder="0821xxxxxxxx"><div class="ferr" id="rs-cs-err"></div></div>
+        <div class="field"><label>Foto penjual <span class="hint">(opsional)</span></label>
+          <input class="filein" id="rs-photo" type="file" accept="image/*" onchange="pickPhoto('rs-photo','rs-photo-prev','rs-photo-btn')">
+          <div><img class="photoprev" id="rs-photo-prev" alt="Pratinjau foto penjual"></div>
+          <button class="btn-sm btn-grey" id="rs-photo-btn" type="button" onclick="$('rs-photo').click()">Pilih Foto</button>
+          <div class="ferr" id="rs-photo-err"></div></div>
         <div class="field"><label>Foto restoran <span class="hint">(opsional)</span></label>
           <input class="filein" id="rs-shop-photo" type="file" accept="image/*" onchange="pickPhoto('rs-shop-photo','rs-shop-photo-prev','rs-shop-photo-btn')">
           <div><img class="photoprev" id="rs-shop-photo-prev" alt="Pratinjau foto restoran"></div>
           <button class="btn-sm btn-grey" id="rs-shop-photo-btn" type="button" onclick="$('rs-shop-photo').click()">Pilih Foto</button>
           <div class="ferr" id="rs-shop-photo-err"></div></div>
-        <div class="formnav"><button class="btn btn-grey" id="rs2-back" style="flex:1" onclick="go('v-reg-seller-1')">&larr; Sebelum</button>
-          <button class="btn btn-tosca" style="flex:1.5" onclick="submitSellerForm()">Sesudah · DAFTARKAN</button></div>
+        <div class="formnav"><button class="btn btn-grey" id="rs2-back" style="flex:1" onclick="go('v-reg-seller-1')">&larr; Sebelumnya</button>
+          <button class="btn btn-tosca" style="flex:1.5" onclick="submitSellerForm()">Selanjutnya · DAFTARKAN</button></div>
         <div class="hint" style="margin-top:10px">Nomor customer service boleh berbeda dari nomor pemilik. Ini yang terlihat pembeli saat menyentuh kode restoran.</div>
       </div>
     </div>
