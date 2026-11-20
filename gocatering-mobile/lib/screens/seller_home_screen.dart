@@ -85,7 +85,7 @@ class _SellerHomeScreenState extends State<SellerHomeScreen> {
                       ),
                     )
                   else
-                    ..._shops.map((s) => _ShopCard(shop: s)),
+                    ..._shops.map((s) => _ShopCard(s)),
                 ],
               ),
             ),

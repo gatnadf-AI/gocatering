@@ -15,9 +15,9 @@ class PackageDraft {
   PackageDraft({
     required this.tempPath,
     required this.packageId,
-    String name = '',
-    int price = 0,
-    String descr = '',
+    this.name = '',
+    this.price = 0,
+    this.descr = '',
   });
 
   final String tempPath;
