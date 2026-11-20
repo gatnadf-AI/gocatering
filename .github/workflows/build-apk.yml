@@ -115,9 +115,39 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: flutter test
 
+      # Sama seperti langkah analisis: log job tidak bisa dibaca tanpa login,
+      # jadi kalau build Gradle gagal, potongan yang menjelaskan sebabnya
+      # (versi, baris "What went wrong", berkas gradle yang bermasalah) dikirim
+      # sebagai anotasi dan muncul di halaman run yang publik.
       - name: Build APK debug (langsung bisa dipasang di HP)
         working-directory: ${{ env.APP_DIR }}
-        run: flutter build apk --debug
+        run: |
+          set +e
+          flutter build apk --debug > build-debug.log 2>&1
+          code=$?
+          tail -40 build-debug.log
+          if [ "$code" -ne 0 ]; then
+            {
+              echo "== versi =="
+              flutter --version 2>&1 | head -3
+              java -version 2>&1 | head -2
+              echo "== kerangka android =="
+              ls android 2>&1 | head -8
+              grep -h distributionUrl android/gradle/wrapper/gradle-wrapper.properties 2>&1
+              grep -nE "compileSdk|minSdk|jvmTarget|namespace" android/app/build.gradle.kts 2>/dev/null | head -6
+              tail -5 android/app/build.gradle.kts 2>/dev/null
+              echo "== what went wrong =="
+              grep -n -A 8 "What went wrong" build-debug.log 2>&1 | head -40
+              echo "== baris error =="
+              grep -nE "^(e: |error: |FAILURE|Execution failed)" build-debug.log 2>&1 | head -12
+              echo "== 20 baris terakhir =="
+              tail -20 build-debug.log
+            } > diag.txt
+            echo "--- diagnostik (exit=$code, $(wc -l < build-debug.log) baris log) ---"
+            cat diag.txt
+            nl -ba diag.txt | head -46 | sed 's/^/::notice::/'
+          fi
+          exit $code
 
       - name: Build APK + AAB rilis (butuh secret keystore)
         if: env.KEYSTORE_B64 != ''
