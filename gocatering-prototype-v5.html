@@ -27,7 +27,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .screenwrap{width:100%;height:100%;background:var(--bg);border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column}
 .statusbar{height:26px;background:var(--tosca-t);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;flex:0 0 auto}
 .appbar{background:var(--biru);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600;flex:0 0 auto;box-shadow:0 2px 6px rgba(0,0,0,.18);position:relative;z-index:5}
-.appbar .act{margin-left:auto;cursor:pointer;font-size:18px;opacity:.95;background:none;border:none;color:#fff}
+.appbar .act{margin-left:auto;cursor:pointer;font-size:18px;opacity:.95;background:none;border:none;color:#fff;position:relative}
+.appbar .act .badge{position:absolute;top:-6px;right:-8px;background:#e53935;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+@keyframes slideIn{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
 .appbar.tosca{background:var(--tosca)}
 .appbar .sub{font-size:11px;font-weight:400;opacity:.9;display:block}
 .body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
@@ -427,6 +429,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <div class="appbar" id="appbar">
     <button class="act" id="ab-back" style="display:none" onclick="goBack()">←</button>
     <div><span id="ab-title">Newgocatering</span><span class="sub" id="ab-sub"></span></div>
+    <button class="act" id="ab-bell" style="display:none" onclick="showNewOrders()">🔔<span class="badge" id="bell-badge" style="display:none">0</span></button>
     <button class="act" id="ab-menu" style="display:none" onclick="openSheet('sheet-menu')">⋮</button>
   </div>
   <div class="sync" id="syncbar" style="display:none">
@@ -441,35 +444,28 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
           <div class="logo">GO</div><div class="logo-s">CATERING</div>
           <div class="hint" style="margin-top:6px">Pesan catering besok, satu paket pilihan, jumlah bebas</div>
         </div>
-        <div class="roles">
-          <div class="role on" id="role-buyer" onclick="pickRole('buyer')"><div class="ic">🛒</div><div class="nm">Pembeli</div></div>
-          <div class="role" id="role-seller" onclick="pickRole('seller')"><div class="ic">👨‍🍳</div><div class="nm">Penjual</div></div>
-        </div>
+        <button class="btn btn-tosca" style="margin-bottom:10px" onclick="goAsBuyer()">Lanjut sebagai Pembeli</button>
+        <button class="btn btn-grey" style="margin-bottom:10px" onclick="go('v-register')">Daftar sebagai Pembeli</button>
+        <div class="divider">atau login sebagai penjual</div>
         <div class="field"><label>Email</label><input id="li-email" type="email" placeholder="email@example.com"></div>
         <div class="field"><label>Password</label><input id="li-pass" type="password" placeholder="••••••••"></div>
-        <button class="btn btn-tosca" onclick="doLogin()">LOGIN</button>
+        <button class="btn btn-tosca" onclick="doLogin()">LOGIN PENJUAL</button>
         <div style="text-align:center;margin:6px 0"><button class="btn-link" onclick="toast('Fitur reset password belum tersedia di prototype ini. Untuk demo, pakai akun di panel kiri.','err')">Lupa password?</button></div>
-        <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-register')">Daftar</button>
         <button class="btn btn-grey" style="margin-top:8px" onclick="toSellerReg()">Daftar sebagai penjual</button>
-        <div class="divider">atau</div>
-        <button class="btn btn-google" onclick="openGoogleSheet()"><span class="glogo"><span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span></span> Masuk dengan Google</button>
-        <div class="hint center" style="margin-top:8px">Khusus akun pembeli. Google hanya membagikan nama, email, dan foto — no. WA diminta sekali.</div>
-        <div class="demo"><b>Akun demo</b>
-          Pembeli bebas (mis. <code>budi@mail.com</code> / <code>1234</code>).
-          Penjual pakai email di panel kiri.
-          <div class="row"><button onclick="fillDemo('buyer')">Isi pembeli</button><button onclick="fillDemo('seller1')">Isi penjual</button></div>
+        <div class="demo"><b>Akun demo penjual</b>
+          <div class="row"><button onclick="fillDemo('seller1')">Isi penjual 1</button><button onclick="fillDemo('seller2')">Isi penjual 2</button></div>
         </div>
       </div>
     </div>
 
-    <!-- REGISTER -->
+    <!-- REGISTER PEMBELI -->
     <div class="view" id="v-register">
       <div class="pad">
         <div class="field"><label>Nama</label><input id="rg-name" placeholder="Nama lengkap"></div>
         <div class="field"><label>No. Handphone</label><input id="rg-phone" placeholder="0812xxxxxxxx"></div>
         <div class="field"><label>Email</label><input id="rg-email" type="email" placeholder="email@example.com"></div>
         <div class="field"><label>Password</label><input id="rg-pass" type="password" placeholder="min. 6 karakter"></div>
-        <button class="btn btn-tosca" id="rg-cta" onclick="regCta()">SIMPAN</button>
+        <button class="btn btn-tosca" onclick="doRegister()">SIMPAN</button>
         <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-login')">Kembali ke Login</button>
       </div>
     </div>
@@ -685,15 +681,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div class="view" id="v-seller">
       <div id="dash-shop"></div>
       <div class="wgrid" id="dash-widgets"></div>
-      <div class="tabs" id="seller-tabs">
-        <button class="on" data-tab="all" onclick="setTab('all')">Semua</button>
-        <button data-tab="new" onclick="setTab('new')">Baru</button>        <button data-tab="confirmed" onclick="setTab('confirmed')">Dikonfirmasi</button>
-        <button data-tab="processing" onclick="setTab('processing')">Diproses</button>
-        <button data-tab="shipped" onclick="setTab('shipped')">Dikirim</button>
-        <button data-tab="completed" onclick="setTab('completed')">Selesai</button>
-        <button data-tab="menu" onclick="setTab('menu')">Menu</button>
-      </div>
-      <div id="seller-list" style="padding:12px 0 16px"></div>
+      <div id="dash-new-banner" style="display:none"></div>
     </div>
 
     <!-- SELLER: DETAIL WIDGET (lacak pesanan per toko) -->
@@ -703,20 +691,30 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <div id="sdash-list" style="padding:2px 0 18px"></div>
     </div>
 
+    <!-- SELLER: DAFTAR PELANGGAN -->
+    <div class="view" id="v-s-customers">
+      <div class="pad" style="padding-bottom:6px">
+        <h3 style="margin:0">Daftar Pelanggan</h3>
+        <div class="hint" id="scust-sub"></div>
+      </div>
+      <div class="tabs" id="scust-tabs">
+        <button class="on" data-tab="progress" onclick="setCustTab('progress')">On Progress</button>
+        <button data-tab="done" onclick="setCustTab('done')">Selesai</button>
+      </div>
+      <div id="scust-list" style="padding:2px 0 18px"></div>
+    </div>
+
   </div>
 
-  <div class="bnav" id="bnav" style="display:none">
-    <button data-nav="v-shops" onclick="navTo('v-shops')"><span class="ic">🏪</span>Toko</button>
-    <button data-nav="v-catalog" class="on" onclick="navTo('v-catalog')"><span class="ic">🍱</span>Menu</button>
-    <button data-nav="v-orders" onclick="navTo('v-orders')"><span class="ic">📦</span>Pesanan</button>
-    <button data-nav="v-profile" onclick="navTo('v-profile')"><span class="ic">👤</span>Profil</button>
-  </div>
+  <div class="bnav" id="bnav" style="display:none"></div>
+
+  <!-- FLOATING SCROLL TO TOP -->
+  <button id="scroll-top" style="display:none;position:fixed;bottom:90px;right:20px;width:44px;height:44px;border-radius:22px;background:var(--biru);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);z-index:100" onclick="scrollToTop()">↑</button>
 
   <!-- SHEETS -->
   <div class="overlay" id="sheet-menu" onclick="if(event.target===this)closeSheet('sheet-menu')">
     <div class="sheet"><h3>Menu</h3><div class="hint" style="margin-bottom:12px" id="menu-sub"></div>
-      <button class="btn btn-grey" style="margin-bottom:8px" onclick="closeSheet('sheet-menu');navTo('v-orders')">Pesanan Saya</button>
-      <button class="btn btn-grey" style="margin-bottom:8px" onclick="closeSheet('sheet-menu');go('v-catalog')">Kembali ke Menu</button>
+      <div id="menu-items"></div>
       <button class="btn btn-danger" onclick="closeSheet('sheet-menu');logout()">Keluar</button>
     </div>
   </div>
@@ -1290,20 +1288,26 @@ function onEnter(view){
   if(!state.user) return;
   if(view==='v-profile') renderProfile();
   else if(view==='v-orders') renderOrders();
+  else if(view==='v-shops') renderShops();
   else if(view==='v-seller'){
     /* dasbor penjual selalu dibuka pada toko terakhir yang dipilih (spec §7.3) */
     if(state.sellerShop && myShopIds().indexOf(state.sellerShop)>=0) sellerShopId=state.sellerShop;
     ensureSellerShop(); renderSeller();
   }
+  else if(view==='v-s-customers') renderCustomers();
 }
 function goBack(){ const p=history.pop(); go(p||'v-login',false); }
+function scrollToTop(){ $('body').scrollTo({top:0,behavior:'smooth'}); }
 function navTo(view){ history=[]; go(view,false); }
 function renderChrome(view){
   const buyer=['v-shops','v-catalog','v-orders','v-profile','v-checkout','v-co-ff','v-co-profil','v-co-pay'].includes(view);
-  $('bnav').style.display=(['v-shops','v-catalog','v-orders','v-profile'].includes(view))?'flex':'none';
-  document.querySelectorAll('.bnav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===view));
-  $('ab-back').style.display=['v-register','v-reg-seller-1','v-reg-seller-2','v-catalog','v-checkout','v-co-ff','v-co-profil','v-co-pay','v-payment','v-profile','v-sdash'].includes(view)?'block':'none';
-  $('ab-menu').style.display=['v-shops','v-catalog','v-orders','v-profile','v-seller'].includes(view)?'block':'none';
+  const sellerViews=['v-seller','v-sdash','v-s-customers'];
+  const showBnav=[...sellerViews,'v-shops','v-catalog','v-orders','v-profile'].includes(view);
+  $('bnav').style.display=showBnav?'flex':'none';
+  renderBnav(view);
+  $('ab-back').style.display=['v-register','v-reg-seller-1','v-reg-seller-2','v-catalog','v-checkout','v-co-ff','v-co-profil','v-co-pay','v-payment','v-profile','v-sdash','v-s-customers'].includes(view)?'block':'none';
+  $('ab-bell').style.display=sellerViews.includes(view)?'block':'none';
+  $('ab-menu').style.display=[...sellerViews,'v-shops','v-catalog','v-orders','v-profile'].includes(view)?'block':'none';
   const titles={'v-login':['Newgocatering',''],'v-register':['Daftar','Isi biodata pengguna'],
     'v-reg-seller-1':['Daftar Penjual','1 · Data Diri'],'v-reg-seller-2':['Daftar Penjual','2 · Data Toko'],
     'v-reg-done':['Akun Penjual Terbit','Simpan password sementara'],
@@ -1315,12 +1319,56 @@ function renderChrome(view){
     'v-gcontact':['Lengkapi Kontak','Akun Google'],
     'v-seller':['Dashboard Penjual',activeShopId()?shopOf(activeShopId()).name:''],
     'v-sdash':[(WIDGETS.find(x=>x.k===dashKind)||{}).lbl||'Detail Pesanan',
-               activeShopId()?shopOf(activeShopId()).name+' · id restoran '+restaurantId(activeShopId()):'']};
+               activeShopId()?shopOf(activeShopId()).name+' · id restoran '+restaurantId(activeShopId()):''],
+    'v-s-customers':['Daftar Pelanggan',activeShopId()?shopOf(activeShopId()).name:'']};
   const t=titles[view]||['Newgocatering',''];
   $('ab-title').textContent=t[0]; $('ab-sub').textContent=t[1];
-  $('ab-menu').onclick=()=>{ $('menu-sub').textContent=(state.user?state.user.name+' — '+(state.user.role==='seller'?'penjual':'pembeli'):''); openSheet('sheet-menu'); };
+  $('ab-menu').onclick=()=>{
+    $('menu-sub').textContent=(state.user?state.user.name+' — '+(state.user.role==='seller'?'penjual':'pembeli'):'');
+    renderMenuItems();
+    openSheet('sheet-menu');
+  };
   $('appbar').className='appbar'+(view==='v-seller'?' tosca':'');
 }
+/* ================= MENU ================= */
+function renderBnav(view){
+  const role=state.user?state.user.role:'buyer';
+  const items=role==='seller'
+    ? [
+        {nav:'v-seller', ic:'📊', label:'Dashboard'},
+        {nav:'v-sdash', ic:'⏳', label:'Work in Progress', arg:'queue'},
+        {nav:'v-s-customers', ic:'👥', label:'Pelanggan'},
+        {nav:'v-profile', ic:'👤', label:'Profil'},
+      ]
+    : [
+        {nav:'v-shops', ic:'🏪', label:'Toko'},
+        {nav:'v-catalog', ic:'🍱', label:'Menu'},
+        {nav:'v-orders', ic:'📦', label:'Pesanan'},
+        {nav:'v-profile', ic:'👤', label:'Profil'},
+      ];
+  $('bnav').innerHTML=items.map(it=>
+    `<button data-nav="${it.nav}" class="${view===it.nav?'on':''}" onclick="${it.arg?`openDash('${it.arg}');`:`navTo('${it.nav}');`}"><span class="ic">${it.ic}</span>${it.label}</button>`
+  ).join('');
+}
+
+function renderMenuItems(){
+  const role=state.user?state.user.role:'buyer';
+  const items=role==='seller'
+    ? [
+        {label:'Dashboard', view:'v-seller'},
+        {label:'Work in Progress', view:'v-sdash', arg:'queue'},
+        {label:'Pickup / Delivery', view:'v-sdash', arg:'pickup'},
+        {label:'Daftar Pelanggan', view:'v-s-customers'},
+      ]
+    : [
+        {label:'Pesanan Saya', view:'v-orders'},
+        {label:'Kembali ke Menu', view:'v-catalog'},
+      ];
+  $('menu-items').innerHTML=items.map(it=>
+    `<button class="btn btn-grey" style="margin-bottom:8px" onclick="closeSheet('sheet-menu');${it.arg?`openDash('${it.arg}');`:`navTo('${it.view}');`}">${it.label}</button>`
+  ).join('');
+}
+
 function openSheet(id){ $(id).classList.add('on'); }
 function closeSheet(id){ $(id).classList.remove('on'); }
 
@@ -1343,37 +1391,19 @@ function sellerOrdersFor(id){ return state.orders.filter(o=>o.shopId===id); }
 function ensureSellerShop(){ const o=currentOwner(); if(!o) return; if(o.shops.indexOf(state.sellerShop)<0){ state.sellerShop=o.shops[0]||null; sellerShopId=state.sellerShop; } }
 /* doLogin berbasis role: satu email boleh ada di dua kotak data yang berbeda,
    tapi hanya kotak yang sesuai role yang dibaca (spec §4). */
+/* ================= LOGIN PENJUAL ================= */
 function doLogin(){
-  const email=fv('li-email').toLowerCase(), pass=$('li-pass').value||'';
-  if(!email||!pass) return toast('Isi email dan password dulu','err');
-  const o=findOwner('email',email), isBuyer=!!state.users[email];
-  if(role==='seller'){
-    if(!o) return toast(isBuyer?'Email ini akun pembeli — pilih role Pembeli':'Email atau password penjual salah','err');
-    if(pass!==o.password) return toast('Email atau password penjual salah','err');
-    state.user={email,name:o.nama,role:'seller',ownerKey:o.key,phone:o.phone};
-    /* toko aktif terakhir dipulihkan kalau masih miliknya (spec §7.3) */
-    state.sellerShop=(state.sellerShop&&o.shops.indexOf(state.sellerShop)>=0)?state.sellerShop:o.shops[0];
-    sellerShopId=state.sellerShop; save();
-    /* sheet "Tambah Pesanan" di dashboard membaca currentShop (warisan v4) */
-    currentShop=shopOf(state.sellerShop);
-    if(o.mustReset){ $('np-hint').textContent='Password sementara wajib diganti sebelum masuk dashboard.'; go('v-s-reset'); return }
-    go('v-seller',false); ensureSellerShop(); tab='all'; renderSeller();
-    toast('Selamat datang, '+o.nama,'ok'); return;
-  }
-  if(o) return toast('Email ini akun penjual — gunakan "Daftar sebagai penjual" di layar login','err');
-  if(!state.users[email]){ state.users[email]={password:pass||'1234',name:email.split('@')[0],phone:'',role:'buyer'}; save(); toast('Akun pembeli dibuat otomatis','ok'); }
-  if(state.users[email].password!==pass) return toast('Password salah','err');
-  const r=state.users[email];
-  state.user={email,name:r.name,phone:r.phone||'',addr:r.addr||'',role:'buyer',google:!!r.google,ava:r.ava,tone:r.tone};
-  save(); history=[]; go('v-shops',false); renderShops(); toast('Login berhasil','ok');
-}
-function doRegister(){
-  if(!buyerFormOk()) return;
-  const u=state.newUser;
-  state.users[u.email]={password:u.password,name:u.name,phone:u.phone,role:'buyer'}; save();
-  state.newUser=null;
-  toast('Registrasi berhasil. Silakan login.','ok');
-  $('li-email').value=u.email; $('li-pass').value=u.password; pickRole('buyer'); go('v-login',false);
+  const email=fv('li-email').toLowerCase(), pw=$('li-pass').value;
+  if(!email||!pw) return toast('Isi email dan password','err');
+  const o=findOwner('email',email);
+  if(!o) return toast('Email tidak terdaftar sebagai penjual','err');
+  if(dec(o.password)!==pw) return toast('Password salah','err');
+  state.user={email,name:o.nama,role:'seller',ownerKey:o.key,phone:o.phone};
+  state.tmpSeller=null; state.tmpShop=null;
+  save();
+  if(o.mustReset){ go('v-s-reset'); toast('Ganti password dulu','warn'); return; }
+  toast('Selamat datang, '+o.nama,'ok');
+  go('v-seller');
 }
 
 /* ================= REGISTRASI PENJUAL (spec §4, §5.1–5.2) =================
@@ -1425,17 +1455,25 @@ function validateShop(){
   return {ok:!first, first:first?first[0]:'', values:{name,addr,mapUrl,csWa,photo:readPhoto('rs-shop-photo')}};
 }
 /* validasi form daftar biasa; dipakai regCta() sebelum melompat ke wizard penjual */
-function buyerFormOk(){
-  const n=fv('rg-name'),p=fv('rg-phone').replace(/[\s-]/g,''),e=fv('rg-email').toLowerCase(),pw=($('rg-pass').value||'');
-  if(!n||!p||!e||!pw){ toast('Lengkapi semua biodata','err'); return false }
-  if(!RE_PHONE.test(p)){ toast('Nomor WA tidak valid — 11 sampai 13 digit, contoh 08123456789','err'); return false }
-  if(pw.length<6){ toast('Password minimal 6 karakter','err'); return false }
-  if(state.users[e]){ toast('Email sudah terdaftar, silakan login','err'); return false }
-  if(findOwner('email',e)){ toast('Email ini akun penjual — gunakan "Daftar sebagai penjual" di layar login','err'); return false }
-  state.newUser={name:n,phone:p,email:e,password:pw};
-  return true;
+/* ================= PEMBELI: LANGSUNG ATAU DAFTAR ================= */
+function goAsBuyer(){
+  /* pembeli tanpa login: langsung ke daftar toko */
+  state.user={email:'',name:'Tamu',phone:'',role:'buyer'};
+  save();
+  go('v-shops');
+  renderShops();
 }
-function regCta(){ return doRegister(); }
+function doRegister(){
+  const n=fv('rg-name'),p=fv('rg-phone').replace(/[\s-]/g,''),e=fv('rg-email').toLowerCase(),pw=($('rg-pass').value||'');
+  if(!n||!p||!e||!pw){ toast('Lengkapi semua biodata','err'); return; }
+  if(!RE_PHONE.test(p)){ toast('Nomor WA tidak valid — 11 sampai 13 digit, contoh 08123456789','err'); return; }
+  if(pw.length<6){ toast('Password minimal 6 karakter','err'); return; }
+  if(state.users[e]){ toast('Email sudah terdaftar, silakan login','err'); return; }
+  if(findOwner('email',e)){ toast('Email ini akun penjual — gunakan "Daftar sebagai penjual" di layar login','err'); return; }
+  state.users[e]={password:pw,name:n,phone:p,role:'buyer'}; save();
+  toast('Registrasi berhasil. Silakan login.','ok');
+  $('li-email').value=e; $('li-pass').value=pw; go('v-login',false);
+}
 function toSellerReg(){
   pickRole('seller');
   go('v-reg-seller-1');
@@ -1707,9 +1745,17 @@ document.addEventListener('DOMContentLoaded',()=>{
     $('clock').textContent=nowLbl();
     const v=document.querySelector('.view.on');
     if(v&&v.id.indexOf('v-co')===0) renderCutoff();
+    if(state.user && state.user.role==='seller') checkNewOrders();
   },30000);
+  setInterval(()=>{
+    if(state.user && state.user.role==='seller') checkNewOrders();
+  },10000);
   renderChrome('v-login');
   initCarouselDrag(); initSheetDrag();
+  /* floating scroll-to-top button */
+  $('body').addEventListener('scroll',()=>{
+    $('scroll-top').style.display=$('body').scrollTop>300?'block':'none';
+  });
   /* kartu yang bisa ditebut: aktif dengan Enter/Space */
   document.addEventListener('keydown',e=>{
     if(e.key!=='Enter'&&e.key!==' ') return;
@@ -2140,8 +2186,22 @@ function submitOrder(){
 function commitOrder(ord){
   if(ord.fulfillment==='pickup'&&ord.pickup) commitQueue(ord.shopId,ord.pickup.processDate||ord.pickup.date);
   state.orders.unshift(ord);
+  addCustomerToShop(ord.shopId, ord.buyer.name, ord.buyer.phone);
   if(offline){ state.queue.push(ord.id); toast('Tersimpan di DB lokal — menunggu sinkronisasi'); }
   save(); renderSyncBar();
+}
+function addCustomerToShop(shopId, name, phone){
+  if(!state.customers) state.customers={};
+  if(!state.customers[shopId]) state.customers[shopId]=[];
+  const list=state.customers[shopId];
+  const existing=list.find(c=>c.phone===phone);
+  if(existing){
+    existing.name=name;
+    existing.orderCount=(existing.orderCount||0)+1;
+    existing.lastOrder=new Date().toISOString();
+  } else {
+    list.push({name, phone, orderCount:1, firstOrder:new Date().toISOString(), lastOrder:new Date().toISOString()});
+  }
 }
 function finishOrder(ord){
   cart=[]; pendingOrder=null; payingExisting=false; lastBarTotal=0; lastSheetTotal=null; lastPayTotal=null; lastPax=null; coStep=0;
@@ -2466,7 +2526,67 @@ function sweepNote(){                        /* dipanggil tiap dasbor atau detai
 }
 function renderSeller(){
   sweepNote();
-  renderShopSwitch(); renderWidgets(); renderSellerList();
+  renderShopSwitch(); renderWidgets(); renderNewOrderBanner();
+}
+function renderNewOrderBanner(){
+  const shopId=activeShopId();
+  if(!shopId){ $('dash-new-banner').style.display='none'; return; }
+  const newOrders=state.orders.filter(o=>o.shopId===shopId && o.status==='new');
+  if(newOrders.length===0){ $('dash-new-banner').style.display='none'; updateBellBadge(0); return; }
+  // Show first new order as banner
+  const o=newOrders[0];
+  const it=orderItems(o);
+  $('dash-new-banner').innerHTML=`<div class="new-banner" onclick="acceptOrder('${o.id}')" style="background:linear-gradient(135deg,#e65100 0%,#f57c00 100%);color:#fff;padding:16px;margin:0 0 12px;border-radius:12px;cursor:pointer;box-shadow:0 4px 12px rgba(230,81,0,0.3);animation:slideIn 0.3s ease-out">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:32px">🔔</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Pesanan Baru Diterima!</div>
+        <div style="font-size:13px;opacity:0.95">${o.buyer.name} · ${o.buyer.phone}</div>
+        <div style="font-size:12px;opacity:0.9;margin-top:4px">${it.map(x=>x.name+' × '+x.qty).join(', ')}</div>
+        <div style="font-size:14px;font-weight:700;margin-top:6px">${rp(o.total)} · ${o.fulfillment==='pickup'?'Ambil di toko':'Diantar'}</div>
+      </div>
+      <div style="font-size:24px;opacity:0.9">→</div>
+    </div>
+    <div style="font-size:11px;opacity:0.85;margin-top:8px;text-align:center">Sentuh untuk pindah ke Work in Progress</div>
+  </div>`;
+  $('dash-new-banner').style.display='block';
+  updateBellBadge(newOrders.length);
+}
+function acceptOrder(id){
+  const o=state.orders.find(x=>x.id===id); if(!o) return;
+  if(!guardShop(o.shopId)) return;
+  o.status='confirmed'; save(); refreshDash(); toast(`${id} → Work in Progress`,'ok');
+}
+function updateBellBadge(count){
+  const badge=$('bell-badge');
+  if(count>0){ badge.textContent=count>99?'99+':count; badge.style.display='flex'; }
+  else badge.style.display='none';
+}
+function showNewOrders(){
+  navTo('v-seller');
+  toast('Scroll ke bawah untuk lihat pesanan baru','info');
+}
+function playNewOrderSound(){
+  try {
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value=800; osc.type='sine';
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.5);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.5);
+  } catch(e){}
+}
+function checkNewOrders(){
+  if(!state.user || state.user.role!=='seller') return;
+  const shopId=activeShopId();
+  if(!shopId) return;
+  const newOrders=state.orders.filter(o=>o.shopId===shopId && o.status==='new');
+  if(newOrders.length>0){
+    playNewOrderSound();
+    toast(`🔔 ${newOrders.length} pesanan baru diterima`,'ok');
+  }
 }
 function renderShopSwitch(){
   const ids=myShopIds(), box=$('dash-shop');
@@ -2553,43 +2673,6 @@ function trackCard(o){
       <button class="btn-sm btn-grey" onclick="openDetail('${o.id}')">Detail</button>
     </div>${statusFlow(o)}</div>`;
 }
-function setTab(t){ tab=t; document.querySelectorAll('#seller-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); renderSellerList(); }
-function renderSellerList(){
-  const id=activeShopId();
-  if(tab==='menu'){
-    /* state.shops, bukan konstanta SHOPS: id toko sudah 6 angka sejak Task 4 */
-    $('seller-list').innerHTML=[shopOf(id)].filter(Boolean).map(s=>`
-     <div class="card" style="margin-top:12px"><b style="font-size:14px">${s.logo} ${s.name}</b>
-     ${s.packages.map(p=>`<div class="mrow"><img src="${p.img}" onerror="this.src='assets/food/nasi-kotak.jpg'">
-      <div class="mi"><div class="mn">${p.name}</div><div class="mp">${rp(p.price)} · ${p.desc}</div></div>
-      <div class="sw ${state.menuOff[p.id]?'':'on'}" onclick="toggleMenu('${p.id}')"></div></div>`).join('')}</div>`).join('');
-    return;
-  }
-  const list=tab==='all'?sellerOrders():sellerOrders().filter(o=>o.status===tab);
-  $('seller-list').innerHTML=list.length?list.map(sellerCard).join('')
-   :`<div class="empty"><div class="ic">📋</div>Tidak ada pesanan${tab==='all'?' di toko ini':' berstatus '+FLOW_LBL[tab]}</div>`;
-}
-function sellerCard(o){
-  const i=FLOW.indexOf(o.status), locked=i<FLOW.length-1 && FLOW[i+1]==='processing' && !canProcess(o);
-  return `<div class="ord"><div class="oh"><span class="oid">${o.id} · ${shopOf(o.shopId).name}</span>
-    <span class="chip c-${o.status}">${FLOW_LBL[o.status]}</span></div>
-    <div class="ob">${orderItems(o).map(x=>`<div style="display:flex;justify-content:space-between;gap:8px"><span><b>${x.name}</b> × ${x.qty}</span><span>${rp(x.line)}</span></div>`).join('')}
-    <span class="hint">Total ${rp(o.total)}${o.deliveryFee?' · termasuk ongkir '+rp(o.deliveryFee):''}</span><br>
-    <div class="ffline">${fulfillLine(o)}</div>
-    ${o.buyer.name} · ${o.buyer.phone} · <b>${paxOf(o)} orang</b><br>${o.buyer.addr}<br>
-    <span class="hint">${fmtDate(o.createdAt)} · ${PAYMENTS[o.method].name} · ${o.payStatus==='paid'?'<b style="color:#2e7d32">LUNAS</b>':o.payStatus==='cod'?'<b>Bayar di tempat (ambil di toko)</b>':o.payStatus}</span>
-    ${o.buyer.note?`<br><span class="hint">📝 ${o.buyer.note}</span>`:''}
-    ${o.buyer.late?`<br><span class="latechip">⏱ baru dimasak ${niceDate(o.buyer.processDate)}</span>`:''}
-    ${locked?'<div class="locknote">🔒 Belum lunas — makanan tidak dapat dibuat sebelum pembayaran masuk.</div>':''}
-    ${proofHtml(o.collected)}</div>
-    <div class="oa">
-      ${o.fulfillment==='pickup'&&isInQueue(o)&&canProcess(o)
-        ?`<button class="btn-sm btn-tosca" style="flex:2" onclick="markCollected('${o.id}')">✓ Sudah Diambil · 📸</button>`
-        :(i<FLOW.length-1?`<button class="btn-sm ${locked?'btn-grey':'btn-tosca'}" style="flex:2" onclick="advance('${o.id}')">${locked?'🔒 ':''}→ ${FLOW_LBL[FLOW[i+1]]}</button>`:'<button class="btn-sm btn-grey" disabled style="flex:2">Selesai</button>')}
-      <button class="btn-sm btn-wa" onclick="waOrder('${o.id}')">WA</button>
-      ${isInQueue(o)?`<button class="btn-sm btn-danger" onclick="askCancel('${o.id}')">Batal</button>`:''}
-    </div>${statusFlow(o)}</div>`;
-}
 function advance(id){
   const o=state.orders.find(x=>x.id===id); if(!o) return;
   if(!guardShop(o.shopId)) return;
@@ -2605,6 +2688,54 @@ function advance(id){
   if(o.status==='shipped') toast('Notifikasi FCM terkirim ke pembeli','ok');
   if(o.status==='processing'&&o.fulfillment==='pickup') toast(`Makanan ${o.pickup.queue} masuk antrean produksi`,'ok');
 }
+
+/* ================= DAFTAR PELANGGAN ================= */
+let custTab='progress';
+function setCustTab(t){
+  custTab=t;
+  document.querySelectorAll('#scust-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  renderCustList();
+}
+function renderCustomers(){
+  const s=shopOf(activeShopId());
+  if(!s) return;
+  $('scust-sub').textContent=`${s.name} · ketuk nama untuk chat WA`;
+  setCustTab('progress');
+}
+function renderCustList(){
+  const shopId=activeShopId();
+  if(!state.customers) state.customers={};
+  const customers=state.customers[shopId]||[];
+  // Filter by tab: progress = customers with active orders, done = customers with only completed orders
+  const shopOrders=state.orders.filter(o=>o.shopId===shopId);
+  let filtered=customers;
+  if(custTab==='progress'){
+    // Customers with at least one non-completed, non-cancelled order
+    const phonesWithProgress=new Set(shopOrders.filter(o=>!['completed','cancelled'].includes(o.status)).map(o=>o.buyer.phone));
+    filtered=customers.filter(c=>phonesWithProgress.has(c.phone));
+  } else {
+    // Customers whose all orders are completed or cancelled
+    const phonesWithProgress=new Set(shopOrders.filter(o=>!['completed','cancelled'].includes(o.status)).map(o=>o.buyer.phone));
+    filtered=customers.filter(c=>!phonesWithProgress.has(c.phone));
+  }
+  filtered.sort((a,b)=>b.orderCount-a.orderCount);
+  $('scust-list').innerHTML=filtered.length?filtered.map(c=>`
+    <div class="ord">
+      <div class="oh">
+        <span class="oid">${esc(c.name)}</span>
+        <span class="chip c-new">${c.orderCount} pesanan</span>
+      </div>
+      <div class="ob">
+        <div class="oline"><span>No. WA</span><b><a href="https://wa.me/${c.phone.replace(/^0/,'62')}" target="_blank" style="color:var(--biru);text-decoration:none">${c.phone}</a></b></div>
+        <div class="hint" style="margin-top:6px">Pesanan terakhir: ${niceDate(c.lastOrder)}</div>
+      </div>
+      <div class="oa">
+        <a class="btn-sm btn-wa" href="https://wa.me/${c.phone.replace(/^0/,'62')}" target="_blank">Chat WA</a>
+      </div>
+    </div>
+  `).join(''):`<div class="empty"><div class="ic">👥</div>Belum ada pelanggan di kategori ini</div>`;
+}
+
 function cancelOrder(id,reason,note){
   const o=state.orders.find(x=>x.id===id); if(!o) return;
   if(!guardShop(o.shopId)) return;
@@ -2703,7 +2834,7 @@ function refreshDash(){
 function toggleMenu(pid){
   const sh=_shopList().find(s=>s.packages.some(p=>p.id===pid)); if(!sh) return;
   if(!guardShop(sh.id)) return;
-  state.menuOff[pid]=!state.menuOff[pid]; save(); renderSellerList(); toast(state.menuOff[pid]?'Paket disembunyikan dari katalog':'Paket ditampilkan','ok'); }
+  state.menuOff[pid]=!state.menuOff[pid]; save(); toast(state.menuOff[pid]?'Paket disembunyikan dari katalog':'Paket ditampilkan','ok'); }
 
 /* ================= OFFLINE / SYNC ================= */
 function setOffline(v){
