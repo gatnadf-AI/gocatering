@@ -1,0 +1,23 @@
+// Skrip init Gradle untuk CI (disalin ke ~/.gradle/init.gradle oleh workflow).
+//
+// Kenapa perlu: build Flutter memakai "included build" milik SDK
+// (packages/flutter_tools/gradle) yang settings-nya hanya mendaftarkan
+// gradlePluginPortal untuk pluginManagement. Kalau portal lambat atau tidak
+// memancarkan (mirror) artefak Kotlin yang diminta, seluruh build berhenti
+// dengan "Could not find org.jetbrains.kotlin:kotlin-stdlib:x.y.z" padahal
+// artefaknya tersedia di Maven Central. Init script ini menambahkan Central
+// dan Google ke pencarian plugin tanpa menyentuh templat maupun SDK Flutter.
+//
+// beforeSettings (bukan settingsEvaluated) supaya daftar repositori sudah
+// lengkap sebelum plugin waktu-konfigurasi diunduh.
+//
+// Sengaja TIDAK menambahkan allprojects { repositories { ... } }: included
+// build Flutter memakai RepositoriesMode.FAIL_ON_PROJECT_REPOS, jadi
+// repositori tingkat proyek akan menggagalkan build.
+beforeSettings { settings ->
+    settings.pluginManagement.repositories {
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+    }
+}

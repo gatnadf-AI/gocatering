@@ -97,6 +97,15 @@ jobs:
           RELEASE_SIGNING: '1'
         run: bash scripts/enable-release-signing.sh
 
+      # included build milik Flutter hanya mencari plugin di gradlePluginPortal;
+      # satu kali portal itu tidak memancarkan artefak Kotlin sudah cukup untuk
+      # membatalkan build. Init script ini menambah Maven Central + Google.
+      - name: Pasang init script Gradle
+        run: |
+          mkdir -p "$HOME/.gradle"
+          cp "$APP_DIR/scripts/ci-gradle-init.gradle" "$HOME/.gradle/init.gradle"
+          echo "~/.gradle/init.gradle terpasang"
+
       - name: Dependensi
         working-directory: ${{ env.APP_DIR }}
         run: flutter pub get
@@ -134,8 +143,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
-          flutter build apk --debug > build-debug.log 2>&1
-          code=$?
+          # Unduh dependensi Gradle sesekali gagal dari sisi server; satu
+          # kegagalan jaringan tidak boleh menggagalkan seluruh rilis.
+          code=1
+          for try in 1 2 3; do
+            if flutter build apk --debug > build-debug.log 2>&1; then code=0; break; fi
+            code=$?
+            echo "percobaan $try gagal (exit=$code)"
+            [ "$try" -lt 3 ] && sleep 20
+          done
           if [ "$code" -ne 0 ]; then
             echo "build gagal — mengulang lewat Gradle untuk sebab lengkap"
             ( cd android && ./gradlew :app:assembleDebug --stacktrace --console=plain ) > gradle-debug.log 2>&1
