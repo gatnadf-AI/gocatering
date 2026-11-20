@@ -42,6 +42,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .btn-wa{background:#25D366;color:#fff}
 .btn-danger{background:#fff;color:#e53935;border:1px solid #ffcdd2}
 .btn-sm{padding:8px 12px;font-size:12.5px;border-radius:8px;width:auto}
+.btn-link{background:none;border:none;color:var(--biru);font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .field{margin:12px 0}
 .field label{display:block;font-size:12px;font-weight:600;color:#455a64;margin-bottom:6px}
@@ -53,10 +54,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .logo{font-size:52px;font-weight:900;color:#FF6B35;letter-spacing:-2px}
 .logo-s{font-size:22px;font-weight:800;color:#4CAF50;letter-spacing:4px}
 .roles{display:flex;gap:10px;margin:18px 0}
-.role{flex:1;border:2px solid var(--garis);border-radius:12px;padding:14px 8px;text-align:center;cursor:pointer;background:#fff;transition:.15s}
+.role{flex:1;border:2px solid var(--garis);border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;background:#fff;transition:.15s}
 .role.on{border-color:var(--biru);background:#e3f2fd}
-.role .ic{font-size:26px}
-.role .nm{font-size:13px;font-weight:700;margin-top:4px}
+.role .ic{font-size:20px}
+.role .nm{font-size:11px;font-weight:700;margin-top:4px}
 .chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
 .c-new{background:#FFF3E0;color:#E65100}
 .c-confirmed{background:#E3F2FD;color:#1565C0}
@@ -447,6 +448,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="field"><label>Email</label><input id="li-email" type="email" placeholder="email@example.com"></div>
         <div class="field"><label>Password</label><input id="li-pass" type="password" placeholder="••••••••"></div>
         <button class="btn btn-tosca" onclick="doLogin()">LOGIN</button>
+        <div style="text-align:center;margin:6px 0"><button class="btn-link" onclick="toast('Fitur reset password belum tersedia di prototype ini. Untuk demo, pakai akun di panel kiri.','err')">Lupa password?</button></div>
         <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-register')">Daftar</button>
         <button class="btn btn-grey" style="margin-top:8px" onclick="toSellerReg()">Daftar sebagai penjual</button>
         <div class="divider">atau</div>
@@ -940,7 +942,7 @@ function cryptRows(rows,fields,fn){
 const RE_EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RE_GMAIL=/^[a-z0-9](?:[a-z0-9._%+-]*[a-z0-9])?@gmail\.com$/i;
 const RE_NIK=/^\d{16}$/;
-const RE_PHONE=/^(?:0\d{8,13}|\+?62\d{8,13})$/;
+const RE_PHONE=/^(?:0\d{10,12}|\+?62\d{9,11})$/;
 const RE_MAP=/^https:\/\/(?:www\.google\.com\/maps|maps\.google\.com|maps\.app\.goo\.gl|goo\.gl\/)/;
 const NAME_OK=/^[A-Za-z .'-]{3,}$/;
 const GELAR=['Tn','Ny','Nona'];
@@ -1402,7 +1404,7 @@ function validateIdentity(){
   if(!RE_NIK.test(nik)) e.nik='NIK harus 16 digit angka';
   else { const o=findOwner('nik',nik); if(o) e.nik='NIK sudah terdaftar atas nama '+o.nama+'. Login dulu, lalu pilih Tambah Toko'; }
   const phone=fv('rs-phone').replace(/[\s-]/g,'');
-  if(!RE_PHONE.test(phone)) e.phone='Nomor WA tidak valid — contoh 081234567890';
+  if(!RE_PHONE.test(phone)) e.phone='Nomor WA tidak valid — 11 sampai 13 digit, contoh 08123456789';
   const order=[['rs-gelar',e.gelar],['rs-nama',e.nama],['rs-email',e.email],['rs-nik',e.nik],['rs-phone',e.phone]];
   order.forEach(p=>setErr(p[0],p[1]||''));
   const first=order.find(p=>p[1]);
@@ -1423,8 +1425,9 @@ function validateShop(){
 }
 /* validasi form daftar biasa; dipakai regCta() sebelum melompat ke wizard penjual */
 function buyerFormOk(){
-  const n=fv('rg-name'),p=fv('rg-phone'),e=fv('rg-email').toLowerCase(),pw=($('rg-pass').value||'');
+  const n=fv('rg-name'),p=fv('rg-phone').replace(/[\s-]/g,''),e=fv('rg-email').toLowerCase(),pw=($('rg-pass').value||'');
   if(!n||!p||!e||!pw){ toast('Lengkapi semua biodata','err'); return false }
+  if(!RE_PHONE.test(p)){ toast('Nomor WA tidak valid — 11 sampai 13 digit, contoh 08123456789','err'); return false }
   if(pw.length<6){ toast('Password minimal 6 karakter','err'); return false }
   if(state.users[e]){ toast('Email sudah terdaftar, silakan login','err'); return false }
   if(findOwner('email',e)){ toast('Email ini akun penjual — gunakan "Daftar sebagai penjual" di layar login','err'); return false }
