@@ -104,8 +104,10 @@ Tombol **Masuk dengan Google** menampilkan 3 akun bawaan (`sari.wijaya@`, `andir
 ```
 gocatering-prototype-v5.html   aplikasi utama (HTML + CSS + JS, satu berkas)
 gocatering-prototype-v4.html   basis v5, disimpan apa adanya sebagai pembanding
+gocatering-mobile/             aplikasi Flutter (SQLite + foto per restoran) — lihat README-nya
+.github/workflows/             build-apk.yml: bangun APK di GitHub Actions
 assets/food/                   foto menu + attribusi.json (sumber & lisensi tiap foto)
-LICENSE                        MIT untuk kode prototype
+LICENSE                        Terbatas — perlu izin tertulis goCatering
 ```
 
 ## Catatan teknis
@@ -129,10 +131,20 @@ LICENSE                        MIT untuk kode prototype
 
 ## Lisensi & atribusi
 
-Kode pada repo ini berlisensi **MIT** (lihat `LICENSE`).
+Kode pada repo ini berlisensi **terbatas** (lihat [`LICENSE`](LICENSE)): tidak boleh diunduh,
+disalin, disebarluaskan, atau dipakai tanpa **izin tertulis** dari goCatering. Berlaku untuk
+prototipe HTML, aplikasi Flutter di `gocatering-mobile/`, dan dokumentasi di `docs/`.
 
-Foto makanan di `assets/food/` **tidak** termasuk lisensi MIT: gambar-gambar itu berasal dari
+Foto makanan di `assets/food/` **tidak** termasuk klausul tersebut: gambar-gambar itu berasal dari
 Wikimedia Commons dengan lisensi CC dan nama penciptanya tercatat pada
 [`assets/food/attribusi.json`](assets/food/attribusi.json). Gunakan berkas tersebut sebagai
 sumber atribusi bila foto ikut dipublikasi.
-Hubungi email androvich97@gmail.com untuk detail aplikasi
+
+> Catatan jujur: selama repo ini **public**, teks lisensi hanya berlaku sebagai pemberitahuan
+> hukum — siapa pun masih bisa meng-*clone* atau mengunduh artifact/Release dari tab Actions.
+> Kalau yang dikejar adalah perlindungan teknis (bukan sekadar klausul), satu-satunya jalan
+> adalah menjadikan repo privat, atau memindahkan `gocatering-mobile/` ke repo privat tersendiri
+> sementara prototipe Pages tetap publik.
+
+Hubungi **androvich97@gmail.com** / **contact@gocatering.id** untuk meminta izin tertulis.
+
