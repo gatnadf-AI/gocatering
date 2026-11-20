@@ -438,7 +438,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <div class="body" id="body">
 
     <!-- SPLASH SCREEN -->
-    <div class="view on" id="v-splash" style="background:#fff">
+    <div class="view on" id="v-splash" style="background:#fff" onclick="go('v-login')">
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:20px">
         <div style="font-family:Arial,sans-serif;font-size:36px;font-weight:bold;color:#00897b;margin-bottom:10px">Go Catering</div>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" style="width:100%;height:auto;max-height:70vh">
@@ -1810,12 +1810,12 @@ function fillDemo(w){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   $('clock').textContent=nowLbl();
-  /* splash screen: otomatis ke login setelah 3 detik */
+  /* splash screen: otomatis ke login setelah 5 detik, atau sentuh untuk skip */
   setTimeout(()=>{
     if(document.querySelector('.view.on').id==='v-splash'){
       go('v-login');
     }
-  },3000);
+  },5000);
   setInterval(()=>{
     $('clock').textContent=nowLbl();
     const v=document.querySelector('.view.on');
