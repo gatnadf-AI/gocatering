@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#00897b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -356,11 +356,64 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .resto-init{width:52px;height:52px;border-radius:50%;background:#e8f5f2;color:#00796b;flex:0 0 auto;
   display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
 #resto-photo{width:52px;height:52px;border-radius:12px;object-fit:cover;flex:0 0 auto;display:none}
+/* ===== v5.1: RESPONSIF (iPhone / iPad / Android / desktop) =====
+   ≤ 500 px   : layar penuh, bingkai HP palsu & status bar dihapus, safe-area
+                poni/Home-Indicator dihormati
+   501–1024 px: satu kolom selebar mungkin (maks 680 px) dengan bingkai (rasa tablet)
+   ≥ 1025 px  : tidak berubah — bingkai 380×800 + panel catatan di samping
+   Panel catatan pengembang (.panel) di bawah 1025 px jadi laci bawah lewat ℹ. */
+#notebtn,#notebg,#noteclose{display:none}
+@media (max-width:1024px){
+  body{display:block;padding:0;min-height:100vh;min-height:100dvh;background:#0f1418}
+  .stage{display:block}
+  .phone{width:min(100%,680px);height:calc(100vh - 24px);height:min(calc(100dvh - 24px),940px);
+         margin:12px auto;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  #notebtn{display:flex;position:absolute;left:14px;bottom:calc(132px + env(safe-area-inset-bottom,0px));
+           z-index:70;width:40px;height:40px;border-radius:20px;border:none;background:rgba(17,24,39,.85);
+           color:#fff;font-size:18px;line-height:1;align-items:center;justify-content:center;cursor:pointer;
+           box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  #notebg{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:78;opacity:0;
+          pointer-events:none;transition:opacity .22s ease}
+  #notebg.on{opacity:1;pointer-events:auto}
+  .panel{position:fixed;left:50%;bottom:0;width:min(100%,680px);max-height:74vh;max-height:min(74dvh,620px);
+         overflow-y:auto;z-index:79;border-radius:18px 18px 0 0;box-shadow:0 -14px 44px rgba(0,0,0,.55);
+         transform:translate(-50%,103%);transition:transform .28s ease;font-size:12.5px;
+         padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+  .panel.on{transform:translate(-50%,0)}
+  #noteclose{display:block;float:right;margin:0 -2px 6px 10px;width:28px;height:28px;
+             border-radius:14px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;font-size:14px;
+             line-height:1;cursor:pointer}
+}
+@media (min-width:900px) and (max-width:1024px) and (orientation:landscape){
+  /* iPad / tablet besar mendatar (900-1024 px saja; desktop >1024 px tidak
+     disentuh): catatan pengembang kembali jadi kolom kedua. Lebar dinyatakan
+     dalam px/vw, bukan % dari .stage yang menyusut, supaya tidak kolaps. */
+  body{display:flex;align-items:center;justify-content:center;gap:18px;padding:12px}
+  .phone{width:620px;max-width:56vw;height:calc(100vh - 24px);height:min(calc(100dvh - 24px),820px);margin:0}
+  .panel,.panel.on{position:static;transform:none;width:320px;max-width:32vw;
+                   max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);
+                   border-radius:16px;padding-bottom:18px;box-shadow:0 18px 50px rgba(0,0,0,.4)}
+  #notebtn,#notebg{display:none}
+}
+
+@media (max-width:500px){
+  .phone{width:100%;height:100vh;height:100dvh;margin:0;padding:0;border-radius:0;box-shadow:none}
+  .screenwrap{border-radius:0}
+  .statusbar{display:none}
+  .appbar{padding-top:calc(12px + env(safe-area-inset-top,0px))}
+  .bnav{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+  .sheet{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+  .sheetfoot{padding-bottom:calc(11px + env(safe-area-inset-bottom,0px));
+             margin-bottom:calc(-16px - env(safe-area-inset-bottom,0px))}
+  #notebtn{bottom:calc(132px + env(safe-area-inset-bottom,0px))}
+}
 </style>
 </head>
 <body>
 
 <div class="panel">
+  <button id="noteclose" onclick="toggleNotes(false)" aria-label="Tutup catatan" title="Tutup catatan">&#10005;</button>
   <h1>goCatering v5</h1>
   <div>Prototype interaktif — alur pembeli &amp; penjual, pembayaran digital, WhatsApp, dan simulasi offline-first.</div>
   <h2>Baru di v5</h2>
@@ -446,7 +499,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
     <!-- SPLASH SCREEN -->
     <div class="view on" id="v-splash" style="background:#fff" onclick="go('v-login')">
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:20px">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px">
         <div style="font-family:Arial,sans-serif;font-size:36px;font-weight:bold;color:#00897b;margin-bottom:10px">Go Catering</div>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" style="width:100%;height:auto;max-height:70vh">
           <defs>
@@ -769,8 +822,12 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
   <div class="bnav" id="bnav" style="display:none"></div>
 
-  <!-- FLOATING SCROLL TO TOP -->
-  <button id="scroll-top" style="display:none;position:fixed;bottom:90px;right:20px;width:44px;height:44px;border-radius:22px;background:var(--biru);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);z-index:100" onclick="scrollToTop()">↑</button>
+  <!-- FLOATING SCROLL TO TOP (absolute: tetap di dalam layar, bukan di jendela browser) -->
+  <button id="scroll-top" style="display:none;position:absolute;bottom:calc(90px + env(safe-area-inset-bottom,0px));right:20px;width:44px;height:44px;border-radius:22px;background:var(--biru);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);z-index:100" onclick="scrollToTop()">↑</button>
+
+  <!-- v5.1: pemanggil catatan pengembang (HP / tablet) -->
+  <button id="notebtn" onclick="toggleNotes()" aria-label="Catatan pengembang" title="Catatan pengembang">&#8505;</button>
+  <div id="notebg" onclick="toggleNotes(false)"></div>
 
   <!-- SHEETS -->
   <div class="overlay" id="sheet-menu" onclick="if(event.target===this)closeSheet('sheet-menu')">
@@ -1449,6 +1506,15 @@ function renderMenuItems(){
 
 function openSheet(id){ $(id).classList.add('on'); }
 function closeSheet(id){ $(id).classList.remove('on'); }
+// v5.1: di HP/tablet catatan pengembang jadi laci bawah; di desktop panel tetap
+// di samping layar dan tombolnya tersembunyi, jadi fungsi ini tidak dipakai.
+function toggleNotes(force){
+  const p=document.querySelector('.panel'), bg=$('notebg');
+  if(!p) return;
+  const on = (force===undefined) ? !p.classList.contains('on') : !!force;
+  p.classList.toggle('on',on);
+  if(bg) bg.classList.toggle('on',on);
+}
 
 /* ================= AUTH ================= */
 let role='buyer';

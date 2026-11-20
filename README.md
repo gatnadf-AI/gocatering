@@ -11,8 +11,12 @@ Semua alur berjalan tanpa server — cocok untuk demo, user testing, atau presen
 Tidak perlu install atau build. Cukup:
 
 1. Download / clone repo ini (folder `assets/food/` harus ikut, isinya foto menu).
-2. Buka **`gocatering-prototype-v5.html`** di browser (Chrome/Edge/Firefox) — atau `index.html`,
-   yang otomatis mengalihkan ke v5. Di desktop tampilan sudah dibingkai seperti layar HP 380 × 800.
+2. Buka **`gocatering-prototype-v5.html`** di browser (Chrome/Edge/Firefox — atau langsung
+   dari HP/iPad) — atau `index.html`, yang otomatis mengalihkan ke v5. Tampilannya mengikuti
+   lebar layar: **≤ 500 px** satu layar penuh tanpa bingkai (safe-area poni & home indicator
+   dihormati), **501–1024 px** satu kolom maks 680 px tetap berbingkai, **> 1024 px** seperti
+   demo desktop (bingkai 380 × 800 + panel catatan di samping). Di HP/tablet, panel catatan
+   pengembang berpindah ke laci bawah lewat tombol **ℹ**.
 
 Alternatif: aktifkan **Settings → Pages → GitHub Actions / Deploy from branch** pada repo ini,
 lalu buka `https://gatnadf-AI.github.io/gocatering/gocatering-prototype-v5.html`.
