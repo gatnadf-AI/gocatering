@@ -5,13 +5,25 @@
 # build.gradle(.kts) milik app. Gradle membolehkan blok konfigurasi yang sama
 # ditulis berulang, jadi blok ini cukup menimpa signingConfig build "release".
 #
-# Aman untuk build tanpa kunci: selama android/key.properties belum ada,
-# semuanya dilewati dan Flutter memakai signing debug seperti biasa.
+# Aman untuk build tanpa kunci: langkah ini hanya jalan kalau workflow menyetel
+# RELEASE_SIGNING=1 (yaitu saat secret keystore terisi). Tanpa itu APK debug
+# memakai signing bawaan Flutter dan berkas gradle tetap seperti templat.
+#
+# Jangan pakai `java.util.Properties()` di berkas .kts: nama `java` di skrip
+# modul Gradle menunjuk ekstensi plugin Java, jadi kompilasi skrip gagal
+# ("Unresolved reference 'util'"). Karena itu kunci dibaca manual lewat
+# readLines(). Belum teruji dengan keystore sungguhan — baru teruji bahwa
+# dilewati tanpa kunci.
 set -euo pipefail
 
 APP_GRADLE_KTS="android/app/build.gradle.kts"
 APP_GRADLE_GROOVY="android/app/build.gradle"
 MARKER="goCatering: signing rilis"
+
+if [ -z "${RELEASE_SIGNING:-}" ]; then
+  echo "RELEASE_SIGNING tidak diset -> signing rilis dilewati (APK debug memakai signing bawaan Flutter)"
+  exit 0
+fi
 
 if [ -f "$APP_GRADLE_KTS" ]; then
   target="$APP_GRADLE_KTS"
@@ -34,26 +46,30 @@ fi
   echo "// >>> $MARKER (dibaca dari android/key.properties bila ada)"
   if [ "$flavor" = "kts" ]; then
     cat <<'BLOCK'
-val gcProps = java.util.Properties().apply {
-    val f = rootProject.file("key.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
-}
-val gcHasKeys = gcProps.getProperty("storeFile") != null
+val gcKeyFile = rootProject.file("key.properties")
+val gcProps: Map<String, String> =
+    if (gcKeyFile.exists()) {
+        gcKeyFile.readLines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+            .associate { it.substringBefore("=") to it.substringAfter("=") }
+    } else {
+        emptyMap()
+    }
+val gcStoreFile = gcProps["storeFile"]
 
-android {
-    signingConfigs {
-        create("gocatering") {
-            if (gcHasKeys) {
-                keyAlias = gcProps.getProperty("keyAlias")
-                keyPassword = gcProps.getProperty("keyPassword")
-                storePassword = gcProps.getProperty("storePassword")
-                storeFile = file(gcProps.getProperty("storeFile"))
+if (gcStoreFile != null) {
+    android {
+        signingConfigs {
+            register("gocatering") {
+                keyAlias = gcProps["keyAlias"]
+                keyPassword = gcProps["keyPassword"]
+                storePassword = gcProps["storePassword"]
+                storeFile = file(gcStoreFile)
             }
         }
-    }
-    buildTypes {
-        getByName("release") {
-            if (gcHasKeys) {
+        buildTypes {
+            named("release") {
                 signingConfig = signingConfigs.getByName("gocatering")
             }
         }

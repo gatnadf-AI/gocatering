@@ -87,8 +87,14 @@ jobs:
           test -f "$APP_DIR/android/build.gradle.kts" -o -f "$APP_DIR/android/build.gradle"
           echo "kerangka android/ siap"
 
-      - name: Sambungkan signing rilis (aktif hanya bila key.properties ada)
+      # Hanya berarti kalau keystore rilis tersedia. Tanpa secret, langkah ini
+      # dilewati supaya templat android/ yang dibangkitkan Flutter dipakai apa
+      # adanya (AGP 9 menolak blok tambahan yang salah — lihat skripnya).
+      - name: Sambungkan signing rilis
+        if: env.KEYSTORE_B64 != ''
         working-directory: ${{ env.APP_DIR }}
+        env:
+          RELEASE_SIGNING: '1'
         run: bash scripts/enable-release-signing.sh
 
       - name: Dependensi
