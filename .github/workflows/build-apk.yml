@@ -92,10 +92,24 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: flutter pub get
 
+      # `dart analyze` exit 1 = info, 2 = warning, 3 = error; warning & error
+      # membatalkan build. Keluarannya ditulis ke step summary karena berkas log
+      # job hanya bisa dibuka oleh anggota repo, sedangkan summary ikut publik.
       - name: Analisis statis
         working-directory: ${{ env.APP_DIR }}
-        # `dart analyze` gagal untuk warning & error, tapi membiarkan info.
-        run: dart analyze
+        run: |
+          set +e
+          dart analyze > analyze.txt 2>&1
+          code=$?
+          cat analyze.txt
+          {
+            echo "## Hasil \`dart analyze\` (kode keluar: $code)"
+            echo ""
+            echo '```'
+            head -200 analyze.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $code
 
       - name: Unit test
         working-directory: ${{ env.APP_DIR }}
