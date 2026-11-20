@@ -1417,6 +1417,7 @@ function validateShop(){
   else if(state.shops.some(s=>String(s.name).toLowerCase()===name.toLowerCase())) e.shop='Nama restoran sudah dipakai';
   const addr=fv('rs-addr'); if(addr.length<10) e.addr='Alamat fisik belum lengkap (min. 10 karakter)';
   const mapUrl=fv('rs-map'); if(!RE_MAP.test(mapUrl)) e.map='Tempel link Google Maps (https://maps…)';
+  else if(state.shops.some(s=>s.mapUrl===mapUrl)) e.map='Link Google Maps sudah dipakai toko lain';
   const csWa=fv('rs-cs').replace(/[\s-]/g,''); if(!RE_PHONE.test(csWa)) e.cs='No. WhatsApp customer service tidak valid';
   const order=[['rs-shop',e.shop],['rs-addr',e.addr],['rs-map',e.map],['rs-cs',e.cs]];
   order.forEach(p=>setErr(p[0],p[1]||''));
@@ -2469,14 +2470,13 @@ function renderSeller(){
 }
 function renderShopSwitch(){
   const ids=myShopIds(), box=$('dash-shop');
-  if(ids.length<1){ box.innerHTML=''; return; }   /* satu toko pun tetap tampil: di sinilah tombol Tambah Toko hidup */
-  box.innerHTML=`<div class="shopswitch"><span class="sl">TOKO</span><div class="swrap">`
-    +ids.map(id=>{
-      const s=shopOf(id);
-      return `<button type="button" class="swchip${id===activeShopId()?' on':''}" onclick="setSellerShop('${id}')">${s.logo} ${s.name}<span class="rc">${rcodeOf(id)}</span></button>`;
-    }).join('')
-    +`<button type="button" class="swchip" style="background:#e8f5e9;border-color:#c8e6c9;color:#2e7d32" onclick="startAddShop()">+ Tambah Toko</button>`
-    +`</div></div>`;
+  if(ids.length<1){ box.innerHTML=''; return; }
+  const active=activeShopId();
+  box.innerHTML=`<div class="shopswitch"><span class="sl">TOKO</span>
+    <select id="dash-shop-select" onchange="if(this.value==='__add__'){startAddShop();}else{setSellerShop(this.value);}" style="flex:1;padding:8px;border:1px solid var(--garis);border-radius:8px;font-size:13px;background:#fff">
+      ${ids.map(id=>{const s=shopOf(id); return `<option value="${id}"${id===active?' selected':''}>${s.name} (${rcodeOf(id)})</option>`;}).join('')}
+      <option value="__add__" style="color:#2e7d32">+ Tambah Toko</option>
+    </select></div>`;
 }
 function setSellerShop(id){
   if(!guardShop(id)) return;
