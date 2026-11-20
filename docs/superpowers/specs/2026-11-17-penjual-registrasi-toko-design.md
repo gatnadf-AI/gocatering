@@ -120,11 +120,18 @@ hanya form toko yang muncul, NIK pemilik dipakai lagi (butir 3).
 
 ## 5. Alur dan layar baru
 
-1. **`v-reg-seller-1` — Data Diri Penjual.** Titik masuk: saat role di `v-register` dipilih
-   Penjual, tombol SIMPAN berubah menjadi `DAFTARKAN TOKO` yang membawa ke layar ini;
-   layar login juga mendapat satu tombol "Daftar sebagai penjual". Enam field di §4 —
-   foto opsional, kalau dipilih tampil pratinjau kecil. Tombol `Sesudah →` memanggil
-   validasi, belum menyimpan apa pun.
+1. **`v-reg-seller-1` — Data Diri Penjual.** Titik masuk: tombol "Daftar sebagai penjual"
+   di layar login. Enam field di §4 — foto opsional, kalau dipilih tampil pratinjau kecil.
+   Tombol `Sesudah →` memanggil validasi, belum menyimpan apa pun.
+
+   > **Amandemen 2026-11-20.** Pemilih `Role` di form `v-register` dihapus: form daftar
+   > sekarang khusus pembeli (peran otomatis `buyer` di `doRegister()`). Jalur penjual
+   > hanya lewat tombol "Daftar sebagai penjual" di layar login. Field mati `rg-shopfield`
+   > dan handler `$('rg-role').onchange` yang mengubah label CTA juga dihapus. Blok
+   > pra-isi biodata di `toSellerReg()` ikut dihapus karena satu-satunya pengisinya
+   > (form daftar dengan role=Penjual) tidak ada lagi. Pesan error "Email ini akun
+   > penjual — pilih role Penjual" diganti jadi "gunakan 'Daftar sebagai penjual' di
+   > layar login".
 2. **`v-reg-seller-2` — Data Toko.** Nama restoran, alamat fisik, link peta, WA CS, dan
    foto restoran (opsional). Tombol `← Sebelum` kembali tanpa menghapus isian (nilai
    hidup di field yang sama seperti wizard checkout). `Sesudah · DAFTARKAN` memanggil

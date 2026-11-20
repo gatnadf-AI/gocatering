@@ -467,8 +467,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="field"><label>No. Handphone</label><input id="rg-phone" placeholder="0812xxxxxxxx"></div>
         <div class="field"><label>Email</label><input id="rg-email" type="email" placeholder="email@example.com"></div>
         <div class="field"><label>Password</label><input id="rg-pass" type="password" placeholder="min. 6 karakter"></div>
-        <div class="field"><label>Role</label><select id="rg-role"><option value="buyer">Pembeli</option><option value="seller">Penjual (buka toko)</option></select></div>
-        <div class="field" id="rg-shopfield" style="display:none"><label>Nama toko</label><input id="rg-shop" placeholder="cth: Warung Sehat"></div>
         <button class="btn btn-tosca" id="rg-cta" onclick="regCta()">SIMPAN</button>
         <button class="btn btn-grey" style="margin-top:8px" onclick="go('v-login')">Kembali ke Login</button>
       </div>
@@ -1360,7 +1358,7 @@ function doLogin(){
     go('v-seller',false); ensureSellerShop(); tab='all'; renderSeller();
     toast('Selamat datang, '+o.nama,'ok'); return;
   }
-  if(o) return toast('Email ini akun penjual — pilih role Penjual','err');
+  if(o) return toast('Email ini akun penjual — gunakan "Daftar sebagai penjual" di layar login','err');
   if(!state.users[email]){ state.users[email]={password:pass||'1234',name:email.split('@')[0],phone:'',role:'buyer'}; save(); toast('Akun pembeli dibuat otomatis','ok'); }
   if(state.users[email].password!==pass) return toast('Password salah','err');
   const r=state.users[email];
@@ -1429,23 +1427,14 @@ function buyerFormOk(){
   if(!n||!p||!e||!pw){ toast('Lengkapi semua biodata','err'); return false }
   if(pw.length<6){ toast('Password minimal 6 karakter','err'); return false }
   if(state.users[e]){ toast('Email sudah terdaftar, silakan login','err'); return false }
-  if(findOwner('email',e)){ toast('Email ini akun penjual — pilih role Penjual saat login','err'); return false }
+  if(findOwner('email',e)){ toast('Email ini akun penjual — gunakan "Daftar sebagai penjual" di layar login','err'); return false }
   state.newUser={name:n,phone:p,email:e,password:pw};
   return true;
 }
-function regCta(){
-  if($('rg-role').value!=='seller') return doRegister();
-  if(!buyerFormOk()) return;
-  toSellerReg();
-}
+function regCta(){ return doRegister(); }
 function toSellerReg(){
   pickRole('seller');
-  const u=state.newUser||{};
   go('v-reg-seller-1');
-  /* hanya pra-isi kalau langkah 1 masih kosong, supaya tombol "Sebelum" tidak menimpa */
-  if(!fv('rs-nama')){
-    $('rs-nama').value=u.name||''; $('rs-email').value=u.email||''; $('rs-phone').value=u.phone||'';
-  }
 }
 function nextIdentity(){
   const v=validateIdentity();
@@ -1709,13 +1698,6 @@ function fillDemo(w){
   go('v-login',false); toast('Form terisi — tinggal klik LOGIN');
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  /* Nama toko tidak lagi diminta di form daftar biasa — pengisian toko pindah
-     ke wizard 2 langkah (v-reg-seller-1/2), jadi field lama tetap tersembunyi. */
-  $('rg-role').onchange=e=>{
-    const seller=e.target.value==='seller';
-    $('rg-shopfield').style.display='none';
-    $('rg-cta').textContent=seller?'DAFTARKAN TOKO':'SIMPAN';
-  };
   $('clock').textContent=nowLbl();
   setInterval(()=>{
     $('clock').textContent=nowLbl();
