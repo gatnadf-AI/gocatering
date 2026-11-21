@@ -20,7 +20,7 @@ GITLAB_API="${GITLAB_API:-https://gitlab.com/api/v4}"
 GITLAB_WEB="${GITLAB_WEB:-https://gitlab.com}"
 GITLAB_PROJECT="${GITLAB_PROJECT:-89262296}"
 GITLAB_PATH="${GITLAB_PATH:-clr657/gocatering}"
-GITLAB_PKG="${GITLAB_PKG:-gocatering}"
+GITLAB_PKG="${GITLAB_PKG:-gocatering-apk}"
 # Rilis GitLab harus menunjuk tag GitLab. SHA commit GitHub tidak ada di sana,
 # jadi default-nya ujung branch main GitLab; ubah lewat GITLAB_REF bila perlu.
 GITLAB_REF="${GITLAB_REF:-main}"
@@ -74,6 +74,11 @@ case "$REF" in
   *)  TAG="build-$SHORT" ;;
 esac
 
+# Segmen "versi" paket memakai nama tag, bukan VERSION dari pubspec. Tiap build
+# menghasilkan berkas bernama sama (SHA256SUMS.txt, LICENSE.txt), jadi tanpa
+# pembeda ini build diagnostik berikutnya menimpa checksum rilis resmi.
+PKGVER="$TAG"
+
 # LICENSE wajib menempel pada rilis: klausulnya harus sampai bersamaan dengan
 # aplikasinya. publish-release.sh sudah menyalinnya ke dist/, tapi kalau skrip
 # itu belum jalan kita salin sendiri.
@@ -89,7 +94,7 @@ if [ "${#FILES[@]}" -eq 0 ]; then
   exit 1
 fi
 
-echo "Menyalin ${#FILES[@]} berkas ke $GITLAB_PATH (paket $GITLAB_PKG/$VERSION, tag $TAG)"
+echo "Menyalin ${#FILES[@]} berkas ke $GITLAB_PATH (paket $GITLAB_PKG/$PKGVER)"
 
 # ---------------------------------------------------------------- tag GitLab ---
 gl GET "$GITLAB_API/projects/$GITLAB_PROJECT/repository/tags/$TAG"
@@ -110,12 +115,12 @@ LINKS=""
 for f in "${FILES[@]}"; do
   name="$(basename "$f")"
   gl PUT --upload-file "$f" \
-     "$GITLAB_API/projects/$GITLAB_PROJECT/packages/generic/$GITLAB_PKG/$VERSION/$name"
+     "$GITLAB_API/projects/$GITLAB_PROJECT/packages/generic/$GITLAB_PKG/$PKGVER/$name"
   if ! ok; then
     echo "::error::unggah $name gagal (HTTP $CODE): $(head -c 300 "$BODY")" >&2
     exit 1
   fi
-  url="$GITLAB_API/projects/$GITLAB_PROJECT/packages/generic/$GITLAB_PKG/$VERSION/$name"
+  url="$GITLAB_API/projects/$GITLAB_PROJECT/packages/generic/$GITLAB_PKG/$PKGVER/$name"
   [ -n "$LINKS" ] && LINKS="$LINKS,"
   LINKS="$LINKS{\"name\":\"$(json_escape_str "$name")\",\"url\":\"$url\"}"
 done
@@ -178,7 +183,7 @@ FAIL=0
 for f in "${FILES[@]}"; do
   name="$(basename "$f")"
   size="$(wc -c < "$f" | tr -d ' ')"
-  gl HEAD "$GITLAB_API/projects/$GITLAB_PROJECT/packages/generic/$GITLAB_PKG/$VERSION/$name"
+  gl HEAD "$GITLAB_API/projects/$GITLAB_PROJECT/packages/generic/$GITLAB_PKG/$PKGVER/$name"
   remote="$(grep -i -a '^content-length:' "$BODY" | tr -dc '0-9')"
   if [ "$CODE" = "200" ] && [ "$remote" = "$size" ]; then
     printf '  OK  %-44s %s byte\n' "$name" "$remote"
