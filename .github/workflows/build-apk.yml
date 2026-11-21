@@ -36,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -230,3 +231,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash "$APP_DIR/scripts/publish-release.sh"
+
+      # Salinan ke GitLab (gitlab.com/clr657/gocatering) supaya berkas yang sama
+      # tersedia juga di sana tanpa memindahkan mesin build. GITLAB_TOKEN
+      # (scope api) dibaca dari env tingkat job; kalau secret belum dipasang,
+      # kondisi ini salah dan langkahnya tidak jalan sama sekali.
+      - name: Salin rilis ke GitLab
+        if: env.GITLAB_TOKEN != '' && (startsWith(github.ref, 'refs/tags/v') || inputs.publish_release)
+        run: bash "$APP_DIR/scripts/publish-gitlab.sh"
